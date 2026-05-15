@@ -1,0 +1,55 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "orchestrator",
+  "providers": {
+    "deepseek": {
+      "apiKey": "${DEEPSEEK_API_KEY}",
+      "baseURL": "https://api.deepseek.com"
+    },
+    "google": {
+      "apiKey": "${GEMINI_API_KEY}"
+    },
+    "crofai": {
+      "baseURL": "https://crof.ai/v1",
+      "models": {
+        "glm-5.1-precision": {},
+        "deepseek-v3.2": {}
+      }
+    }
+  },
+  "models": {
+    "deepseek-v4-pro-think": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "options": {
+        "extra_body": {
+          "thinking": { "type": "enabled" },
+          "reasoning_effort": "max"
+        }
+      }
+    },
+    "gemini-3.1-vision": {
+      "provider": "google",
+      "model": "gemini-3.1-pro"
+    }
+  },
+  "mcp": {
+    "server-brave-search": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "environment": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    }
+  },
+  "permission": {
+    "skill": {
+      "browser-telemetry": "allow",
+      "browser-agent": "allow"
+    }
+  }
+}
