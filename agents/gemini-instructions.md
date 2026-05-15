@@ -3,6 +3,11 @@ description: Migrated async execution protocol instructions from Gemini CLI
 mode: subagent
 hidden: true
 model: deepseek/deepseek-v4-pro
+permission:
+  external_directory:
+    "/tmp/*": allow
+  bash: allow
+  read: allow
 ---
 # ASYNC EXECUTION PROTOCOL
 * **Never Block:** You are strictly forbidden from running terminal commands in the foreground.
