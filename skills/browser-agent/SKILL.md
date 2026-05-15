@@ -198,3 +198,31 @@ node test_e2e.js
 - Chromium: snap v147 at `/snap/chromium/current/usr/lib/chromium-browser/chrome`
 - Puppeteer-core with headless Chrome via DevTools Protocol
 - Page logs are buffered (up to 5000 network, 5000 console entries)
+
+## Stealth / Anti-Detection
+
+The browser-agent server includes built-in anti-detection (stealth mode) to bypass services that block headless browsers:
+
+| Measure | What it does | Defeats |
+|---|---|---|
+| `--disable-blink-features=AutomationControlled` | Removes `navigator.webdriver` flag from Chrome | Google OAuth, Cloudflare |
+| User-Agent override | Strips "HeadlessChrome" from UA string | Google, most bot detectors |
+| `evaluateOnNewDocument` hook | Overrides `navigator.webdriver`, `navigator.plugins`, `Permissions` API | Advanced fingerprinting |
+| `navigator.plugins` fake | Returns fake plugins array (5 entries) | Plugin-based detection |
+
+### How to verify stealth is active:
+```js
+browser_evaluate({
+  script: `(() => ({
+    webdriver: navigator.webdriver,
+    headlessChrome: navigator.userAgent.includes('HeadlessChrome'),
+    plugins: navigator.plugins.length
+  }))()`
+})
+// Expect: { webdriver: false, headlessChrome: false, plugins: 5 }
+```
+
+### If stealth is ever lost (e.g., restart wiped it):
+The server.js at `/home/ubuntu/browser-agent/server.js` must have the stealth patches
+applied. See the reference server.js in this skill directory for the canonical version.
+Apply with: `systemctl --user restart browser-agent.service`

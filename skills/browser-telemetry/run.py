@@ -6,6 +6,15 @@ Usage:
     python run.py '{"action": "click", "selector": "#btn"}'
     python run.py '{"action": "type", "selector": "#input", "text": "hello"}'
 
+Stealth mode (enabled by default):
+    Anti-detection measures to bypass Google OAuth, Cloudflare, and bot walls:
+    - Disables AutomationControlled blink feature
+    - Removes "HeadlessChrome" from User-Agent
+    - Overrides navigator.webdriver to false
+    - Fakes navigator.plugins fingerprint
+
+    Disable with: {"action": "navigate", "url": "...", "stealth": false}
+
 Outputs JSON to stdout with keys: screenshot, dom, network, console, url, title, errors.
 Saves screenshot to /tmp/ui-state.png.
 """
@@ -18,24 +27,79 @@ from pathlib import Path
 
 SCREENSHOT_PATH = "/tmp/ui-state.png"
 
+# Stealth: non-headless-looking User-Agent
+STEALTH_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/147.0.0.0 Safari/537.36"
+)
 
-def launch_browser():
-    """Launch a headless Chromium browser via Playwright."""
+# Stealth: anti-detection JS injected before every page load
+STEALTH_INIT_SCRIPT = """
+// Override navigator.webdriver (Google OAuth detection)
+Object.defineProperty(navigator, 'webdriver', { get: () => false });
+
+// Fake plugins array (fingerprinting)
+Object.defineProperty(navigator, 'plugins', {
+    get: () => [1, 2, 3, 4, 5]
+});
+
+// Fake languages
+Object.defineProperty(navigator, 'languages', {
+    get: () => ['en-US', 'en']
+});
+
+// Override permissions query to avoid headless detection
+const originalQuery = window.navigator.permissions.query;
+window.navigator.permissions.query = (parameters) => (
+    parameters.name === 'notifications'
+        ? Promise.resolve({ state: Notification.permission })
+        : originalQuery(parameters)
+);
+
+// Hide Chrome automation extension
+Object.defineProperty(document, 'hidden', { get: () => false });
+Object.defineProperty(document, 'visibilityState', { get: () => 'visible' });
+"""
+
+
+def launch_browser(stealth=True):
+    """Launch a headless Chromium browser via Playwright.
+    
+    Args:
+        stealth: Enable anti-detection measures (default True).
+                 Disable for trusted localhost environments.
+    """
     from playwright.sync_api import sync_playwright
 
     playwright = sync_playwright().start()
+
+    chrome_args = [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+    ]
+
+    if stealth:
+        chrome_args.extend([
+            "--disable-blink-features=AutomationControlled",
+            "--disable-features=IsolateOrigins,site-per-process",
+        ])
+
     browser = playwright.chromium.launch(
         headless=True,
-        args=[
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-        ],
+        args=chrome_args,
     )
+
     context = browser.new_context(
         viewport={"width": 1280, "height": 720},
         ignore_https_errors=True,
+        user_agent=STEALTH_USER_AGENT if stealth else None,
     )
+
+    if stealth:
+        context.add_init_script(STEALTH_INIT_SCRIPT)
+
     page = context.new_page()
 
     # Collect network requests
@@ -166,6 +230,8 @@ def main():
         print(json.dumps({"error": f"Invalid JSON: {e}"}))
         sys.exit(1)
 
+    stealth = action.get("stealth", True)  # enabled by default
+
     try:
         (
             playwright,
@@ -176,7 +242,7 @@ def main():
             network_responses,
             console_logs,
             page_errors,
-        ) = launch_browser()
+        ) = launch_browser(stealth=stealth)
     except Exception as e:
         print(json.dumps({
             "error": f"Failed to launch browser: {e}\n{traceback.format_exc()}"

@@ -51,26 +51,135 @@ my-agent-os/
 ├── agents/
 │   ├── orchestrator.md        # Tier 1: Primary terminal manager (DeepSeek V4 Pro)
 │   ├── discovery.md           # Tier 2: UI exploration thinker (DeepSeek V4 Pro + reasoning)
-│   ├── vision.md              # Tier 3: Headless vision parser (Gemini 3.1 Pro)
+│   ├── vision.md              # Tier 3: Headless vision parser (Gemini 2.5 Flash)
 │   └── gemini-instructions.md # Migrated Gemini CLI async execution protocol
 ├── skills/
 │   ├── browser-agent/         # Persistent Chromium browser agent (migrated from OpenCode)
+│   │   ├── SKILL.md           # Agent-facing documentation
+│   │   ├── server.js          # Puppeteer HTTP API server (deployed to systemd)
+│   │   └── stealth-reference.md # Anti-detection technique reference
 │   └── browser-telemetry/     # Playwright-based headless telemetry
+│       ├── SKILL.md           # Agent-facing documentation
+│       └── run.py             # One-shot Playwright action executor
 ├── tools/
 │   └── browser.ts             # Browser tool definitions (migrated from OpenCode)
 └── mcp/
     └── settings.json          # MCP server configurations (Brave Search)
 ```
 
-## 3-Tier Reasoning Pipeline
+## Components & How They Work Together
 
-| Tier | Agent | Model | Role |
-|------|-------|-------|------|
-| 1 | `orchestrator` | `deepseek/deepseek-v4-pro` | Task routing & terminal management |
-| 2 | `discovery` | `deepseek/deepseek-v4-pro` (thinking) | Deep UI exploration & selector mapping |
-| 3 | `vision` | `google/gemini-3.1-pro-preview` | Visual parsing of screenshots to text |
+### The Big Picture
 
-**Flow:** User → Orchestrator (routes task) → Discovery (maps UI via Playwright) → Vision (parses screenshots) → back to Orchestrator
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        YOU (User)                           │
+│                 opencode run "your task"                     │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 TIER 1: orchestator                         │
+│              Model: DeepSeek V4 Pro                         │
+│  Routes tasks, manages terminal, delegates complex work      │
+│                                                             │
+│  Tools: bash, browser_navigate, browser_click, read, edit,  │
+│         webfetch, glob, grep, Brave Search MCP              │
+│                                                             │
+│  --- When task needs UI exploration ---                     │
+│  spawns ──────────► @discovery                              │
+│                                                             │
+│  --- When it needs to see an image ---                      │
+│  spawns ──────────► @vision                                │
+└─────────────────────────────────────────────────────────────┘
+                      │
+          ┌───────────┴───────────┐
+          ▼                       ▼
+┌──────────────────┐    ┌──────────────────┐
+│  TIER 2: discovery│    │  TIER 3: vision   │
+│  DeepSeek V4 Pro  │    │  Gemini 2.5 Flash │
+│  (thinking mode)  │    │  (image analysis) │
+│                   │    │                   │
+│  Maps complex UIs │    │  Reads screenshots│
+│  Finds selectors  │    │  Returns spatial  │
+│  Plans interactions│   │  text maps        │
+│                   │    │                   │
+│  Uses:             │    │  Uses:            │
+│  browser-telemetry │    │  Read tool        │
+│  @vision           │    │                   │
+└────────┬──────────┘    └──────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   BROWSER LAYER                              │
+│                                                             │
+│  ┌───────────────────────┐   ┌──────────────────────────┐  │
+│  │  browser-agent        │   │  browser-telemetry       │  │
+│  │  (Puppeteer, persistent)│  │  (Playwright, one-shot)  │  │
+│  │                       │   │                          │  │
+│  │  • HTTP API :9222     │   │  • CLI: python3 run.py   │  │
+│  │  • Stays alive between│   │  • Fresh browser per call│  │
+│  │    calls              │   │  • JSON output           │  │
+│  │  • systemd service    │   │  • Screenshot to /tmp    │  │
+│  │  • userDataDir persist│   │                          │  │
+│  │                       │   │                          │  │
+│  │  ✓ Stealth mode       │   │  ✓ Stealth mode          │  │
+│  │  ✓ Session persistence│   │  ✓ Anti-detection        │  │
+│  │  ✓ Network/console log│   │  ✓ DOM/network capture   │  │
+│  │  ✓ Memory hygiene     │   │  ✓ Toggleable            │  │
+│  └───────────────────────┘   └──────────────────────────┘  │
+│                                                             │
+│  Both include STEALTH MODE (enabled by default):             │
+│  • --disable-blink-features=AutomationControlled            │
+│  • User-Agent without "HeadlessChrome"                      │
+│  • navigator.webdriver → false                              │
+│  • navigator.plugins → faked                                │
+│  • Permissions API → overridden                             │
+│  → Bypasses Google OAuth, Cloudflare, bot walls             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Component Glossary
+
+| Component | Runtime | Model | Persistence | Stealth | Purpose |
+|-----------|---------|-------|-------------|---------|---------|
+| **orchestrator** | OpenCode agent | DeepSeek V4 Pro | — | — | Task routing, terminal ops, delegation |
+| **discovery** | OpenCode subagent | DeepSeek V4 Pro (thinking) | — | Inherited | UI mapping, selector discovery |
+| **vision** | OpenCode subagent | Gemini 2.5 Flash | — | — | Screenshot → spatial text report |
+| **browser-agent** | systemd service (:9222) | Puppeteer + Chromium | ✅ userDataDir | ✅ built-in | Interactive browsing, persistent session |
+| **browser-telemetry** | CLI subprocess | Playwright + Chromium | ❌ one-shot | ✅ default on | Quick navigate/screenshot/click |
+| **Brave Search** | MCP server | Brave API | — | — | Web + local search |
+
+### Data Flow: A Real Example
+
+```
+User: "Login to DeepSeek Platform via Google and check my usage"
+
+1. orchestrator loads skill({ name: "browser-agent" })
+2. browser_navigate → platform.deepseek.com/sign_in
+3. browser_click → Google OAuth button (.ds-sign-in-form__social-button)
+4. Redirected to accounts.google.com (stealth bypasses bot detection)
+5. browser_type → email, browser_click → Next
+6. browser_type → password, browser_click → Next
+7. Google 2FA → user taps phone (manual interaction required)
+8. browser_evaluate → click Continue on consent screen
+9. Redirected to platform.deepseek.com/usage ✅
+10. browser_text + browser_screenshot → Extract usage data
+
+Result: Balance $2.62, Monthly $2.37, 1,223 API requests
+All session cookies + localStorage persisted to userDataDir
+```
+
+### When to Use Which Browser Tool
+
+| Scenario | Use | Why |
+|----------|-----|-----|
+| Multi-step login / form fill | `browser-agent` | Persistent session, no re-auth |
+| Quick page snapshot | `browser-telemetry` | Fast one-shot, returns JSON |
+| OAuth / Google sign-in | `browser-agent` | Stealth + persistent cookies |
+| SaaS dashboard mapping | `@discovery` (uses browser-telemetry) | Structured exploration + vision |
+| Extract API responses | Either → `browser_networkLogs` | Capture XHR/fetch calls |
+| Localhost dev testing | Either → `"stealth": false` | Skip anti-detection overhead |
 
 ## Usage
 
@@ -141,6 +250,8 @@ opencode models google | head -5
 | `Chrome not found` | Run `python3 -m playwright install chromium` |
 | Vision agent returns empty | Try `google/gemini-2.5-flash` or check GEMINI_API_KEY validity |
 | `npx` prompts or hangs | Ensure Node.js ≥18 is installed and `npx` is on PATH |
+| Google OAuth / sign-in blocked | Verify stealth is active: `browser_evaluate({ script: "navigator.webdriver" })` → should be `false`. Restart with `systemctl --user restart browser-agent.service` |
+| Browser session lost after restart | `userDataDir` persistence was added in stealth update. First restart after upgrade wipes session; subsequent restarts preserve it |
 
 ## Harvested Configs
 

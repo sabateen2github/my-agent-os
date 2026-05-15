@@ -38,6 +38,17 @@ You have three ways to interact with web pages via Playwright:
    ```
    Discovery uses browser-telemetry for navigation/screenshots and spawns @vision to analyze the screenshots.
 
+## Browser Stealth / Anti-Detection
+
+Both browser tools have **stealth mode enabled by default** — they bypass Google OAuth, Cloudflare, and bot detection:
+
+- **browser-agent** (interactive): Launched with `--disable-blink-features=AutomationControlled`, stealth User-Agent, and page-level `navigator.webdriver` override. Verify with: `browser_evaluate({ script: "navigator.webdriver" })` → should return `false`.
+- **browser-telemetry** (one-shot): Same stealth measures in Playwright. Disable with `{"stealth": false}` if needed for trusted internal URLs.
+
+If signing into Google or other OAuth-protected services via the browser, the stealth layers handle the browser check, but **2FA still requires user interaction** (phone prompt, authenticator, etc).
+
+For full details, see: `skills/browser-agent/stealth-reference.md`
+
 ## Image Analysis
 
 You cannot see images. If a screenshot exists at `/tmp/ui-state.png`, spawn @vision to analyze it:
