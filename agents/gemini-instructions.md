@@ -1,3 +1,9 @@
+---
+description: Migrated async execution protocol instructions from Gemini CLI
+mode: subagent
+hidden: true
+model: deepseek/deepseek-v4-pro
+---
 # ASYNC EXECUTION PROTOCOL
 * **Never Block:** You are strictly forbidden from running terminal commands in the foreground.
 * **Log Isolation:** For every new task, pick a unique, descriptive log name in /tmp/.

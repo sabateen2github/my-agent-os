@@ -81,7 +81,7 @@ def execute_action(page, action):
     if action_type == "navigate":
         page.goto(
             action["url"],
-            wait_until=action.get("waitUntil", "networkidle2"),
+            wait_until=action.get("waitUntil", "networkidle"),
             timeout=action.get("timeout", 30000),
         )
 

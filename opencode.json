@@ -1,36 +1,40 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "deepseek/deepseek-v4-pro",
   "default_agent": "orchestrator",
-  "providers": {
+  "provider": {
     "deepseek": {
-      "apiKey": "${DEEPSEEK_API_KEY}",
-      "baseURL": "https://api.deepseek.com"
-    },
-    "google": {
-      "apiKey": "${GEMINI_API_KEY}"
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://api.deepseek.com/v1"
+      },
+      "models": {
+        "deepseek-chat": {},
+        "deepseek-reasoner": {},
+        "deepseek-v4-flash": {},
+        "deepseek-v4-pro": {}
+      }
     },
     "crofai": {
-      "baseURL": "https://crof.ai/v1",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://crof.ai/v1"
+      },
       "models": {
         "glm-5.1-precision": {},
         "deepseek-v3.2": {}
       }
-    }
-  },
-  "models": {
-    "deepseek-v4-pro-think": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-pro",
-      "options": {
-        "extra_body": {
-          "thinking": { "type": "enabled" },
-          "reasoning_effort": "max"
-        }
-      }
     },
-    "gemini-3.1-vision": {
-      "provider": "google",
-      "model": "gemini-3.1-pro"
+    "google": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://generativelanguage.googleapis.com/v1beta/openai",
+        "apiKey": "{env:GEMINI_API_KEY}"
+      },
+      "models": {
+        "gemini-2.5-flash": {},
+        "gemini-2.5-pro": {}
+      }
     }
   },
   "mcp": {
@@ -42,14 +46,14 @@
         "@modelcontextprotocol/server-brave-search"
       ],
       "environment": {
-        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+        "BRAVE_API_KEY": "{env:BRAVE_API_KEY}"
       }
     }
   },
   "permission": {
     "skill": {
-      "browser-telemetry": "allow",
-      "browser-agent": "allow"
+      "browser-agent": "allow",
+      "browser-telemetry": "allow"
     }
   }
 }
