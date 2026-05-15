@@ -6,6 +6,10 @@ const PORT = parseInt(process.env.BROWSER_AGENT_PORT || '9222', 10);
 const USER_DATA_DIR = '/home/ubuntu/browser-agent/user-data';  // Persist session across restarts
 const LOG_MAX_AGE_MS = 60 * 60 * 1000;  // 1 hour — drop older logs to prevent memory bloat
 const LOG_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;  // Clean up every 10 minutes
+const PAGE_RECYCLE_INTERVAL_MS = 30 * 60 * 1000;  // Close/reopen page every 30 min to flush DOM/JS contexts
+const MEMORY_WARN_MB = 500;   // Log warning when RSS exceeds 500MB
+const MEMORY_KILL_MB = 800;   // Hard-recycle browser when RSS exceeds 800MB
+const MEMORY_CHECK_INTERVAL_MS = 5 * 60 * 1000;  // Check memory every 5 minutes
 
 let browser = null;
 let page = null;
@@ -25,7 +29,99 @@ setInterval(() => {
   trim(jsErrors);
 }, LOG_CLEANUP_INTERVAL_MS).unref();
 
+// Memory watchdog: monitor RSS and warn/recycle if thresholds exceeded
+let lastPageRecycle = Date.now();
+let recycleRequested = false;
+
+setInterval(() => {
+  const mem = process.memoryUsage();
+  const rssMB = Math.round(mem.rss / 1024 / 1024);
+  if (rssMB > MEMORY_WARN_MB) {
+    console.error(`[browser-agent] WARNING: Memory ${rssMB}MB > ${MEMORY_WARN_MB}MB threshold`);
+  }
+  if (rssMB > MEMORY_KILL_MB) {
+    console.error(`[browser-agent] CRITICAL: Memory ${rssMB}MB > ${MEMORY_KILL_MB}MB — triggering recycle`);
+    recycleRequested = true;
+  }
+}, MEMORY_CHECK_INTERVAL_MS).unref();
+
+// Page recycle: periodically close and reopen the page to flush DOM/JS context bloat
+// This does NOT restart the browser — cookies, localStorage, sessionStorage all survive
+async function recyclePage() {
+  if (!page || !browser || !browser.connected) return;
+  try {
+    const currentUrl = page.url();
+    await page.close().catch(() => {});
+    page = await browser.newPage();
+
+    // Re-apply stealth on new page
+    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36');
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => false });
+      Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+      Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+      const originalQuery = window.navigator.permissions.query;
+      window.navigator.permissions.query = (parameters) => (
+        parameters.name === 'notifications' ? Promise.resolve({ state: Notification.permission }) : originalQuery(parameters)
+      );
+    });
+    await page.setViewport({ width: 1280, height: 800 });
+
+    // Re-attach event listeners
+    page.on('console', msg => {
+      consoleLogs.push({ type: msg.type(), text: msg.text(), timestamp: Date.now() });
+      if (consoleLogs.length > 5000) consoleLogs.splice(0, 1000);
+    });
+    page.on('pageerror', err => {
+      jsErrors.push({ message: err.message, timestamp: Date.now() });
+      if (jsErrors.length > 1000) jsErrors.splice(0, 200);
+    });
+    page.on('request', req => {
+      networkRequests.push({ id: req._requestId, method: req.method(), url: req.url(), resourceType: req.resourceType(), headers: req.headers(), postData: req.postData(), timestamp: Date.now() });
+      if (networkRequests.length > 5000) networkRequests.splice(0, 1000);
+    });
+    page.on('response', res => {
+      networkResponses.push({ id: res._requestId, url: res.url(), status: res.status(), statusText: res.statusText(), headers: res.headers(), fromCache: res.fromCache(), timestamp: Date.now() });
+      if (networkResponses.length > 5000) networkResponses.splice(0, 1000);
+    });
+
+    // Navigate back to where we were
+    if (currentUrl && currentUrl !== 'about:blank') {
+      await page.goto(currentUrl, { waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
+    }
+    console.error(`[browser-agent] Page recycled (was at ${currentUrl})`);
+  } catch (e) {
+    console.error(`[browser-agent] Page recycle failed: ${e.message}`);
+  }
+}
+
+// Hard recycle: kill and restart the entire browser process (session survives via userDataDir)
+async function hardRecycle() {
+  console.error(`[browser-agent] Hard recycling browser...`);
+  try {
+    if (page) await page.close().catch(() => {});
+    if (browser) await browser.close().catch(() => {});
+  } catch {}
+  browser = null;
+  page = null;
+  connected = false;
+  recycleRequested = false;
+  await ensureBrowser();
+  console.error(`[browser-agent] Hard recycle complete`);
+}
+
 async function ensureBrowser() {
+  // Check if hard recycle was requested by memory watchdog
+  if (recycleRequested) {
+    await hardRecycle();
+  }
+
+  // Periodic page recycle (soft — keeps browser + session alive)
+  if (page && browser && browser.connected && (Date.now() - lastPageRecycle > PAGE_RECYCLE_INTERVAL_MS)) {
+    await recyclePage();
+    lastPageRecycle = Date.now();
+  }
+
   if (browser && browser.connected) {
     try { await browser.version(); return; } catch {}
   }
@@ -80,6 +176,8 @@ async function ensureBrowser() {
     networkResponses.push({ id: res._requestId, url: res.url(), status: res.status(), statusText: res.statusText(), headers: res.headers(), fromCache: res.fromCache(), timestamp: Date.now() });
     if (networkResponses.length > 5000) networkResponses.splice(0, 1000);
   });
+
+  lastPageRecycle = Date.now();  // Reset recycle timer on fresh launch
 }
 
 function jsonResponse(res, data) {
