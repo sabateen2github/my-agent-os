@@ -7,12 +7,16 @@ const USER_DATA_DIR = '/home/ubuntu/browser-agent/user-data';  // Persist sessio
 const LOG_MAX_AGE_MS = 60 * 60 * 1000;  // 1 hour — drop older logs to prevent memory bloat
 const LOG_CLEANUP_INTERVAL_MS = 10 * 60 * 1000;  // Clean up every 10 minutes
 const PAGE_RECYCLE_INTERVAL_MS = 30 * 60 * 1000;  // Close/reopen page every 30 min to flush DOM/JS contexts
+const STALE_TAB_AGE_MS = 18 * 60 * 60 * 1000;  // Auto-close tabs older than 18 hours
+const TAB_CLEANUP_INTERVAL_MS = 30 * 60 * 1000;  // Check for stale tabs every 30 minutes
 const MEMORY_WARN_MB = 500;   // Log warning when RSS exceeds 500MB
 const MEMORY_KILL_MB = 800;   // Hard-recycle browser when RSS exceeds 800MB
 const MEMORY_CHECK_INTERVAL_MS = 5 * 60 * 1000;  // Check memory every 5 minutes
+const MAX_TABS = 20;  // Hard cap — close oldest tabs if exceeded
 
 let browser = null;
-let page = null;
+let activePage = null;  // Currently active page (most recently created/interacted)
+const managedPages = new Map();  // page → { id, createdAt, lastUsed }
 const consoleLogs = [];
 const networkRequests = [];
 const networkResponses = [];
@@ -28,6 +32,73 @@ setInterval(() => {
   trim(networkResponses);
   trim(jsErrors);
 }, LOG_CLEANUP_INTERVAL_MS).unref();
+
+// ── Tab / Page Management ────────────────────────────────────────────
+
+function trackPage(p) {
+  managedPages.set(p, { id: managedPages.size + 1, createdAt: Date.now(), lastUsed: Date.now() });
+  activePage = p;
+}
+
+function untrackPage(p) {
+  managedPages.delete(p);
+  // If the active page was closed, pick the most recently used remaining page
+  if (activePage === p) {
+    let newest = null;
+    let newestTime = 0;
+    for (const [pg, meta] of managedPages) {
+      if (meta.lastUsed > newestTime) { newest = pg; newestTime = meta.lastUsed; }
+    }
+    activePage = newest;
+  }
+}
+
+function touchActivePage() {
+  const meta = managedPages.get(activePage);
+  if (meta) meta.lastUsed = Date.now();
+}
+
+// Stale tab cleanup: close pages inactive for > STALE_TAB_AGE_MS
+setInterval(async () => {
+  if (!browser || !browser.connected) return;
+  const cutoff = Date.now() - STALE_TAB_AGE_MS;
+  const toClose = [];
+  for (const [pg, meta] of managedPages) {
+    if (meta.lastUsed < cutoff) toClose.push(pg);
+  }
+  // Keep at least 1 page alive
+  if (toClose.length >= managedPages.size) toClose.pop();
+
+  for (const pg of toClose) {
+    try {
+      const meta = managedPages.get(pg);
+      console.error(`[browser-agent] Closing stale tab #${meta?.id} (idle since ${new Date(meta?.lastUsed).toISOString()})`);
+      await pg.close().catch(() => {});
+      untrackPage(pg);
+    } catch {}
+  }
+
+  // Hard cap: if we still have too many tabs, close the oldest ones
+  while (managedPages.size > MAX_TABS) {
+    let oldest = null;
+    let oldestTime = Infinity;
+    for (const [pg, meta] of managedPages) {
+      if (meta.createdAt < oldestTime) { oldest = pg; oldestTime = meta.createdAt; }
+    }
+    if (oldest && oldest !== activePage) {
+      try { await oldest.close().catch(() => {}); } catch {}
+      untrackPage(oldest);
+    } else if (managedPages.size > 1) {
+      // Can't close active page, close next oldest
+      const sorted = [...managedPages.entries()].sort((a, b) => a[1].createdAt - b[1].createdAt);
+      const toKill = sorted.find(([pg]) => pg !== activePage);
+      if (toKill) {
+        try { await toKill[0].close().catch(() => {}); } catch {}
+        untrackPage(toKill[0]);
+      }
+    } else break;
+  }
+}, TAB_CLEANUP_INTERVAL_MS).unref();
 
 // Memory watchdog: monitor RSS and warn/recycle if thresholds exceeded
 let lastPageRecycle = Date.now();
@@ -45,18 +116,22 @@ setInterval(() => {
   }
 }, MEMORY_CHECK_INTERVAL_MS).unref();
 
-// Page recycle: periodically close and reopen the page to flush DOM/JS context bloat
+// Page recycle: periodically close and reopen the active page to flush DOM/JS context bloat
 // This does NOT restart the browser — cookies, localStorage, sessionStorage all survive
 async function recyclePage() {
-  if (!page || !browser || !browser.connected) return;
+  if (!activePage || !browser || !browser.connected) return;
   try {
-    const currentUrl = page.url();
-    await page.close().catch(() => {});
-    page = await browser.newPage();
+    const oldPage = activePage;
+    const currentUrl = oldPage.url();
+    untrackPage(oldPage);
+    await oldPage.close().catch(() => {});
+
+    const newPage = await browser.newPage();
+    trackPage(newPage);
 
     // Re-apply stealth on new page
-    await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36');
-    await page.evaluateOnNewDocument(() => {
+    await newPage.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36');
+    await newPage.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, 'webdriver', { get: () => false });
       Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
       Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
@@ -65,31 +140,31 @@ async function recyclePage() {
         parameters.name === 'notifications' ? Promise.resolve({ state: Notification.permission }) : originalQuery(parameters)
       );
     });
-    await page.setViewport({ width: 1280, height: 800 });
+    await newPage.setViewport({ width: 1280, height: 800 });
 
     // Re-attach event listeners
-    page.on('console', msg => {
+    newPage.on('console', msg => {
       consoleLogs.push({ type: msg.type(), text: msg.text(), timestamp: Date.now() });
       if (consoleLogs.length > 5000) consoleLogs.splice(0, 1000);
     });
-    page.on('pageerror', err => {
+    newPage.on('pageerror', err => {
       jsErrors.push({ message: err.message, timestamp: Date.now() });
       if (jsErrors.length > 1000) jsErrors.splice(0, 200);
     });
-    page.on('request', req => {
+    newPage.on('request', req => {
       networkRequests.push({ id: req._requestId, method: req.method(), url: req.url(), resourceType: req.resourceType(), headers: req.headers(), postData: req.postData(), timestamp: Date.now() });
       if (networkRequests.length > 5000) networkRequests.splice(0, 1000);
     });
-    page.on('response', res => {
+    newPage.on('response', res => {
       networkResponses.push({ id: res._requestId, url: res.url(), status: res.status(), statusText: res.statusText(), headers: res.headers(), fromCache: res.fromCache(), timestamp: Date.now() });
       if (networkResponses.length > 5000) networkResponses.splice(0, 1000);
     });
 
     // Navigate back to where we were
     if (currentUrl && currentUrl !== 'about:blank') {
-      await page.goto(currentUrl, { waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
+      await newPage.goto(currentUrl, { waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
     }
-    console.error(`[browser-agent] Page recycled (was at ${currentUrl})`);
+    console.error(`[browser-agent] Page recycled (was at ${currentUrl}), ${managedPages.size} tabs active`);
   } catch (e) {
     console.error(`[browser-agent] Page recycle failed: ${e.message}`);
   }
@@ -97,17 +172,54 @@ async function recyclePage() {
 
 // Hard recycle: kill and restart the entire browser process (session survives via userDataDir)
 async function hardRecycle() {
-  console.error(`[browser-agent] Hard recycling browser...`);
+  console.error(`[browser-agent] Hard recycling browser (${managedPages.size} tabs)...`);
   try {
-    if (page) await page.close().catch(() => {});
+    for (const [pg] of managedPages) {
+      await pg.close().catch(() => {});
+    }
+    managedPages.clear();
+    activePage = null;
     if (browser) await browser.close().catch(() => {});
   } catch {}
   browser = null;
-  page = null;
   connected = false;
   recycleRequested = false;
   await ensureBrowser();
   console.error(`[browser-agent] Hard recycle complete`);
+}
+
+// Apply stealth + listeners to a page (used for both initial page and popups)
+async function setupPage(pg) {
+  await pg.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36');
+  await pg.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+    Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+    const originalQuery = window.navigator.permissions.query;
+    window.navigator.permissions.query = (parameters) => (
+      parameters.name === 'notifications' ?
+        Promise.resolve({ state: Notification.permission }) :
+        originalQuery(parameters)
+    );
+  });
+  await pg.setViewport({ width: 1280, height: 800 });
+
+  pg.on('console', msg => {
+    consoleLogs.push({ type: msg.type(), text: msg.text(), timestamp: Date.now() });
+    if (consoleLogs.length > 5000) consoleLogs.splice(0, 1000);
+  });
+  pg.on('pageerror', err => {
+    jsErrors.push({ message: err.message, timestamp: Date.now() });
+    if (jsErrors.length > 1000) jsErrors.splice(0, 200);
+  });
+  pg.on('request', req => {
+    networkRequests.push({ id: req._requestId, method: req.method(), url: req.url(), resourceType: req.resourceType(), headers: req.headers(), postData: req.postData(), timestamp: Date.now() });
+    if (networkRequests.length > 5000) networkRequests.splice(0, 1000);
+  });
+  pg.on('response', res => {
+    networkResponses.push({ id: res._requestId, url: res.url(), status: res.status(), statusText: res.statusText(), headers: res.headers(), fromCache: res.fromCache(), timestamp: Date.now() });
+    if (networkResponses.length > 5000) networkResponses.splice(0, 1000);
+  });
 }
 
 async function ensureBrowser() {
@@ -117,67 +229,74 @@ async function ensureBrowser() {
   }
 
   // Periodic page recycle (soft — keeps browser + session alive)
-  if (page && browser && browser.connected && (Date.now() - lastPageRecycle > PAGE_RECYCLE_INTERVAL_MS)) {
+  if (activePage && browser && browser.connected && (Date.now() - lastPageRecycle > PAGE_RECYCLE_INTERVAL_MS)) {
     await recyclePage();
     lastPageRecycle = Date.now();
   }
 
   if (browser && browser.connected) {
-    try { await browser.version(); return; } catch {}
+    // Verify active page is still alive; if not, pick another or create new
+    if (activePage) {
+      try { await activePage.evaluate(() => 1); touchActivePage(); return; } catch {}
+    }
+    // Active page died — pick another tracked page or create new
+    for (const [pg] of managedPages) {
+      try { await pg.evaluate(() => 1); activePage = pg; touchActivePage(); return; } catch { untrackPage(pg); }
+    }
+    // All pages dead — create new
+    try {
+      activePage = await browser.newPage();
+      trackPage(activePage);
+      await setupPage(activePage);
+      lastPageRecycle = Date.now();
+      return;
+    } catch {}
+    // Browser itself dead — fall through to relaunch
   }
+
+  // Fresh browser launch
   browser = await puppeteer.launch({
     executablePath: CHROMIUM_PATH,
-    userDataDir: USER_DATA_DIR,  // Persist cookies, localStorage, sessionStorage across restarts
+    userDataDir: USER_DATA_DIR,
     args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--headless=new',
-      '--disable-blink-features=AutomationControlled',
+      '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
+      '--disable-gpu', '--headless=new', '--disable-blink-features=AutomationControlled',
       '--window-size=1280,800',
     ],
   });
   connected = true;
-  page = await browser.newPage();
 
-  // Stealth: remove HeadlessChrome from user agent
-  await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36');
-
-  // Stealth: override navigator.webdriver and other detection flags
-  await page.evaluateOnNewDocument(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => false });
-    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-    Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-    // Override permissions
-    const originalQuery = window.navigator.permissions.query;
-    window.navigator.permissions.query = (parameters) => (
-      parameters.name === 'notifications' ?
-        Promise.resolve({ state: Notification.permission }) :
-        originalQuery(parameters)
-    );
+  // Track popup/new-tab creation (Google OAuth, target="_blank", window.open)
+  browser.on('targetcreated', async (target) => {
+    if (target.type() !== 'page') return;
+    try {
+      const popup = await target.page();
+      if (!popup || managedPages.has(popup)) return;
+      trackPage(popup);
+      await setupPage(popup);
+      console.error(`[browser-agent] Popup/tab tracked (#${managedPages.get(popup).id}), total: ${managedPages.size}`);
+    } catch (e) {
+      console.error(`[browser-agent] Failed to track popup: ${e.message}`);
+    }
   });
 
-  await page.setViewport({ width: 1280, height: 800 });
-
-  page.on('console', msg => {
-    consoleLogs.push({ type: msg.type(), text: msg.text(), timestamp: Date.now() });
-    if (consoleLogs.length > 5000) consoleLogs.splice(0, 1000);
-  });
-  page.on('pageerror', err => {
-    jsErrors.push({ message: err.message, timestamp: Date.now() });
-    if (jsErrors.length > 1000) jsErrors.splice(0, 200);
-  });
-  page.on('request', req => {
-    networkRequests.push({ id: req._requestId, method: req.method(), url: req.url(), resourceType: req.resourceType(), headers: req.headers(), postData: req.postData(), timestamp: Date.now() });
-    if (networkRequests.length > 5000) networkRequests.splice(0, 1000);
-  });
-  page.on('response', res => {
-    networkResponses.push({ id: res._requestId, url: res.url(), status: res.status(), statusText: res.statusText(), headers: res.headers(), fromCache: res.fromCache(), timestamp: Date.now() });
-    if (networkResponses.length > 5000) networkResponses.splice(0, 1000);
+  // Track target destruction (popup closed itself)
+  browser.on('targetdestroyed', async (target) => {
+    if (target.type() !== 'page') return;
+    try {
+      const deadPage = await target.page().catch(() => null);
+      if (deadPage && managedPages.has(deadPage)) {
+        untrackPage(deadPage);
+        console.error(`[browser-agent] Popup/tab closed, ${managedPages.size} remaining`);
+      }
+    } catch {}
   });
 
-  lastPageRecycle = Date.now();  // Reset recycle timer on fresh launch
+  managedPages.clear();
+  activePage = await browser.newPage();
+  trackPage(activePage);
+  await setupPage(activePage);
+  lastPageRecycle = Date.now();
 }
 
 function jsonResponse(res, data) {
@@ -191,42 +310,47 @@ async function handleCommand(cmd) {
   switch (cmd.action) {
 
     case 'navigate': {
-      await page.goto(cmd.url, { waitUntil: cmd.waitUntil || 'networkidle2', timeout: cmd.timeout || 30000 });
-      const title = await page.title();
-      const url = page.url();
+      await activePage.goto(cmd.url, { waitUntil: cmd.waitUntil || 'networkidle2', timeout: cmd.timeout || 30000 });
+      touchActivePage();
+      const title = await activePage.title();
+      const url = activePage.url();
       return { status: 'ok', title, url };
     }
 
     case 'click': {
       const selector = cmd.selector;
-      if (cmd.waitFor) await page.waitForSelector(selector, { timeout: cmd.waitFor });
-      await page.click(selector, { clickCount: cmd.clickCount || 1, delay: cmd.delay || 0 });
+      if (cmd.waitFor) await activePage.waitForSelector(selector, { timeout: cmd.waitFor });
+      await activePage.click(selector, { clickCount: cmd.clickCount || 1, delay: cmd.delay || 0 });
+      touchActivePage();
       if (cmd.waitAfter) await new Promise(r => setTimeout(r, cmd.waitAfter));
       return { status: 'ok', clicked: selector };
     }
 
     case 'type': {
       const selector = cmd.selector;
-      if (cmd.waitFor) await page.waitForSelector(selector, { timeout: cmd.waitFor });
-      if (cmd.clear) await page.evaluate(s => { document.querySelector(s).value = ''; }, selector);
-      await page.type(selector, cmd.text, { delay: cmd.delay || 0 });
-      if (cmd.pressEnter) await page.keyboard.press('Enter');
+      if (cmd.waitFor) await activePage.waitForSelector(selector, { timeout: cmd.waitFor });
+      if (cmd.clear) await activePage.evaluate(s => { document.querySelector(s).value = ''; }, selector);
+      await activePage.type(selector, cmd.text, { delay: cmd.delay || 0 });
+      touchActivePage();
+      if (cmd.pressEnter) await activePage.keyboard.press('Enter');
       if (cmd.waitAfter) await new Promise(r => setTimeout(r, cmd.waitAfter));
       return { status: 'ok', typed: cmd.text, selector };
     }
 
     case 'press': {
-      await page.keyboard.press(cmd.key);
+      await activePage.keyboard.press(cmd.key);
+      touchActivePage();
       if (cmd.waitAfter) await new Promise(r => setTimeout(r, cmd.waitAfter));
       return { status: 'ok', pressed: cmd.key };
     }
 
     case 'scroll': {
       if (cmd.selector) {
-        await page.evaluate((s, d) => { const el = document.querySelector(s); el.scrollBy({ top: d, behavior: 'smooth' }); }, cmd.selector, cmd.delta || 300);
+        await activePage.evaluate((s, d) => { const el = document.querySelector(s); el.scrollBy({ top: d, behavior: 'smooth' }); }, cmd.selector, cmd.delta || 300);
       } else {
-        await page.evaluate(d => window.scrollBy(0, d), cmd.delta || 300);
+        await activePage.evaluate(d => window.scrollBy(0, d), cmd.delta || 300);
       }
+      touchActivePage();
       if (cmd.waitAfter) await new Promise(r => setTimeout(r, cmd.waitAfter));
       return { status: 'ok', scrolled: cmd.delta || 300 };
     }
@@ -235,85 +359,89 @@ async function handleCommand(cmd) {
       const outputPath = cmd.output || `/home/ubuntu/browser-agent/screenshots/screenshot-${Date.now()}.png`;
       const opts = { path: outputPath, fullPage: cmd.fullPage || false, type: cmd.type || 'png' };
       if (cmd.selector) {
-        const el = await page.$(cmd.selector);
+        const el = await activePage.$(cmd.selector);
         if (el) { await el.screenshot(opts); }
-        else { await page.screenshot(opts); }
+        else { await activePage.screenshot(opts); }
       } else {
-        await page.screenshot(opts);
+        await activePage.screenshot(opts);
       }
       return { status: 'ok', file: outputPath };
     }
 
     case 'evaluate': {
-      const result = await page.evaluate(cmd.script);
+      const result = await activePage.evaluate(cmd.script);
+      touchActivePage();
       return { status: 'ok', result };
     }
 
     case 'html': {
-      const html = await page.content();
+      const html = await activePage.content();
       return { status: 'ok', html: html.substring(0, Number(cmd.maxLength) || 500000) };
     }
 
     case 'text': {
       let text;
       if (cmd.selector) {
-        text = await page.$$eval(cmd.selector, els => els.map(e => e.innerText).join('\n'));
+        text = await activePage.$$eval(cmd.selector, els => els.map(e => e.innerText).join('\n'));
       } else {
-        text = await page.evaluate(() => document.body?.innerText || '');
+        text = await activePage.evaluate(() => document.body?.innerText || '');
       }
       return { status: 'ok', text: text.substring(0, Number(cmd.maxLength) || 100000) };
     }
 
     case 'url': {
-      return { status: 'ok', url: page.url(), title: await page.title() };
+      return { status: 'ok', url: activePage.url(), title: await activePage.title() };
     }
 
     case 'waitFor': {
       if (cmd.selector) {
-        await page.waitForSelector(cmd.selector, { timeout: cmd.timeout || 10000 });
+        await activePage.waitForSelector(cmd.selector, { timeout: cmd.timeout || 10000 });
       } else if (cmd.navigation) {
-        await page.waitForNavigation({ timeout: cmd.timeout || 10000 });
+        await activePage.waitForNavigation({ timeout: cmd.timeout || 10000 });
       } else if (cmd.networkIdle) {
-        await page.waitForNetworkIdle({ timeout: cmd.timeout || 10000 });
+        await activePage.waitForNetworkIdle({ timeout: cmd.timeout || 10000 });
       }
       return { status: 'ok' };
     }
 
     case 'goBack': {
-      await page.goBack({ timeout: cmd.timeout || 10000 });
-      return { status: 'ok', url: page.url() };
+      await activePage.goBack({ timeout: cmd.timeout || 10000 });
+      touchActivePage();
+      return { status: 'ok', url: activePage.url() };
     }
 
     case 'goForward': {
-      await page.goForward({ timeout: cmd.timeout || 10000 });
-      return { status: 'ok', url: page.url() };
+      await activePage.goForward({ timeout: cmd.timeout || 10000 });
+      touchActivePage();
+      return { status: 'ok', url: activePage.url() };
     }
 
     case 'reload': {
-      await page.reload({ timeout: cmd.timeout || 10000 });
-      return { status: 'ok', url: page.url() };
+      await activePage.reload({ timeout: cmd.timeout || 10000 });
+      touchActivePage();
+      return { status: 'ok', url: activePage.url() };
     }
 
     case 'cookies': {
       if (cmd.get) {
-        const cookies = await page.cookies(cmd.get === true ? undefined : cmd.get);
+        const cookies = await activePage.cookies(cmd.get === true ? undefined : cmd.get);
         return { status: 'ok', cookies };
       }
       if (cmd.set) {
-        await page.setCookie(cmd.set);
+        await activePage.setCookie(cmd.set);
         return { status: 'ok', set: true };
       }
       if (cmd.delete) {
         const names = Array.isArray(cmd.delete) ? cmd.delete : [cmd.delete];
-        await page.deleteCookie(...names.map(n => ({ name: n })));
+        await activePage.deleteCookie(...names.map(n => ({ name: n })));
         return { status: 'ok', deleted: names };
       }
-      const cookies = await page.cookies();
+      const cookies = await activePage.cookies();
       return { status: 'ok', cookies };
     }
 
     case 'localStorage': {
-      const result = await page.evaluate((action, key, value) => {
+      const result = await activePage.evaluate((action, key, value) => {
         if (action === 'get') return localStorage.getItem(key);
         if (action === 'set') { localStorage.setItem(key, value); return true; }
         if (action === 'delete') { localStorage.removeItem(key); return true; }
@@ -333,7 +461,7 @@ async function handleCommand(cmd) {
     }
 
     case 'sessionStorage': {
-      const result = await page.evaluate((action, key, value) => {
+      const result = await activePage.evaluate((action, key, value) => {
         if (action === 'get') return sessionStorage.getItem(key);
         if (action === 'set') { sessionStorage.setItem(key, value); return true; }
         if (action === 'delete') { sessionStorage.removeItem(key); return true; }
@@ -375,32 +503,33 @@ async function handleCommand(cmd) {
     }
 
     case 'hover': {
-      await page.hover(cmd.selector);
+      await activePage.hover(cmd.selector);
+      touchActivePage();
       if (cmd.waitAfter) await new Promise(r => setTimeout(r, cmd.waitAfter));
       return { status: 'ok', hovered: cmd.selector };
     }
 
     case 'select': {
-      await page.select(cmd.selector, ...cmd.values);
+      await activePage.select(cmd.selector, ...cmd.values);
       return { status: 'ok', selected: cmd.values };
     }
 
     case 'upload': {
-      const input = await page.$(cmd.selector);
+      const input = await activePage.$(cmd.selector);
       await input.uploadFile(...cmd.paths);
       return { status: 'ok', uploaded: cmd.paths };
     }
 
     case 'viewport': {
-      await page.setViewport({ width: cmd.width, height: cmd.height });
+      await activePage.setViewport({ width: cmd.width, height: cmd.height });
       return { status: 'ok', width: cmd.width, height: cmd.height };
     }
 
     case 'intercept': {
-      await page.setRequestInterception(true);
+      await activePage.setRequestInterception(true);
       const patterns = cmd.blockPatterns || [];
-      const existingHandler = page._interceptHandler;
-      if (existingHandler) page.off('request', existingHandler);
+      const existingHandler = activePage._interceptHandler;
+      if (existingHandler) activePage.off('request', existingHandler);
 
       const handler = req => {
         const url = req.url();
@@ -408,13 +537,13 @@ async function handleCommand(cmd) {
         if (blocked) { req.abort(); return; }
         req.continue();
       };
-      page._interceptHandler = handler;
-      page.on('request', handler);
+      activePage._interceptHandler = handler;
+      activePage.on('request', handler);
       return { status: 'ok', intercepting: true, blockPatterns: patterns };
     }
 
     case 'stopIntercept': {
-      await page.setRequestInterception(false);
+      await activePage.setRequestInterception(false);
       return { status: 'ok', intercepting: false };
     }
 
@@ -422,16 +551,23 @@ async function handleCommand(cmd) {
       if (cmd.device) {
         const devices = puppeteer.devices;
         const device = devices[cmd.device];
-        if (device) { await page.emulate(device); return { status: 'ok', emulated: cmd.device }; }
+        if (device) { await activePage.emulate(device); return { status: 'ok', emulated: cmd.device }; }
       }
       if (cmd.userAgent) {
-        await page.setUserAgent(cmd.userAgent);
+        await activePage.setUserAgent(cmd.userAgent);
       }
       return { status: 'ok' };
     }
 
     case 'close': {
-      if (browser) { await browser.close(); browser = null; page = null; connected = false; }
+      if (browser) {
+        for (const [pg] of managedPages) { await pg.close().catch(() => {}); }
+        managedPages.clear();
+        activePage = null;
+        await browser.close().catch(() => {});
+        browser = null;
+        connected = false;
+      }
       consoleLogs.length = 0; networkRequests.length = 0; networkResponses.length = 0; jsErrors.length = 0;
       return { status: 'ok', closed: true };
     }
@@ -440,8 +576,9 @@ async function handleCommand(cmd) {
       return {
         status: 'ok',
         connected,
-        url: page ? page.url() : null,
-        title: page ? await page.title().catch(() => null) : null,
+        url: activePage ? activePage.url() : null,
+        title: activePage ? await activePage.title().catch(() => null) : null,
+        tabCount: managedPages.size,
         consoleLogCount: consoleLogs.length,
         networkRequestCount: networkRequests.length,
         networkResponseCount: networkResponses.length,
