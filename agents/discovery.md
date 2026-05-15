@@ -6,6 +6,17 @@ extra_body:
   thinking:
     type: enabled
   reasoning_effort: max
+permission:
+  external_directory:
+    "/tmp/*": allow
+    "/home/ubuntu/my-agent-os/*": allow
+  task:
+    "*": allow
+  bash: allow
+  read: allow
+  glob: allow
+  grep: allow
+  webfetch: allow
 ---
 # Instructions
 You are a UI exploration agent. You cannot see images.

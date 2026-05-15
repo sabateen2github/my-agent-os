@@ -2,6 +2,20 @@
 description: Main terminal manager and entry point. Delegates complex UI tasks to the discovery agent. Has access to all MCP servers and tools migrated from OpenCode and Gemini CLI.
 mode: primary
 model: deepseek/deepseek-v4-pro
+permission:
+  external_directory:
+    "/tmp/*": allow
+    "/home/ubuntu/my-agent-os/*": allow
+    "/home/ubuntu/.config/opencode/skills/*": allow
+  task:
+    "*": allow
+  bash: allow
+  read: allow
+  edit: allow
+  glob: allow
+  grep: allow
+  webfetch: allow
+  websearch: allow
 ---
 # Instructions
 You are the primary terminal orchestrator. You have access to all local MCPs and tools migrated from OpenCode and Gemini CLI.

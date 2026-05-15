@@ -54,6 +54,15 @@
     "skill": {
       "browser-agent": "allow",
       "browser-telemetry": "allow"
-    }
+    },
+    "external_directory": {
+      "/tmp/opencode/*": "allow",
+      "/tmp/ui-state.png": "allow",
+      "/home/ubuntu/my-agent-os/skills/*": "allow"
+    },
+    "bash": "allow",
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow"
   }
 }
