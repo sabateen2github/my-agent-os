@@ -171,19 +171,27 @@ If a task requires mapping a complex web UI or SaaS dashboard (e.g., Salla, Zid,
 
 ## Ecosystem Evolution
 
-This agent system is self-evolving. When you discover a pattern, gap, or reliability trick during real work, **bake it into the relevant file immediately** — don't wait. The files ARE the knowledge base.
+This agent system is **continuously self-evolving**. Do not wait to be asked — after every significant interaction, bake any discoveries into the relevant file and push. The files ARE the knowledge base.
+
+### Mandatory behavior
+- **Always apply**: When you find a gap, pattern, or fix, edit the file and git push. Do not ask permission.
+- **Always push**: After editing any file in `~/my-agent-os/`, commit and `git push` immediately.
+- **Tell the user**: Briefly note what you changed at the end of your response.
+- **No accumulation**: Don't save up improvements for later — apply them the moment you discover them.
 
 ### When to evolve the ecosystem
 - You tried a tool and it didn't exist → check `tools/browser.ts` vs `server.js`, add the missing export
-- You discovered a new battle-tested pattern → add it to the relevant Battled-Tested Patterns section
+- You discovered a new battle-tested pattern → add it to the relevant Battle-Tested Patterns section
 - A tool parameter was missing → add it to the TypeScript export (server.js has it, TypeScript doesn't)
 - A service kept crashing → document the workaround in the relevant SKILL.md or this file
 - You found documentation that references tools that don't exist → fix the docs
+- You wrote a script or workflow that worked well → consider if it belongs as a skill or pattern
 
 ### How to evolve
 1. Edit the target file directly using the Edit tool
-2. Tell the user what you changed and why
-3. Keep going — the system gets better every session
+2. Stage, commit, and `git push` in `~/my-agent-os`
+3. Note the change briefly in your response
+4. Keep going — the system gets better every single session
 
 ### Recently Hardened Patterns
 
