@@ -93,7 +93,7 @@ browser_networkLogs({})
 
 ## React / SPA Advanced Usage
 
-These tools were hardened against Plaid's React SPA (SaltEdge→Plaid migration, 2026):
+These tools bypass React synthetic events, cross-origin iframes, and dynamic class names — hardened against real-world React SPAs:
 
 ### clickAt — coordinate-based clicking
 ```
@@ -123,7 +123,7 @@ Tries 2 strategies in sequence:
 
 ### networkLogs filtering
 ```
-browser_networkLogs({ filter: { method: 'POST', urlPattern: 'api\\.dashboard\\.plaid' } })
+browser_networkLogs({ filter: { method: 'POST', urlPattern: 'api\\.example\\.com' } })
 ```
 Filter by HTTP method, URL regex, or substring. Cuts noise from tracking pixels.
 
@@ -189,27 +189,27 @@ const API_URL = 'http://localhost:8000';
 
   // Inject token into browser
   await page.evaluate((t) => {
-    localStorage.setItem('oracle_token', t);
-    localStorage.setItem('oracle_thread_id', crypto.randomUUID());
+    localStorage.setItem('app_token', t);
+    localStorage.setItem('app_thread_id', crypto.randomUUID());
   }, access_token);
   await page.reload({ waitUntil: 'networkidle2' });
 
   // 4. Verify authenticated UI
   const hasChat = await page.evaluate(() =>
-    !!document.querySelector('input[placeholder*="Oracle"]')
+    !!document.querySelector('input[placeholder*="message"]')
   );
   assert(hasChat, 'Chat input not found after auth');
 
   // 5. Backend auth-protected endpoints
-  const txRes = await fetch(`${API_URL}/api/finance/transactions?limit=5`, {
+  const txRes = await fetch(`${API_URL}/api/data?limit=5`, {
     headers: { Authorization: `Bearer ${access_token}` }
   });
   assert(txRes.status === 200, 'Transactions should return 200 with auth');
 
   // Source code checks (no hardcoded secrets, correct imports, etc.)
   const fs = require('fs');
-  const alertCard = fs.readFileSync('path/to/WealthAlertCard.tsx', 'utf8');
-  assert(!alertCard.includes('localhost:8000'), 'WealthAlertCard should not hardcode localhost');
+  const componentSource = fs.readFileSync('src/components/SomeComponent.tsx', 'utf8');
+  assert(!componentSource.includes('localhost:8000'), 'Component should not hardcode localhost');
 
   await browser.close();
   process.exit(errors.length > 0 ? 1 : 0);
