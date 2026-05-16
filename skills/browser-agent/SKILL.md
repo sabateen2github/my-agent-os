@@ -4,9 +4,10 @@ description: Full interactive browser agent with persistent Chromium session. Na
 license: MIT
 compatibility: opencode
 metadata:
-  runtime: node
-  platform: linux-arm64
+  runtime: python3
+  platform: linux
   service: browser-agent@9222
+  backend: playwright
 ---
 
 ## What I do
@@ -243,11 +244,13 @@ node test_e2e.js
 
 ## Technical details
 
-- Server: Node.js HTTP API on `127.0.0.1:9222`
+- Server: Python HTTP API on `127.0.0.1:9222` (`skills/browser/server.py`)
 - Systemd service: `browser-agent.service` (user scope, auto-starts on boot)
-- Chromium: snap v147 at `/snap/chromium/current/usr/lib/chromium-browser/chrome`
-- Puppeteer-core with headless Chrome via DevTools Protocol
+- Browser: Playwright Chromium with `launch_persistent_context` for session persistence
+- User data dir: `~/browser-agent/user-data` (cookies, localStorage, profile survive restarts)
+- Stealth: Anti-detection enabled by default (webdriver=false, faked plugins, clean UA)
 - Page logs are buffered (up to 5000 network, 5000 console entries)
+- Migration: Replaced Puppeteer (server.js) with Playwright (server.py) — same API contract
 
 ## Stealth / Anti-Detection
 
@@ -272,10 +275,9 @@ browser_evaluate({
 // Expect: { webdriver: false, headlessChrome: false, plugins: 5 }
 ```
 
-### If stealth is ever lost (e.g., restart wiped it):
-The server.js at `/home/ubuntu/browser-agent/server.js` must have the stealth patches
-applied. See the reference server.js in this skill directory for the canonical version.
-Apply with: `systemctl --user restart browser-agent.service`
+### If stealth is ever lost:
+Restart the service: `systemctl --user restart browser-agent.service`
+The server.py applies stealth on every new page automatically.
 
 ## Ecosystem
 

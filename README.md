@@ -54,13 +54,11 @@ my-agent-os/
 │   ├── vision.md              # Tier 3: Headless vision parser (Gemini 2.5 Flash)
 │   └── gemini-instructions.md # Migrated Gemini CLI async execution protocol
 ├── skills/
-│   ├── browser-agent/         # Persistent Chromium browser agent (migrated from OpenCode)
-│   │   ├── SKILL.md           # Agent-facing documentation
-│   │   ├── server.js          # Puppeteer HTTP API server (deployed to systemd)
-│   │   └── stealth-reference.md # Anti-detection technique reference
-│   └── browser-telemetry/     # Playwright-based headless telemetry
-│       ├── SKILL.md           # Agent-facing documentation
-│       └── run.py             # One-shot Playwright action executor
+│   ├── browser/                # Playwright persistent browser + one-shot telemetry
+│   │   ├── SKILL.md            # Agent-facing documentation
+│   │   ├── server.py           # Playwright HTTP API server (deployed to systemd)
+│   │   └── run.py              # One-shot Playwright action executor
+│   └── self-enhance/           # Ecosystem self-evolution skill
 ├── tools/
 │   └── browser.ts             # Browser tool definitions (migrated from OpenCode)
 └── mcp/
