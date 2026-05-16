@@ -57,12 +57,12 @@ For every gap found:
 
 ## Critical Rules
 
-1. **Edit first, create last.** The primary job is improving existing system prompts, scripts, and tool definitions. Only create a new file when no existing file can hold the improvement.
-2. **Never break existing functionality.** When adding tool exports, preserve exact parameter names and types.
-3. **Match server.js exactly.** Tool parameter names in `browser.ts` must match what `server.js` expects.
-4. **Documentation must match reality.** If `orchestrator.md` documents a pattern, the tools must exist.
-5. **Keep it general.** No project-specific knowledge (no "Plaid", no "Oracle", no specific API endpoints). Use abstract examples.
-6. **Accumulate in prompts.** Every improvement goes into the agent `.md` files or skill documentation — that's where the wisdom lives.
+1. **Prove first, commit second.** Edit files during a session to try fixes. Only commit and push after the fix is verified to work. Never commit speculative improvements.
+2. **Edit first, create last.** The primary job is improving existing system prompts, scripts, and tool definitions. Only create a new file when no existing file can hold the improvement.
+3. **Never break existing functionality.** When adding tool exports, preserve exact parameter names and types.
+4. **Match server.js exactly.** Tool parameter names in `browser.ts` must match what `server.js` expects.
+5. **Documentation must match reality.** If `orchestrator.md` documents a pattern, the tools must exist.
+6. **Keep it general.** No project-specific knowledge (no "Plaid", no "Oracle", no specific API endpoints). Use abstract examples.
 
 ## Ecosystem Evolution Rule
 

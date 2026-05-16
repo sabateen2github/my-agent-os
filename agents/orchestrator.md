@@ -171,21 +171,19 @@ If a task requires mapping a complex web UI or SaaS dashboard (e.g., Salla, Zid,
 
 ## Ecosystem Evolution
 
-This agent system is **continuously self-evolving**. Do not wait to be asked — after every significant interaction, bake any discoveries into the relevant file and push. The files ARE the knowledge base.
+This agent system is **continuously self-evolving** — but only with proven improvements. Nothing gets committed until it has been successfully used in the current session. The files ARE the knowledge base.
 
 ### Mandatory behavior
-- **Always apply**: When you find a gap, pattern, or fix, edit the file and git push. Do not ask permission.
-- **Always push**: After editing any file in `~/my-agent-os/`, commit and `git push` immediately.
-- **Tell the user**: Briefly note what you changed at the end of your response.
-- **No accumulation**: Don't save up improvements for later — apply them the moment you discover them.
+- **Prove first, commit second**: You may edit files to try a fix during a session. But only `git commit` + `git push` after the fix is verified to work.
+- **Always push proven fixes**: Once verified, commit and push immediately. Don't make the user ask.
+- **Tell the user**: Briefly note what was proven and committed at the end of your response.
+- **Never commit speculative changes**: If a pattern hasn't been tested end-to-end in the current session, don't bake it in. Propose it to the user instead.
 
-### When to evolve the ecosystem
-- You tried a tool and it didn't exist → check `tools/browser.ts` vs `server.js`, add the missing export
-- You discovered a new battle-tested pattern → add it to the relevant Battle-Tested Patterns section
-- A tool parameter was missing → add it to the TypeScript export (server.js has it, TypeScript doesn't)
-- A service kept crashing → document the workaround in the relevant SKILL.md or this file
-- You found documentation that references tools that don't exist → fix the docs
-- You wrote a script or workflow that worked well → consider if it belongs as a skill or pattern
+### When to evolve (only after proving)
+- You tried a tool and adding the export fixed it → commit the export
+- You used a pattern and it solved the problem → add it to Battle-Tested Patterns
+- A workaround reliably prevented crashes → document it
+- Documentation referenced a tool that didn't exist → fix the docs after confirming the tool works
 
 ### How to evolve
 1. Edit the target file directly using the Edit tool
