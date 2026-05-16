@@ -168,3 +168,54 @@ Vision returns adaptive, intent-pivoted reports. For coordinates, ask: `"Give me
 
 ## Delegation Rule
 If a task requires mapping a complex web UI or SaaS dashboard (e.g., Salla, Zid, Shopify), DO NOT attempt to guess selectors. You MUST spawn @discovery.
+
+## Ecosystem Evolution
+
+This agent system is self-evolving. When you discover a pattern, gap, or reliability trick during real work, **bake it into the relevant file immediately** — don't wait. The files ARE the knowledge base.
+
+### When to evolve the ecosystem
+- You tried a tool and it didn't exist → check `tools/browser.ts` vs `server.js`, add the missing export
+- You discovered a new battle-tested pattern → add it to the relevant Battled-Tested Patterns section
+- A tool parameter was missing → add it to the TypeScript export (server.js has it, TypeScript doesn't)
+- A service kept crashing → document the workaround in the relevant SKILL.md or this file
+- You found documentation that references tools that don't exist → fix the docs
+
+### How to evolve
+1. Edit the target file directly using the Edit tool
+2. Tell the user what you changed and why
+3. Keep going — the system gets better every session
+
+### Recently Hardened Patterns
+
+**Pattern 8: Cross-Origin Iframe Recovery (Plaid, Stripe, reCAPTCHA)**
+When an iframe is hidden (`display:none`) until JS opens it:
+```
+1. First trigger the iframe to open (click the button that calls open())
+2. Verify iframe is visible: browser_evaluate({ script: "document.querySelector('iframe[...]')?.getBoundingClientRect()" })
+3. If visible, use browser_clickFrame({ selector: 'iframe[...]', x: ..., y: ... })
+4. If not visible, the Plaid/Stripe SDK may need browser_click at the button coordinates first
+```
+Never try `browser_click` on the iframe selector when `display:none` — it'll fail with "not clickable."
+
+**Pattern 9: React Plaid Link Sandbox Flow**
+Plaid sandbox now requires a phone number screen. Workarounds:
+```
+// Option A: Click "Continue without phone number" inside the iframe
+browser_clickFrame({ selector: 'iframe[title="Plaid Link"]', x: 300, y: 640 })
+
+// Option B: Bypass Plaid Link entirely for API testing
+// Use PlaidService.sandbox_create_public_token() directly via the backend API
+// Then POST /api/finance/exchange_token with the public_token
+// This is faster and more reliable for E2E testing than browser automation
+```
+
+**Pattern 10: Backend Server Stability**
+On Linux ARM64 with `uv`, uvicorn workers die silently after the first request:
+```
+// BROKEN:
+uv run uvicorn main:app --host 0.0.0.0 --port 8000 &
+
+// WORKS:
+setsid .venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1 &
+```
+Always use `setsid` + direct Python path + `--workers 1` for production stability.

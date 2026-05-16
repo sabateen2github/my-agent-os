@@ -20,40 +20,49 @@ The browser agent server runs as a systemd user service on port 9222 and auto-st
 Work with the browser step by step:
 
 ```
-1. browser_navigate  → go to a URL
-2. browser_click     → click a button/link
-3. browser_type      → fill a form field
-4. browser_press     → press Enter, Tab, Escape, etc.
-5. browser_scroll    → scroll down/up
-6. browser_screenshot → take a snapshot of the current state
-7. browser_text      → read what's on the page
-8. browser_evaluate  → run JS on the page
+ 1. browser_navigate   → go to a URL
+ 2. browser_click      → click a button/link
+ 3. browser_clickAt    → click at exact (x,y) coordinates (OS-level, bypasses React)
+ 4. browser_clickFrame → click inside cross-origin iframes (reCAPTCHA, Plaid, OAuth)
+ 5. browser_type       → fill a form field
+ 6. browser_press      → press Enter, Tab, Escape, etc.
+ 7. browser_scroll     → scroll down/up
+ 8. browser_screenshot → take a snapshot of the current state
+ 9. browser_text       → read what's on the page
+10. browser_evaluate   → run JS on the page
 ```
 
 Inspect what's happening:
 
 ```
-9.  browser_networkLogs  → see all network requests & responses
-10. browser_consoleLogs  → see console output & JS errors
-11. browser_cookies      → get/set/delete cookies
-12. browser_localStorage → read/write localStorage
-13. browser_sessionStorage → read/write sessionStorage
+11. browser_networkLogs  → see all network requests & responses (supports filter: {method, urlPattern, urlContains})
+12. browser_consoleLogs  → see console output & JS errors
+13. browser_cookies      → get/set/delete cookies
+14. browser_localStorage → read/write localStorage
+15. browser_sessionStorage → read/write sessionStorage
 ```
 
 Control the session:
 
 ```
-14. browser_waitFor   → wait for an element, navigation, or network idle
-15. browser_url       → get current URL & title
-16. browser_status    → get browser state & log counts
-17. browser_goBack    / browser_goForward / browser_reload
-18. browser_viewport  → change screen size
-19. browser_hover     → hover over elements
-20. browser_select    → choose dropdown options
-21. browser_intercept → block URLs by regex (ads, trackers)
-22. browser_html       → get full page source
-23. browser_clearLogs  → reset captured logs
-24. browser_close      → shut down the browser
+16. browser_waitFor   → wait for an element, navigation, or network idle
+17. browser_url       → get current URL & title
+18. browser_status    → get browser state & log counts (includes WAF detection)
+19. browser_goBack    / browser_goForward / browser_reload
+20. browser_viewport  → change screen size
+21. browser_hover     → hover over elements
+22. browser_select    → choose dropdown options
+23. browser_intercept → block URLs by regex (ads, trackers)
+24. browser_html      → get full page source
+25. browser_clearLogs → reset captured logs
+26. browser_close     → shut down the browser
+```
+
+React / SPA advanced tools:
+
+```
+27. browser_reactSetValue → set react-select/MUI values via React fiber tree
+28. browser_triggerForm   → submit React forms (requestSubmit + fiber onSubmit)
 ```
 
 ## Typical workflows
@@ -82,18 +91,9 @@ browser_click({ selector: "#load-data-btn", clickCount: 1, delay: 50, waitAfter:
 browser_networkLogs({})
 ```
 
-## React / SPA Battle-Tested Actions
+## React / SPA Advanced Usage
 
-These actions were hardened against Plaid's React SPA during a real-world SaltEdge→Plaid migration:
-
-```
-25. browser_clickAt     → native OS-level click at exact (x, y) coordinates. Bypasses React synthetic events.
-26. browser_clickFrame  → click inside a cross-origin iframe (e.g., reCAPTCHA) at coordinates
-27. browser_reactSetValue → set react-select values by walking React fiber tree (bypasses DOM-only manipulation)
-28. browser_triggerForm  → multi-strategy form submission for React SPAs (requestSubmit + fiber onSubmit)
-29. browser_networkLogs  → now supports filter: { method, urlPattern, urlContains } for targeted API spy
-30. browser_status       → now reports WAF block detection (CloudFront 403, etc.)
-```
+These tools were hardened against Plaid's React SPA (SaltEdge→Plaid migration, 2026):
 
 ### clickAt — coordinate-based clicking
 ```
@@ -276,3 +276,7 @@ browser_evaluate({
 The server.js at `/home/ubuntu/browser-agent/server.js` must have the stealth patches
 applied. See the reference server.js in this skill directory for the canonical version.
 Apply with: `systemctl --user restart browser-agent.service`
+
+## Ecosystem
+
+This skill is part of a self-evolving agent ecosystem. When new browser patterns are discovered during real work, they get baked into `orchestrator.md` and this SKILL.md. The tools in `browser.ts` are kept in sync with what `server.js` actually supports via the `self-enhance` skill.

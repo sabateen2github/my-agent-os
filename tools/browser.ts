@@ -181,9 +181,14 @@ export const browser_networkLogs = tool({
   description: "Get all captured network requests and responses since the last clear. Shows method, URL, headers, status codes, and post data. Use 'since' timestamp to get only new entries.",
   args: {
     since: tool.schema.number().optional().default(0).describe("Unix timestamp in ms to get logs after (0=all)"),
+    filter: tool.schema.object({
+      method: tool.schema.string().optional().describe("HTTP method to filter by (GET, POST, etc.)"),
+      urlPattern: tool.schema.string().optional().describe("Regex pattern to match URLs against"),
+      urlContains: tool.schema.string().optional().describe("Substring that URLs must contain"),
+    }).optional().describe("Filter to reduce noise from tracking pixels"),
   },
   async execute(args) {
-    return call({ action: "networkLogs", since: args.since })
+    return call({ action: "networkLogs", since: args.since, filter: args.filter })
   },
 })
 
@@ -270,6 +275,59 @@ export const browser_select = tool({
   },
   async execute(args) {
     return call({ action: "select", selector: args.selector, values: args.values })
+  },
+})
+
+// ── Advanced React/SPA Tools (battle-tested against Plaid, Stripe, MUI) ──
+
+export const browser_clickAt = tool({
+  description: "Click at exact pixel (x,y) coordinates using OS-level Input.dispatchMouseEvent. Bypasses React synthetic events, canvas elements, and CSS selector failures. Use with @vision for coordinate discovery.",
+  args: {
+    x: tool.schema.number().describe("X pixel coordinate"),
+    y: tool.schema.number().describe("Y pixel coordinate"),
+    waitAfter: tool.schema.number().optional().default(500).describe("Wait ms after clicking"),
+    clickCount: tool.schema.number().optional().default(1).describe("Number of clicks"),
+  },
+  async execute(args) {
+    return call({ action: "clickAt", x: args.x, y: args.y, waitAfter: args.waitAfter, clickCount: args.clickCount })
+  },
+})
+
+export const browser_clickFrame = tool({
+  description: "Click inside a cross-origin iframe at (x,y) coordinates. Use for reCAPTCHA, Google OAuth, Stripe Elements, Plaid Link. Requires the iframe's CSS selector.",
+  args: {
+    selector: tool.schema.string().describe("CSS selector of the iframe element (e.g. 'iframe[title=\"reCAPTCHA\"]')"),
+    x: tool.schema.number().optional().default(0).describe("X offset inside the iframe content"),
+    y: tool.schema.number().optional().default(0).describe("Y offset inside the iframe content"),
+    innerSelector: tool.schema.string().optional().describe("CSS selector inside the iframe to click (defaults to body)"),
+    waitAfter: tool.schema.number().optional().default(500).describe("Wait ms after clicking"),
+  },
+  async execute(args) {
+    return call({ action: "clickFrame", selector: args.selector, x: args.x, y: args.y, innerSelector: args.innerSelector, waitAfter: args.waitAfter })
+  },
+})
+
+export const browser_reactSetValue = tool({
+  description: "Set react-select / MUI Autocomplete values by walking React fiber tree to find stateNode.setValue(). The ONLY reliable way to set React-controlled selects — DOM manipulation and click events don't update React internal state.",
+  args: {
+    selector: tool.schema.string().describe("CSS selector of the React select container (e.g. '.css-1jlacyh-container')"),
+    value: tool.schema.object({
+      value: tool.schema.string().describe("Option value"),
+      label: tool.schema.string().describe("Option label"),
+    }).describe("Value object to set"),
+  },
+  async execute(args) {
+    return call({ action: "reactSetValue", selector: args.selector, value: args.value })
+  },
+})
+
+export const browser_triggerForm = tool({
+  description: "Submit a React SPA form using multi-strategy approach (requestSubmit → fiber onSubmit → click). React SPAs intercept native form.submit() — this handles all cases.",
+  args: {
+    buttonSelector: tool.schema.string().describe("CSS selector of the submit button inside the form"),
+  },
+  async execute(args) {
+    return call({ action: "triggerForm", buttonSelector: args.buttonSelector })
   },
 })
 
