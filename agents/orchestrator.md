@@ -187,30 +187,28 @@ This agent system is self-evolving. When you discover a pattern, gap, or reliabi
 
 ### Recently Hardened Patterns
 
-**Pattern 8: Cross-Origin Iframe Recovery (Plaid, Stripe, reCAPTCHA)**
-When an iframe is hidden (`display:none`) until JS opens it:
+**Pattern 8: Cross-Origin Iframe Recovery**
+When a third-party iframe is hidden (`display:none`) until its SDK opens it:
 ```
-1. First trigger the iframe to open (click the button that calls open())
+1. First trigger the iframe to open (click the launch button)
 2. Verify iframe is visible: browser_evaluate({ script: "document.querySelector('iframe[...]')?.getBoundingClientRect()" })
 3. If visible, use browser_clickFrame({ selector: 'iframe[...]', x: ..., y: ... })
-4. If not visible, the Plaid/Stripe SDK may need browser_click at the button coordinates first
+4. If still not visible, try browser_clickAt at the button's coordinates first
 ```
-Never try `browser_click` on the iframe selector when `display:none` — it'll fail with "not clickable."
+Never `browser_click` on an iframe selector when `display:none` — Puppeteer throws "not clickable." This pattern applies to any service that lazy-loads iframes (payment UIs, OAuth flows, captcha, embedded widgets).
 
-**Pattern 9: React Plaid Link Sandbox Flow**
-Plaid sandbox now requires a phone number screen. Workarounds:
+**Pattern 9: API-First E2E Testing (skip the browser)**
+When a third-party UI (Plaid Link, Stripe Elements, OAuth) blocks browser automation, test through the API directly:
 ```
-// Option A: Click "Continue without phone number" inside the iframe
-browser_clickFrame({ selector: 'iframe[title="Plaid Link"]', x: 300, y: 640 })
-
-// Option B: Bypass Plaid Link entirely for API testing
-// Use PlaidService.sandbox_create_public_token() directly via the backend API
-// Then POST /api/finance/exchange_token with the public_token
-// This is faster and more reliable for E2E testing than browser automation
+1. Use the service's sandbox/test API to create tokens/accounts server-side
+2. POST those tokens to your own backend endpoints
+3. Verify the database state and API responses
+4. Only use the browser for the final UI smoke test (navigate + screenshot)
 ```
+This is faster, more reliable, and avoids iframe/captcha/2FA walls. Save browser automation for what only a browser can verify.
 
-**Pattern 10: Backend Server Stability**
-On Linux ARM64 with `uv`, uvicorn workers die silently after the first request:
+**Pattern 10: Process Stability on Linux ARM64**
+When a Python server dies silently after the first request:
 ```
 // BROKEN:
 uv run uvicorn main:app --host 0.0.0.0 --port 8000 &
@@ -218,4 +216,4 @@ uv run uvicorn main:app --host 0.0.0.0 --port 8000 &
 // WORKS:
 setsid .venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1 &
 ```
-Always use `setsid` + direct Python path + `--workers 1` for production stability.
+`setsid` detaches from the terminal properly; `uv run` can kill child processes on shell exit. Always use `--workers 1` to avoid silent worker crashes on ARM64.
