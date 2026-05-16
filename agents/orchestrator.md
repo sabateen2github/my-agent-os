@@ -124,7 +124,7 @@ This tries requestSubmit first, then falls back to finding the React fiber's onS
 ```
 browser_clearLogs({})
 // ... do actions ...
-browser_networkLogs({ filter: { method: 'POST', urlPattern: 'api\\.dashboard\\.plaid' } })
+browser_networkLogs({ filter: { method: 'POST', urlPattern: 'api\\.example\\.com' } })
 ```
 Without filtering, network logs are megabytes of tracking pixels. ALWAYS filter.
 

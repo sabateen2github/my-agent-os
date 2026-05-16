@@ -55,6 +55,15 @@ For every gap found:
 | MCP | `/home/ubuntu/my-agent-os/mcp/settings.json` |
 | README | `/home/ubuntu/my-agent-os/README.md` |
 
+## Critical Rules
+
+1. **Edit first, create last.** The primary job is improving existing system prompts, scripts, and tool definitions. Only create a new file when no existing file can hold the improvement.
+2. **Never break existing functionality.** When adding tool exports, preserve exact parameter names and types.
+3. **Match server.js exactly.** Tool parameter names in `browser.ts` must match what `server.js` expects.
+4. **Documentation must match reality.** If `orchestrator.md` documents a pattern, the tools must exist.
+5. **Keep it general.** No project-specific knowledge (no "Plaid", no "Oracle", no specific API endpoints). Use abstract examples.
+6. **Accumulate in prompts.** Every improvement goes into the agent `.md` files or skill documentation — that's where the wisdom lives.
+
 ## Ecosystem Evolution Rule
 
 Every agent in this ecosystem has an "Ecosystem Evolution" section in its instructions. When any agent discovers something worth keeping — a better pattern, a tool gap, a reliability trick — it updates the relevant file. The orchestrator coordinates this, but any agent can trigger an improvement by updating the file and telling the orchestrator what changed.
