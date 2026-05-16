@@ -161,6 +161,26 @@ def execute_action(page, action):
         )
         page.wait_for_timeout(action.get("waitAfter", 500))
 
+    elif action_type == "clickAt":
+        page.mouse.click(
+            action["x"],
+            action["y"],
+            click_count=action.get("clickCount", 1),
+        )
+        page.wait_for_timeout(action.get("waitAfter", 500))
+
+    elif action_type == "clickFrame":
+        frame = page.frame_locator(action["selector"])
+        if action.get("innerSelector"):
+            frame.locator(action["innerSelector"]).click(
+                position={"x": action.get("x", 0), "y": action.get("y", 0)}
+            )
+        else:
+            frame.locator("body").click(
+                position={"x": action.get("x", 0), "y": action.get("y", 0)}
+            )
+        page.wait_for_timeout(action.get("waitAfter", 500))
+
     elif action_type == "type":
         selector = action["selector"]
         wait_for = action.get("waitFor")
