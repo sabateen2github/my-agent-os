@@ -82,7 +82,57 @@ browser_click({ selector: "#load-data-btn", clickCount: 1, delay: 50, waitAfter:
 browser_networkLogs({})
 ```
 
-## CRITICAL: When to use Puppeteer scripts instead of browser-agent tools
+## React / SPA Battle-Tested Actions
+
+These actions were hardened against Plaid's React SPA during a real-world SaltEdge→Plaid migration:
+
+```
+25. browser_clickAt     → native OS-level click at exact (x, y) coordinates. Bypasses React synthetic events.
+26. browser_clickFrame  → click inside a cross-origin iframe (e.g., reCAPTCHA) at coordinates
+27. browser_reactSetValue → set react-select values by walking React fiber tree (bypasses DOM-only manipulation)
+28. browser_triggerForm  → multi-strategy form submission for React SPAs (requestSubmit + fiber onSubmit)
+29. browser_networkLogs  → now supports filter: { method, urlPattern, urlContains } for targeted API spy
+30. browser_status       → now reports WAF block detection (CloudFront 403, etc.)
+```
+
+### clickAt — coordinate-based clicking
+```
+browser_clickAt({ x: 640, y: 389, waitAfter: 500 })
+```
+Use when CSS selectors don't work (dynamic React UIs, iframes, shadow DOM). Sends `Input.dispatchMouseEvent` at the OS level — the page sees a real human click.
+
+### clickFrame — click inside iframes
+```
+browser_clickFrame({ selector: 'iframe[title="reCAPTCHA"]', x: 28, y: 28, waitAfter: 3000 })
+```
+Use for cross-origin iframes (reCAPTCHA, hCaptcha, Google OAuth). Clicks at (x,y) inside the iframe's content document.
+
+### reactSetValue — set react-select values
+```
+browser_reactSetValue({ selector: '.css-1jlacyh-container', value: { value: 'business', label: 'Business or developer' } })
+```
+Walks React fiber tree to find `stateNode.setValue()` and calls it directly. This is the ONLY reliable way to set react-select values — DOM manipulation and click events don't update React's internal state.
+
+### triggerForm — submit React forms
+```
+browser_triggerForm({ buttonSelector: 'button' })
+```
+Tries 2 strategies in sequence:
+1. `form.requestSubmit(button)` — React-compatible submission
+2. Walk React fiber to find and call `onSubmit` handler directly
+
+### networkLogs filtering
+```
+browser_networkLogs({ filter: { method: 'POST', urlPattern: 'api\\.dashboard\\.plaid' } })
+```
+Filter by HTTP method, URL regex, or substring. Cuts noise from tracking pixels.
+
+### WAF detection
+```
+browser_status({})
+// → { wafBlocked: true, wafMessage: '403 from ...' }
+```
+Detects CloudFront/AWS WAF blocks, helps you know when to clear cookies and re-authenticate.
 
 **For complex E2E test flows (multi-step auth, form sequences, chat interactions, full user journeys), ALWAYS write a standalone Puppeteer test script and run it with `node`, instead of using browser-agent tool calls step-by-step.**
 

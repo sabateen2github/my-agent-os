@@ -326,6 +326,16 @@ async function handleCommand(cmd) {
       return { status: 'ok', clicked: selector };
     }
 
+    case 'clickAt': {
+      const x = Number(cmd.x);
+      const y = Number(cmd.y);
+      const clickCount = cmd.clickCount || 1;
+      await activePage.mouse.click(x, y, { clickCount });
+      touchActivePage();
+      if (cmd.waitAfter) await new Promise(r => setTimeout(r, cmd.waitAfter));
+      return { status: 'ok', clickedAt: { x, y }, clickCount };
+    }
+
     case 'type': {
       const selector = cmd.selector;
       if (cmd.waitFor) await activePage.waitForSelector(selector, { timeout: cmd.waitFor });
@@ -482,9 +492,106 @@ async function handleCommand(cmd) {
 
     case 'networkLogs': {
       const since = cmd.since || 0;
-      const reqs = networkRequests.filter(r => r.timestamp >= since);
-      const ress = networkResponses.filter(r => r.timestamp >= since);
+      let reqs = networkRequests.filter(r => r.timestamp >= since);
+      let ress = networkResponses.filter(r => r.timestamp >= since);
+      // Apply filters
+      if (cmd.filter) {
+        const f = cmd.filter;
+        if (f.method) { reqs = reqs.filter(r => r.method === f.method.toUpperCase()); ress = ress.filter(r => r.status && String(r.status) === String(f.statusCode)); }
+        if (f.urlPattern) { const re = new RegExp(f.urlPattern, 'i'); reqs = reqs.filter(r => re.test(r.url)); ress = ress.filter(r => re.test(r.url)); }
+        if (f.urlContains) { reqs = reqs.filter(r => r.url.includes(f.urlContains)); ress = ress.filter(r => r.url.includes(f.urlContains)); }
+      }
       return { status: 'ok', requests: reqs, responses: ress, count: { requests: reqs.length, responses: ress.length } };
+    }
+
+    case 'clickFrame': {
+      // Click at coordinates inside a cross-origin iframe.
+      // Uses frame.contentFrame() to target the iframe's document.
+      const frameEl = await activePage.$(cmd.selector);
+      if (!frameEl) return { status: 'error', message: `iframe not found: ${cmd.selector}` };
+      const frame = await frameEl.contentFrame();
+      if (!frame) return { status: 'error', message: 'Cannot access iframe content (cross-origin without --disable-features=site-per-process)' };
+      const x = Number(cmd.x) || 0;
+      const y = Number(cmd.y) || 0;
+      await frame.click(cmd.innerSelector || 'body', { offset: { x, y } });
+      touchActivePage();
+      if (cmd.waitAfter) await new Promise(r => setTimeout(r, cmd.waitAfter));
+      return { status: 'ok', clickedFrame: cmd.selector, at: { x, y } };
+    }
+
+    case 'reactSetValue': {
+      // Set react-select values by walking React fiber tree to find setValue/selectOption.
+      // Uses the same technique that worked against Plaid's create-team form.
+      const result = await activePage.evaluate((sel, opt) => {
+        const container = typeof sel === 'string' ? document.querySelector(sel) : document.querySelectorAll(sel)[0];
+        if (!container) return 'no container';
+        let fiber = container, d = 0;
+        while (fiber && d < 30) {
+          const k = Object.keys(fiber).find(kk => kk.startsWith('__reactFiber'));
+          if (k) { fiber = fiber[k]; break; }
+          fiber = fiber.parentElement; d++;
+        }
+        if (!fiber || !fiber.return) return 'no fiber';
+        let node = fiber.return, s = 0;
+        while (node && s < 50) {
+          if (node.stateNode && typeof node.stateNode.setValue === 'function') {
+            node.stateNode.setValue([opt], 'select-option');
+            return 'set:' + (opt.label || opt.value || 'ok');
+          }
+          node = node.return; s++;
+        }
+        return 'no setValue in ' + s + ' steps';
+      }, cmd.selector, cmd.value);
+      touchActivePage();
+      return { status: 'ok', result };
+    }
+
+    case 'triggerForm': {
+      // Multi-strategy form submission for React SPAs.
+      // Tries requestSubmit (React), native click, raw event, and fiber onSubmit.
+      const methods = [];
+      try {
+        // Strategy 1: Find button and use form.requestSubmit (React compatible)
+        const btn = cmd.buttonSelector 
+          ? await activePage.$(cmd.buttonSelector) 
+          : (await activePage.$$('button[type="submit"], button')).find(async b => (await activePage.evaluate(el => el.textContent, b)).includes('ubmit') || true);
+        if (btn) {
+          await activePage.evaluate(b => {
+            const form = b.closest('form');
+            if (form) { form.requestSubmit(b); return 'requestSubmit'; }
+            b.click(); return 'click';
+          }, btn);
+          methods.push('requestSubmit');
+        }
+      } catch (e) { methods.push('submit error: ' + e.message); }
+      
+      // Strategy 2: Walk React fiber to find and call onSubmit directly
+      try {
+        await activePage.evaluate(() => {
+          const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('ubmit') || b.textContent.includes('Create') || b.type === 'submit');
+          if (!btn) return;
+          let fiber = btn, d = 0;
+          while (fiber && d < 30) {
+            const k = Object.keys(fiber).find(kk => kk.startsWith('__reactFiber'));
+            if (k) { fiber = fiber[k]; break; }
+            fiber = fiber.parentElement; d++;
+          }
+          if (!fiber?.return) return;
+          let node = fiber.return, s = 0;
+          while (node && s < 80) {
+            const props = node.memoizedProps || {};
+            if (props.onSubmit) {
+              props.onSubmit({ preventDefault: () => {}, stopPropagation: () => {}, nativeEvent: { submitter: btn } });
+              return;
+            }
+            node = node.return; s++;
+          }
+        });
+        methods.push('fiberOnSubmit');
+      } catch (e) { methods.push('fiber error: ' + e.message); }
+      
+      touchActivePage();
+      return { status: 'ok', methods };
     }
 
     case 'consoleLogs': {
@@ -573,6 +680,27 @@ async function handleCommand(cmd) {
     }
 
     case 'status': {
+      let wafBlocked = false, wafMessage = null;
+      if (activePage) {
+        try {
+          const result = await activePage.evaluate(() => {
+            const title = document.title;
+            const body = document.body?.innerText?.slice(0, 200) || '';
+            if (title.includes('ERROR: The request could not be satisfied') || 
+                body.includes('The request could not be satisfied')) {
+              return { blocked: true, reason: body.slice(0, 150) };
+            }
+            if (body.includes('403 ERROR')) {
+              return { blocked: true, reason: '403 from ' + window.location.href };
+            }
+            return { blocked: false };
+          });
+          if (result?.blocked) {
+            wafBlocked = true;
+            wafMessage = result.reason;
+          }
+        } catch {}
+      }
       return {
         status: 'ok',
         connected,
@@ -583,6 +711,8 @@ async function handleCommand(cmd) {
         networkRequestCount: networkRequests.length,
         networkResponseCount: networkResponses.length,
         jsErrorCount: jsErrors.length,
+        wafBlocked,
+        wafMessage,
       };
     }
 
