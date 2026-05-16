@@ -113,7 +113,7 @@ my-agent-os/
 │                                                             │
 │  ┌───────────────────────┐   ┌──────────────────────────┐  │
 │  │  browser-agent        │   │  browser-telemetry       │  │
-│  │  (Puppeteer, persistent)│  │  (Playwright, one-shot)  │  │
+│  │  (Playwright, persistent) │  │  (Playwright, one-shot)  │  │
 │  │                       │   │                          │  │
 │  │  • HTTP API :9222     │   │  • CLI: python3 run.py   │  │
 │  │  • Stays alive between│   │  • Fresh browser per call│  │
@@ -144,7 +144,7 @@ my-agent-os/
 | **orchestrator** | OpenCode agent | DeepSeek V4 Pro | — | — | Task routing, terminal ops, delegation |
 | **discovery** | OpenCode subagent | DeepSeek V4 Pro (thinking) | — | Inherited | UI mapping, selector discovery |
 | **vision** | OpenCode subagent | Gemini 2.5 Flash | — | — | Screenshot → spatial text report |
-| **browser-agent** | systemd service (:9222) | Puppeteer + Chromium | ✅ userDataDir | ✅ built-in | Interactive browsing, persistent session |
+| **browser-agent** | systemd service (:9222) | Playwright + Chromium | ✅ userDataDir | ✅ built-in | Interactive browsing, persistent session |
 | **browser-telemetry** | CLI subprocess | Playwright + Chromium | ❌ one-shot | ✅ default on | Quick navigate/screenshot/click |
 | **Brave Search** | MCP server | Brave API | — | — | Web + local search |
 

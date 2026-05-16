@@ -19,11 +19,11 @@ When invoked, I audit and improve the entire ecosystem:
 
 ### Phase 1: Audit
 Read every file and cross-reference:
-- Does every action in `server.js` have a tool export in `browser.ts`?
+- Does every action in `server.py` have a tool export in `browser.ts`?
 - Does every tool in `browser.ts` appear in `SKILL.md` documentation?
 - Do `orchestrator.md` patterns reference tools that actually exist?
 - Does `browser-telemetry/run.py` match what `SKILL.md` documents?
-- Is stealth config consistent across server.js, run.py, and docs?
+- Is stealth config consistent across server.py, run.py, and docs?
 - Does `opencode.json` permission block cover all skills, agents, and directories?
 
 ### Phase 2: Fix
@@ -43,9 +43,8 @@ For every gap found:
 | Component | Path |
 |---|---|
 | Tool exports | `/home/ubuntu/my-agent-os/tools/browser.ts` |
-| Browser server | `/home/ubuntu/my-agent-os/skills/browser-agent/server.js` |
+| Browser server | `/home/ubuntu/my-agent-os/skills/browser/server.py` |
 | Browser docs | `/home/ubuntu/my-agent-os/skills/browser-agent/SKILL.md` |
-| Stealth ref | `/home/ubuntu/my-agent-os/skills/browser-agent/stealth-reference.md` |
 | Telemetry impl | `/home/ubuntu/my-agent-os/skills/browser-telemetry/run.py` |
 | Telemetry docs | `/home/ubuntu/my-agent-os/skills/browser-telemetry/SKILL.md` |
 | Orchesterator | `/home/ubuntu/my-agent-os/agents/orchestrator.md` |
@@ -60,7 +59,7 @@ For every gap found:
 1. **Prove first, commit second.** Edit files during a session to try fixes. Only commit and push after the fix is verified to work. Never commit speculative improvements.
 2. **Edit first, create last.** The primary job is improving existing system prompts, scripts, and tool definitions. Only create a new file when no existing file can hold the improvement.
 3. **Never break existing functionality.** When adding tool exports, preserve exact parameter names and types.
-4. **Match server.js exactly.** Tool parameter names in `browser.ts` must match what `server.js` expects.
+4. **Match server.py exactly.** Tool parameter names in `browser.ts` must match what `server.py` expects.
 5. **Documentation must match reality.** If `orchestrator.md` documents a pattern, the tools must exist.
 6. **Keep it general.** No project-specific knowledge (no "Plaid", no "Oracle", no specific API endpoints). Use abstract examples.
 

@@ -201,7 +201,7 @@ When a third-party iframe is hidden (`display:none`) until its SDK opens it:
 3. If visible, use browser_clickFrame({ selector: 'iframe[...]', x: ..., y: ... })
 4. If still not visible, try browser_clickAt at the button's coordinates first
 ```
-Never `browser_click` on an iframe selector when `display:none` — Puppeteer throws "not clickable." This pattern applies to any service that lazy-loads iframes (payment UIs, OAuth flows, captcha, embedded widgets).
+Never `browser_click` on an iframe selector when `display:none` — Playwright throws "not clickable." This pattern applies to any service that lazy-loads iframes (payment UIs, OAuth flows, captcha, embedded widgets).
 
 **Pattern 9: API-First E2E Testing (skip the browser)**
 When a third-party UI (Plaid Link, Stripe Elements, OAuth) blocks browser automation, test through the API directly:

@@ -135,7 +135,7 @@ browser_status({})
 ```
 Detects CloudFront/AWS WAF blocks, helps you know when to clear cookies and re-authenticate.
 
-**For complex E2E test flows (multi-step auth, form sequences, chat interactions, full user journeys), ALWAYS write a standalone Puppeteer test script and run it with `node`, instead of using browser-agent tool calls step-by-step.**
+**For complex E2E test flows (multi-step auth, form sequences, chat interactions, full user journeys), write a standalone Playwright test script and run it with `python3`, instead of using browser-agent tool calls step-by-step.**
 
 The browser-agent HTTP proxy adds significant round-trip overhead per action (each call goes: CLI → HTTP API → spawn shell → Chromium CDP → response). For flows requiring 5+ sequential interactions, this is too slow and timing-sensitive (React re-renders, HMR, state changes can break evaluate contexts between calls).
 
@@ -143,95 +143,92 @@ The browser-agent HTTP proxy adds significant round-trip overhead per action (ea
 
 1. **Backend API tests**: Use `curl` / `fetch` directly — no browser needed for `/health`, `/auth/*`, `/api/*` endpoints.
 2. **Frontend rendering smoke test**: Use browser-agent tools for a single `navigate + screenshot + consoleLogs`.
-3. **Full E2E user flows** (register → login → chat → widgets): Write a self-contained Puppeteer script, run it with `node`, and check the exit code + output.
+3. **Full E2E user flows** (register → login → chat → widgets): Write a self-contained Playwright script, run it with `python3`, and check the exit code + output.
 
-### Example Puppeteer E2E test script
+### Example Playwright E2E test script
 
-```javascript
-const puppeteer = require('puppeteer');
+```python
+from playwright.sync_api import sync_playwright
+import requests
 
-const CHROMIUM_PATH = '/snap/bin/chromium';  // Use system Chromium on ARM/Cloud
-const BASE_URL = 'http://localhost:3000';
-const API_URL = 'http://localhost:8000';
+BASE_URL = 'http://localhost:3000'
+API_URL = 'http://localhost:8000'
 
-(async () => {
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    executablePath: CHROMIUM_PATH,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    protocolTimeout: 60000,  // Essential for slow cloud hydration
-  });
+def main():
+    errors = []
 
-  const page = await browser.newPage();
-  const errors = [];
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        )
+        context = browser.new_context()
+        page = context.new_page()
 
-  // Capture console errors
-  page.on('console', msg => {
-    if (msg.type() === 'error') errors.push(msg.text());
-  });
-  page.on('response', res => {
-    if (res.status() >= 400) errors.push(`HTTP ${res.status()} ${res.url()}`);
-  });
+        # Capture console errors
+        page.on('console', lambda msg: errors.append(msg.text) if msg.type == 'error' else None)
+        page.on('response', lambda res: errors.append(f'HTTP {res.status} {res.url}') if res.status >= 400 else None)
 
-  // 1. Backend health
-  const health = await fetch(`${API_URL}/health`).then(r => r.json());
-  assert(health.status === 'healthy', 'Backend unhealthy');
+        # 1. Backend health
+        health = requests.get(f'{API_URL}/health').json()
+        assert health['status'] == 'healthy', 'Backend unhealthy'
 
-  // 2. Load frontend
-  await page.goto(BASE_URL, { waitUntil: 'networkidle2', timeout: 30000 });
-  await page.waitForSelector('input', { timeout: 10000 });
+        # 2. Load frontend
+        page.goto(BASE_URL, wait_until='networkidle', timeout=30000)
+        page.wait_for_selector('input', timeout=10000)
 
-  // 3. Auth via API (faster + more reliable than UI form)
-  const { access_token } = await fetch(`${API_URL}/auth/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'username=test@test.com&password=pass'
-  }).then(r => r.json());
+        # 3. Auth via API (faster + more reliable than UI form)
+        token_resp = requests.post(f'{API_URL}/auth/token', data={
+            'username': 'test@test.com',
+            'password': 'pass'
+        })
+        access_token = token_resp.json()['access_token']
 
-  // Inject token into browser
-  await page.evaluate((t) => {
-    localStorage.setItem('app_token', t);
-    localStorage.setItem('app_thread_id', crypto.randomUUID());
-  }, access_token);
-  await page.reload({ waitUntil: 'networkidle2' });
+        # Inject token into browser
+        page.evaluate("""
+            (token) => {
+                localStorage.setItem('app_token', token);
+                localStorage.setItem('app_thread_id', crypto.randomUUID());
+            }
+        """, access_token)
+        page.reload(wait_until='networkidle')
 
-  // 4. Verify authenticated UI
-  const hasChat = await page.evaluate(() =>
-    !!document.querySelector('input[placeholder*="message"]')
-  );
-  assert(hasChat, 'Chat input not found after auth');
+        # 4. Verify authenticated UI
+        has_chat = page.evaluate("""
+            () => !!document.querySelector('input[placeholder*="message"]')
+        """)
+        assert has_chat, 'Chat input not found after auth'
 
-  // 5. Backend auth-protected endpoints
-  const txRes = await fetch(`${API_URL}/api/data?limit=5`, {
-    headers: { Authorization: `Bearer ${access_token}` }
-  });
-  assert(txRes.status === 200, 'Transactions should return 200 with auth');
+        # 5. Backend auth-protected endpoints
+        tx_resp = requests.get(f'{API_URL}/api/data?limit=5', headers={
+            'Authorization': f'Bearer {access_token}'
+        })
+        assert tx_resp.status_code == 200, 'Transactions should return 200 with auth'
 
-  // Source code checks (no hardcoded secrets, correct imports, etc.)
-  const fs = require('fs');
-  const componentSource = fs.readFileSync('src/components/SomeComponent.tsx', 'utf8');
-  assert(!componentSource.includes('localhost:8000'), 'Component should not hardcode localhost');
+        context.close()
+        browser.close()
 
-  await browser.close();
-  process.exit(errors.length > 0 ? 1 : 0);
-})();
+    exit(1 if errors else 0)
+
+if __name__ == '__main__':
+    main()
 ```
 
 ### Running the script
 ```bash
-node test_e2e.js
+python3 test_e2e.py
 ```
 
-### Key tips for Puppeteer on ARM/Cloud
-- **Always use `executablePath: '/snap/bin/chromium'`** — bundled Puppeteer binaries fail on ARM64.
-- **Set `protocolTimeout: 60000`** — React hydration on cloud instances is slow.
+### Key tips for Playwright on ARM/Cloud
+- **No snap dependency** — Playwright bundles its own Chromium. Run `python3 -m playwright install chromium` once.
+- **Set generous timeouts** — React hydration on cloud instances is slow. Use `timeout=60000` for page loads.
 - **Start Next.js with `setsid`** — without it, `nohup` processes can die after first request. Use:
   ```bash
   cd frontend && setsid node_modules/.bin/next dev --port 3000 > /tmp/frontend.log 2>&1 &
   ```
-- **Inject auth tokens via `page.evaluate()` localStorage** — don't rely on clicking through login forms in Puppeteer (alert dialogs block the page and break evaluate contexts). Register/login via API, then inject the token.
-- **Use `page.evaluate()` instead of `page.$()` selectors for finding dynamic React elements** — they're more resilient to re-renders.
-- **Wrap all `page.evaluate()` calls in try/catch** — React re-renders can invalidate execution contexts between actions.
+- **Inject auth tokens via `page.evaluate()` localStorage** — don't rely on clicking through login forms (alert dialogs block the page and break evaluate contexts). Register/login via API, then inject the token.
+- **Use `page.evaluate()` instead of CSS selectors for finding dynamic React elements** — they're more resilient to re-renders.
+- **Wrap all `page.evaluate()` calls in try/except** — React re-renders can invalidate execution contexts between actions.
 
 ## Pro tips
 
@@ -281,4 +278,4 @@ The server.py applies stealth on every new page automatically.
 
 ## Ecosystem
 
-This skill is part of a self-evolving agent ecosystem. When new browser patterns are discovered during real work, they get baked into `orchestrator.md` and this SKILL.md. The tools in `browser.ts` are kept in sync with what `server.js` actually supports via the `self-enhance` skill.
+This skill is part of a self-evolving agent ecosystem. When new browser patterns are discovered during real work, they get baked into `orchestrator.md` and this SKILL.md. The tools in `browser.ts` are kept in sync with what `server.py` actually supports via the `self-enhance` skill.
