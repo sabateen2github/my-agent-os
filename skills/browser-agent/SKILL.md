@@ -66,6 +66,13 @@ React / SPA advanced tools:
 28. browser_triggerForm   → submit React forms (requestSubmit + fiber onSubmit)
 ```
 
+Tab management:
+
+```
+29. browser_listTabs   → list all open tabs/pages (id, url, title, active flag)
+30. browser_switchTab  → switch active tab by numeric tabId or 0-based index
+```
+
 ## Typical workflows
 
 ### Quick inspection (single-step)
