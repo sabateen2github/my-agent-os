@@ -22,8 +22,8 @@ Read every file and cross-reference:
 - Does every action in `server.py` have a tool export in `browser.ts`?
 - Does every tool in `browser.ts` appear in `SKILL.md` documentation?
 - Do `orchestrator.md` patterns reference tools that actually exist?
-- Does `browser-telemetry/run.py` match what `SKILL.md` documents?
-- Is stealth config consistent across server.py, run.py, and docs?
+- Does `server.py` support all actions documented in `SKILL.md`?
+- Is stealth config consistent across server.py and docs?
 - Does `opencode.json` permission block cover all skills, agents, and directories?
 
 ### Phase 2: Fix
@@ -45,8 +45,6 @@ For every gap found:
 | Tool exports | `/home/ubuntu/my-agent-os/tools/browser.ts` |
 | Browser server | `/home/ubuntu/my-agent-os/skills/browser/server.py` |
 | Browser docs | `/home/ubuntu/my-agent-os/skills/browser-agent/SKILL.md` |
-| Telemetry impl | `/home/ubuntu/my-agent-os/skills/browser-telemetry/run.py` |
-| Telemetry docs | `/home/ubuntu/my-agent-os/skills/browser-telemetry/SKILL.md` |
 | Orchesterator | `/home/ubuntu/my-agent-os/agents/orchestrator.md` |
 | Discovery | `/home/ubuntu/my-agent-os/agents/discovery.md` |
 | Vision | `/home/ubuntu/my-agent-os/agents/vision.md` |

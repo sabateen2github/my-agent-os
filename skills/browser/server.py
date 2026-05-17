@@ -963,8 +963,8 @@ def handle_command(cmd):
             _intercept_page_ref = None
             return {"status": "ok", "intercepting": False}
 
-        # ── reactSetValue ──
-        elif action == "reactSetValue":
+        # ── triggerForm ──
+        elif action == "triggerForm":
             result = page.evaluate(
                 """([sel, opt]) => {
                     const container = document.querySelector(sel);
@@ -1093,6 +1093,43 @@ def handle_command(cmd):
 
             touch_page(page)
             return {"status": "ok", "methods": methods}
+
+        # ── telemetry ──
+        elif action == "telemetry":
+            # Execute an inner action and return aggregated telemetry.
+            # Replaces browser-telemetry/run.py — single call gets DOM,
+            # network, console, and screenshot alongside the action result.
+            inner = cmd.get("inner", {})
+            inner_action = inner.get("action", "")
+            inner_result = None
+
+            if inner_action:
+                # Remap action names from old browser-telemetry conventions
+                if inner_action == "wait":
+                    inner["action"] = "waitFor"
+                inner_result = handle_command(inner)
+
+            # Collect telemetry
+            url_info = handle_command({"action": "url"})
+            dom_info = handle_command({"action": "html"})
+            network_info = handle_command({"action": "networkLogs"})
+            console_info = handle_command({"action": "consoleLogs"})
+            screenshot_info = handle_command({"action": "screenshot", "output": cmd.get("screenshotOutput", "/tmp/ui-state.png")})
+
+            return {
+                "status": "ok",
+                "result": inner_result,
+                "screenshot": screenshot_info.get("file"),
+                "dom": dom_info.get("html", "")[:100000],
+                "url": url_info.get("url"),
+                "title": url_info.get("title"),
+                "network": {
+                    "requests": network_info.get("requests", [])[-100:],
+                    "responses": network_info.get("responses", [])[-100:],
+                },
+                "console": console_info.get("console", [])[-500:],
+                "errors": console_info.get("errors", []),
+            }
 
         else:
             return {"status": "error", "message": f"Unknown action: {action}"}

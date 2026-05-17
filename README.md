@@ -13,7 +13,7 @@ export DEEPSEEK_API_KEY="sk-..."      # https://platform.deepseek.com/api_keys
 export GEMINI_API_KEY="AIza..."        # https://aistudio.google.com/apikey
 export BRAVE_API_KEY="BSA..."          # https://brave.com/search/api/
 
-# 3. Install Playwright (needed for browser-telemetry skill)
+# 3. Install Playwright (needed for browser-agent server)
 python3 -m pip install --break-system-packages playwright
 python3 -m playwright install chromium
 
@@ -56,8 +56,7 @@ my-agent-os/
 ├── skills/
 │   ├── browser/                # Playwright persistent browser + one-shot telemetry
 │   │   ├── SKILL.md            # Agent-facing documentation
-│   │   ├── server.py           # Playwright HTTP API server (deployed to systemd)
-│   │   └── run.py              # One-shot Playwright action executor
+│   │   └── server.py           # Playwright HTTP API server (deployed to systemd)
 │   └── self-enhance/           # Ecosystem self-evolution skill
 ├── tools/
 │   └── browser.ts             # Browser tool definitions (migrated from OpenCode)
@@ -103,7 +102,7 @@ my-agent-os/
 │  Plans interactions│   │  text maps        │
 │                   │    │                   │
 │  Uses:             │    │  Uses:            │
-│  browser-telemetry │    │  Read tool        │
+│  browser-agent API │    │  Read tool        │
 │  @vision           │    │                   │
 └────────┬──────────┘    └──────────────────┘
          │
@@ -111,21 +110,22 @@ my-agent-os/
 ┌─────────────────────────────────────────────────────────────┐
 │                   BROWSER LAYER                              │
 │                                                             │
-│  ┌───────────────────────┐   ┌──────────────────────────┐  │
-│  │  browser-agent        │   │  browser-telemetry       │  │
-│  │  (Playwright, persistent) │  │  (Playwright, one-shot)  │  │
-│  │                       │   │                          │  │
-│  │  • HTTP API :9222     │   │  • CLI: python3 run.py   │  │
-│  │  • Stays alive between│   │  • Fresh browser per call│  │
-│  │    calls              │   │  • JSON output           │  │
-│  │  • systemd service    │   │  • Screenshot to /tmp    │  │
-│  │  • userDataDir persist│   │                          │  │
-│  │                       │   │                          │  │
-│  │  ✓ Stealth mode       │   │  ✓ Stealth mode          │  │
-│  │  ✓ Session persistence│   │  ✓ Anti-detection        │  │
-│  │  ✓ Network/console log│   │  ✓ DOM/network capture   │  │
-│  │  ✓ Memory hygiene     │   │  ✓ Toggleable            │  │
-│  └───────────────────────┘   └──────────────────────────┘  │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  browser-agent (Playwright, persistent, HTTP API)     │  │
+│  │                                                       │  │
+│  │  • HTTP API on :9222                                  │  │
+│  │  • Stays alive between calls (persistent Chromium)    │  │
+│  │  • systemd service (auto-starts on boot)              │  │
+│  │  • userDataDir persists cookies/sessions              │  │
+│  │  • Tab management (listTabs, switchTab)               │  │
+│  │  • Aggregated telemetry endpoint                      │  │
+│  │                                                       │  │
+│  │  ✓ Stealth mode (always on)                           │  │
+│  │  ✓ Session persistence                                │  │
+│  │  ✓ Network/console log capture                        │  │
+│  │  ✓ Memory hygiene (auto-recycle at 800MB)             │  │
+│  │  ✓ Tab switching & popup tracking                     │  │
+│  └───────────────────────────────────────────────────────┘  │
 │                                                             │
 │  Both include STEALTH MODE (enabled by default):             │
 │  • --disable-blink-features=AutomationControlled            │
@@ -144,8 +144,7 @@ my-agent-os/
 | **orchestrator** | OpenCode agent | DeepSeek V4 Pro | — | — | Task routing, terminal ops, delegation |
 | **discovery** | OpenCode subagent | DeepSeek V4 Pro (thinking) | — | Inherited | UI mapping, selector discovery |
 | **vision** | OpenCode subagent | Gemini 2.5 Flash | — | — | Screenshot → spatial text report |
-| **browser-agent** | systemd service (:9222) | Playwright + Chromium | ✅ userDataDir | ✅ built-in | Interactive browsing, persistent session |
-| **browser-telemetry** | CLI subprocess | Playwright + Chromium | ❌ one-shot | ✅ default on | Quick navigate/screenshot/click |
+| **browser-agent** | systemd service (:9222) | Playwright + Chromium | ✅ userDataDir | ✅ built-in | Interactive browsing, persistent session, tab management, aggregated telemetry |
 | **Brave Search** | MCP server | Brave API | — | — | Web + local search |
 
 ### Data Flow: A Real Example
@@ -172,10 +171,10 @@ All session cookies + localStorage persisted to userDataDir
 
 | Scenario | Use | Why |
 |----------|-----|-----|
-| Multi-step login / form fill | `browser-agent` | Persistent session, no re-auth |
-| Quick page snapshot | `browser-telemetry` | Fast one-shot, returns JSON |
-| OAuth / Google sign-in | `browser-agent` | Stealth + persistent cookies |
-| SaaS dashboard mapping | `@discovery` (uses browser-telemetry) | Structured exploration + vision |
+| Multi-step login / form fill | `browser-agent` tools | Persistent session, no re-auth |
+| Quick page snapshot | `browser_telemetry` | Aggregated DOM+network+screenshot in one call |
+| OAuth / Google sign-in | `browser-agent` tools | Stealth + persistent cookies |
+| SaaS dashboard mapping | `@discovery` (uses browser-agent telemetry) | Structured exploration + vision |
 | Extract API responses | Either → `browser_networkLogs` | Capture XHR/fetch calls |
 | Localhost dev testing | Either → `"stealth": false` | Skip anti-detection overhead |
 
@@ -197,19 +196,19 @@ opencode models deepseek
 opencode models google
 ```
 
-### Browser Telemetry Skill
+### Browser Telemetry
 
-Execute headless Playwright actions from any agent:
+Aggregated DOM + network + console + screenshot in a single call:
 
 ```bash
-# Direct CLI use
-python3 ~/my-agent-os/skills/browser-telemetry/run.py '{"action": "navigate", "url": "https://example.com"}'
-python3 ~/my-agent-os/skills/browser-telemetry/run.py '{"action": "click", "selector": "#btn"}'
-python3 ~/my-agent-os/skills/browser-telemetry/run.py '{"action": "type", "selector": "#input", "text": "hello"}'
+# From any agent via curl:
+curl -s -X POST http://127.0.0.1:9222 -H 'Content-Type: application/json' \
+  -d '{"action":"telemetry","inner":{"action":"navigate","url":"https://example.com"}}'
 
-# From within an agent (orchestrator/discovery)
-skill({ name: "browser-telemetry" })
+# From orchestrator via browser_telemetry tool:
+browser_telemetry({ inner: { action: "navigate", url: "https://example.com" } })
 ```
+
 
 Supported actions: `navigate`, `click`, `type`, `scroll`, `press`, `hover`, `select`, `wait`, `evaluate`, `screenshot`
 

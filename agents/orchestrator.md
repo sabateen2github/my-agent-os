@@ -22,17 +22,11 @@ You are the primary terminal orchestrator. You have access to all local MCPs and
 
 ## Browser / Playwright Access
 
-You have three ways to interact with web pages:
+You have two ways to interact with web pages:
 
-1. **Interactive browser (primary):** Use `browser_*` tools for persistent, step-by-step interaction. The browser stays alive between calls — use it for multi-step flows, auth, form filling.
+1. **Interactive browser (primary):** Use `browser_*` tools for persistent, step-by-step interaction. The browser stays alive between calls — use it for multi-step flows, auth, form filling. For aggregated telemetry in a single call, use `browser_telemetry({ inner: {...} })` — returns DOM, network, console, and screenshot together.
 
-2. **Quick one-shot:** Run the browser-telemetry skill via bash:
-   ```
-   python3 ~/my-agent-os/skills/browser-telemetry/run.py '{"action":"navigate","url":"https://..."}'
-   ```
-   Saves screenshot to `/tmp/ui-state.png`. Returns JSON with DOM, network logs, console.
-
-3. **Complex UI exploration:** Spawn @discovery:
+2. **Complex UI exploration:** Spawn @discovery:
    ```
    @discovery Map the UI of [URL] to achieve [Goal]
    ```
@@ -223,3 +217,20 @@ uv run uvicorn main:app --host 0.0.0.0 --port 8000 &
 setsid .venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1 &
 ```
 `setsid` detaches from the terminal properly; `uv run` can kill child processes on shell exit. Always use `--workers 1` to avoid silent worker crashes on ARM64.
+
+**Pattern 11: Tab Management & Aggregated Telemetry**
+When you need to work with multiple tabs or get aggregated DOM+network+console+screenshot in one call:
+```
+// List all open tabs:
+browser_listTabs({})  // → { tabs: [{id, url, title, active}], tabCount, activeTabId }
+
+// Switch to tab by index or ID:
+browser_switchTab({ index: 0 })    // 0-based index
+browser_switchTab({ tabId: 3 })    // numeric tab ID
+
+// Aggregated telemetry in one call (replaces old browser-telemetry/run.py):
+browser_telemetry({ inner: { action: "navigate", url: "https://..." } })
+// → { result, screenshot, dom, url, title, network, console, errors }
+// Screenshot saved to /tmp/ui-state.png
+```
+Popups from `window.open()` or `target="_blank"` are auto-tracked. Use `browser_listTabs` to find them, `browser_switchTab` to switch. All subsequent `browser_*` actions operate on the switched-to tab.

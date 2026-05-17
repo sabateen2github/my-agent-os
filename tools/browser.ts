@@ -331,6 +331,19 @@ export const browser_triggerForm = tool({
   },
 })
 
+export const browser_telemetry = tool({
+  description: "Execute a browser action and return aggregated telemetry in a single response: DOM, network requests/responses, console logs, JS errors, and screenshot path. Replaces browser-telemetry/run.py. The inner action uses the same format as other browser_* tools (e.g. {action:'navigate',url:'...'}). Screenshot saved to /tmp/ui-state.png by default.",
+  args: {
+    inner: tool.schema.object({
+      action: tool.schema.string().describe("The action to execute: navigate, click, clickAt, clickFrame, type, press, scroll, hover, select, waitFor, evaluate, screenshot"),
+    }).passthrough().describe("Inner action object — same format as other browser_* tool args. E.g. {action:'navigate',url:'https://...'} or {action:'click',selector:'#btn'}"),
+    screenshotOutput: tool.schema.string().optional().describe("Custom screenshot output path (default: /tmp/ui-state.png)"),
+  },
+  async execute(args) {
+    return call({ action: "telemetry", inner: args.inner, screenshotOutput: args.screenshotOutput })
+  },
+})
+
 export const browser_goBack = tool({
   description: "Navigate back in browser history.",
   args: {},
