@@ -371,6 +371,25 @@ export const browser_status = tool({
   },
 })
 
+export const browser_listTabs = tool({
+  description: "List all open browser tabs/pages. Returns tab ID, URL, title, and which one is active. Use before browser_switchTab to find the tab you want.",
+  args: {},
+  async execute() {
+    return call({ action: "listTabs" })
+  },
+})
+
+export const browser_switchTab = tool({
+  description: "Switch to a different browser tab by its ID (from browser_listTabs) or by 0-based index. All subsequent browser_* actions will operate on this tab.",
+  args: {
+    tabId: tool.schema.number().optional().describe("Numeric tab ID from browser_listTabs (use either this or index)"),
+    index: tool.schema.number().optional().describe("0-based index of the tab in the browser_listTabs results (use either this or tabId)"),
+  },
+  async execute(args) {
+    return call({ action: "switchTab", tabId: args.tabId, index: args.index })
+  },
+})
+
 export const browser_close = tool({
   description: "Close the browser and clear all captured logs. The browser will restart on the next navigation.",
   args: {},

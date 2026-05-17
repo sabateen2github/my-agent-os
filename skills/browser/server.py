@@ -92,6 +92,7 @@ network_responses_list = []    # { id, url, status, statusText, headers, fromCac
 js_errors = []                 # { message, timestamp }
 managed_pages = {}             # page object → { "id", "created_at", "last_used" }
 active_page = None             # Currently active page
+_next_tab_id = 0               # Monotonically increasing tab ID counter
 connected = False
 
 # Thread safety
@@ -136,9 +137,10 @@ def touch_page(page):
 
 def track_page(page):
     """Register a new page in managed_pages and set it as active."""
-    global active_page
+    global active_page, _next_tab_id
+    _next_tab_id += 1
     managed_pages[page] = {
-        "id": len(managed_pages) + 1,
+        "id": _next_tab_id,
         "created_at": time.time(),
         "last_used": time.time(),
     }
@@ -357,7 +359,7 @@ def recycle_page():
 
 def hard_recycle():
     """Hard recycle: close the entire browser context and re-launch (session survives via user_data_dir)."""
-    global browser_context, active_page, connected, recycle_requested
+    global browser_context, active_page, connected, recycle_requested, _next_tab_id
     log(f"Hard recycling browser ({len(managed_pages)} tabs)...")
     try:
         for pg in list(managed_pages.keys()):
@@ -379,6 +381,7 @@ def hard_recycle():
     browser_context = None
     connected = False
     recycle_requested = False
+    _next_tab_id = 0
     ensure_browser()
     log("Hard recycle complete")
 
@@ -479,6 +482,7 @@ def ensure_browser():
 
     connected = True
     managed_pages.clear()
+    _next_tab_id = 0
 
     # Track popup/new-page creation (Google OAuth, target="_blank", window.open)
     def on_page(new_page):
@@ -555,6 +559,27 @@ def handle_command(cmd):
             "wafMessage": waf_message,
         }
 
+    if action == "listTabs":
+        tabs = []
+        for pg, meta in list(managed_pages.items()):
+            try:
+                tabs.append({
+                    "id": meta["id"],
+                    "url": pg.url,
+                    "title": pg.title(),
+                    "active": pg is active_page,
+                    "createdAt": meta["created_at"],
+                    "lastUsed": meta["last_used"],
+                })
+            except Exception:
+                pass
+        return {
+            "status": "ok",
+            "tabs": tabs,
+            "tabCount": len(tabs),
+            "activeTabId": managed_pages.get(active_page, {}).get("id") if active_page else None,
+        }
+
     if action == "close":
         try:
             for pg in list(managed_pages.keys()):
@@ -570,6 +595,7 @@ def handle_command(cmd):
             pass
         browser_context = None
         connected = False
+        _next_tab_id = 0
         console_logs.clear()
         network_requests_list.clear()
         network_responses_list.clear()
@@ -964,6 +990,39 @@ def handle_command(cmd):
             )
             touch_page(page)
             return {"status": "ok", "result": result}
+
+        # ── switchTab ──
+        elif action == "switchTab":
+            tab_id = cmd.get("tabId")
+            index = cmd.get("index")
+            target = None
+
+            if tab_id is not None:
+                for pg, meta in managed_pages.items():
+                    if meta["id"] == tab_id:
+                        target = pg
+                        break
+            elif index is not None:
+                sorted_pages = sorted(managed_pages.items(), key=lambda x: x[1]["id"])
+                if 0 <= index < len(sorted_pages):
+                    target = sorted_pages[index][0]
+
+            if target is None:
+                return {"status": "error", "message": f"Tab not found (tabId={tab_id}, index={index}). Use browser_listTabs to see available tabs."}
+
+            try:
+                target.evaluate("() => 1")
+            except Exception:
+                return {"status": "error", "message": "Tab is no longer alive"}
+
+            active_page = target
+            touch_page(active_page)
+            meta = managed_pages[target]
+            return {
+                "status": "ok",
+                "switchedTo": {"id": meta["id"], "url": target.url, "title": target.title()},
+                "tabCount": len(managed_pages),
+            }
 
         # ── triggerForm ──
         elif action == "triggerForm":

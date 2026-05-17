@@ -23,9 +23,12 @@ import json
 import sys
 import os
 import traceback
+import urllib.request
+import urllib.error
 from pathlib import Path
 
 SCREENSHOT_PATH = "/tmp/ui-state.png"
+AGENT_URL = "http://127.0.0.1:9222"
 
 # Stealth: non-headless-looking User-Agent
 STEALTH_USER_AGENT = (
@@ -239,6 +242,82 @@ def execute_action(page, action):
         raise ValueError(f"Unknown action type: {action_type}")
 
 
+# ── Persistent server proxy ──────────────────────────────────────────
+
+def check_persistent():
+    """Return True if the browser-agent server is running on port 9222."""
+    try:
+        req = urllib.request.Request(f"{AGENT_URL}/status")
+        resp = urllib.request.urlopen(req, timeout=2)
+        data = json.loads(resp.read())
+        return data.get("status") == "ok"
+    except Exception:
+        return False
+
+
+def proxy(action):
+    """POST an action to the persistent browser-agent server, return parsed JSON."""
+    body = json.dumps(action).encode("utf-8")
+    req = urllib.request.Request(
+        AGENT_URL,
+        data=body,
+        headers={"Content-Type": "application/json"},
+    )
+    resp = urllib.request.urlopen(req, timeout=30)
+    return json.loads(resp.read())
+
+
+def run_via_persistent(action):
+    """Execute browser-telemetry action via the persistent browser-agent server.
+    Collects the same telemetry output (screenshot, DOM, network, console) as the
+    standalone mode, but without launching a second browser instance."""
+    action_type = action.get("action", "")
+
+    # ── Map browser-telemetry action names to browser-agent action names ──
+    if action_type == "wait":
+        action["action"] = "waitFor"
+        # browser-telemetry uses "networkIdle" key inside action dict;
+        # browser-agent uses same key, so no remap needed
+
+    # Execute the action on the persistent browser
+    result = proxy(action)
+
+    # Collect telemetry from the persistent browser
+    url_info = proxy({"action": "url"})
+    dom_info = proxy({"action": "html"})
+    network_info = proxy({"action": "networkLogs"})
+    console_info = proxy({"action": "consoleLogs"})
+
+    # Take screenshot (always to /tmp/ui-state.png)
+    proxy({"action": "screenshot", "output": SCREENSHOT_PATH})
+
+    output = {
+        "screenshot": SCREENSHOT_PATH if os.path.exists(SCREENSHOT_PATH) else None,
+        "dom": dom_info.get("html", "")[:100000],
+        "network": {
+            "requests": network_info.get("requests", [])[-100:],
+            "responses": network_info.get("responses", [])[-100:],
+        },
+        "console": [
+            {"type": c.get("type"), "text": c.get("text")}
+            for c in console_info.get("console", [])[-500:]
+        ],
+        "url": url_info.get("url"),
+        "title": url_info.get("title"),
+        "errors": [
+            e.get("message", str(e))
+            for e in console_info.get("errors", [])
+        ],
+        "_backend": "persistent",  # signal that persistent server was used
+    }
+
+    if result.get("status") == "ok":
+        output["result"] = result
+
+    print(json.dumps(output, default=str))
+    return True
+
+
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({"error": "No action provided. Usage: run.py '<json>'"}))
@@ -252,6 +331,19 @@ def main():
 
     stealth = action.get("stealth", True)  # enabled by default
 
+    # ── Try persistent browser-agent server first ──────────────────
+    # If the persistent server is running, proxy to it instead of
+    # launching a second browser. Pass --standalone to force a fresh browser.
+    standalone = "--standalone" in sys.argv
+    if not standalone:
+        try:
+            if check_persistent():
+                run_via_persistent(action)
+                return
+        except Exception as e:
+            print(f"[browser-telemetry] Persistent proxy failed ({e}), falling back to standalone...", file=sys.stderr)
+
+    # ── Standalone mode: launch our own fresh browser ──────────────
     try:
         (
             playwright,
