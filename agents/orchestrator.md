@@ -173,6 +173,22 @@ This agent system is **continuously self-evolving** — but only with proven imp
 - **Tell the user**: Briefly note what was proven and committed at the end of your response.
 - **Never commit speculative changes**: If a pattern hasn't been tested end-to-end in the current session, don't bake it in. Propose it to the user instead.
 
+### Anti-Patterns (DO NOT DO)
+- ❌ Testing only the API layer and claiming "the feature works"
+- ❌ Committing after a build succeeds but before visual proof
+- ❌ Saying "it works" because the proxy returned 200 — verify the UI rendered
+- ❌ Testing "send message" but skipping "refresh the page and check messages appear"
+- ❌ Guessing at library APIs — read the source or docs, then test the exact call
+
+### Testing Checklist (before any commit)
+When fixing or adding a feature that affects user-facing behavior:
+1. **Isolate**: Test each layer independently (API → proxy → hook → UI)
+2. **Full cycle**: Perform the ENTIRE user workflow, including page refresh
+3. **Screenshot BEFORE**: Capture state before the change
+4. **Screenshot AFTER**: Capture state after the change
+5. **Diff**: The screenshots must show the intended difference
+6. **Only then commit**: Never commit without passing this checklist
+
 ### When to evolve (only after proving)
 - You tried a tool and adding the export fixed it → commit the export
 - You used a pattern and it solved the problem → add it to Battle-Tested Patterns
@@ -234,3 +250,40 @@ browser_telemetry({ inner: { action: "navigate", url: "https://..." } })
 // Screenshot saved to /tmp/ui-state.png
 ```
 Popups from `window.open()` or `target="_blank"` are auto-tracked. Use `browser_listTabs` to find them, `browser_switchTab` to switch. All subsequent `browser_*` actions operate on the switched-to tab.
+
+**Pattern 12: Message Persistence via CopilotKit useAgent (v1.50+)**
+When using CopilotKit v1.50+ and messages need to survive page refresh:
+```
+1. Import from v2 path: import { useAgent } from "@copilotkit/react-core/v2"
+2. Inside a component within CopilotKit context:
+   const { agent } = useAgent({ agentId: "oracle" })
+3. Fetch stored messages from backend API:
+   fetch(`/api/messages?thread_id=${threadId}`).then(r => r.json())
+4. Inject via agent.setMessages() — accepts plain {id, role, content} objects:
+   agent.setMessages(data.messages)
+```
+FAILED approaches (do NOT use):
+- `useCopilotMessagesContext().setMessages()` — silently ignores plain JSON in v1.57
+- `useCopilotChat().appendMessage()` — deprecated, expects special class
+- `useThreads().setThreadId()` — explicit threadId prop takes priority, override ignored
+- DOM MutationObserver + localStorage — fragile, breaks on CopilotKit updates
+
+This was verified on CopilotKit v1.57.1 with DeepSeek V4 Pro + AG-UI ADK backend.
+
+**Pattern 13: Full-Stack E2E Acceptance Testing**
+When a feature spans backend → proxy → frontend hook → UI render, test each layer sequentially:
+```
+1. BACKEND: curl the endpoint directly → verify response format and content
+2. PROXY: curl through the frontend proxy (with cookies) → verify forwarding works
+3. HOOK: browser_evaluate to check if the hook call succeeded (check network logs)
+4. UI: browser_screenshot BEFORE and AFTER the action, then @vision to compare
+
+For refresh persistence specifically:
+  Step A: Send a message, wait for response
+  Step B: Screenshot (prove messages exist)
+  Step C: Navigate to a new URL (simulate full page refresh)
+  Step D: Wait 10s for hooks + state to settle
+  Step E: Screenshot (prove messages still visible)
+  Step F: @vision to compare — must see previous messages in step E
+```
+Only declare "it works" after Step F passes. Never claim success at Steps 1-2 alone.
