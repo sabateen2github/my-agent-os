@@ -3,9 +3,8 @@ description: DeepSeek V4 Pro Thinker for UI exploration. Cannot see images. Uses
 mode: subagent
 model: deepseek/deepseek-v4-pro
 extra_body:
-  thinking:
-    type: enabled
-  reasoning_effort: max
+  # Thinking/Reasoning is handled natively by OpenCode for deepseek-v4-pro via OpenAI protocol
+  temp: 0.0
 permission:
   external_directory:
     "/tmp/*": allow
