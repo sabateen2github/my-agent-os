@@ -85,7 +85,7 @@
       "maxTokens": 384000
     },
     "explore": {
-      "model": "deepseek/deepseek-v4-flash"
+      "model": "deepseek/deepseek-v4-pro"
     },
     "title": {
       "model": "deepseek/deepseek-v4-flash"
