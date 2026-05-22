@@ -2,17 +2,58 @@
   "$schema": "https://opencode.ai/config.json",
   "model": "deepseek/deepseek-v4-pro",
   "default_agent": "orchestrator",
+  "small_model": "deepseek/deepseek-v4-flash",
+
+  "instructions": [
+    "README.md",
+    "skills/browser-agent/SKILL.md",
+    "skills/self-enhance/SKILL.md"
+  ],
+
   "provider": {
     "deepseek": {
       "npm": "@ai-sdk/openai-compatible",
+      "name": "DeepSeek",
       "options": {
-        "baseURL": "https://api.deepseek.com/v1"
+        "baseURL": "https://api.deepseek.com",
+        "apiKey": "{env:DEEPSEEK_API_KEY}",
+        "timeout": 600000
       },
       "models": {
-        "deepseek-chat": {},
-        "deepseek-reasoner": {},
-        "deepseek-v4-flash": {},
-        "deepseek-v4-pro": {}
+        "deepseek-v4-pro": {
+          "name": "deepseek-v4-pro",
+          "reasoning": true,
+          "interleaved": {
+            "field": "reasoning_content"
+          },
+          "limit": {
+            "context": 1048576,
+            "output": 384000
+          },
+          "options": {
+            "reasoningEffort": "max",
+            "thinking": {
+              "type": "enabled"
+            }
+          }
+        },
+        "deepseek-v4-flash": {
+          "name": "deepseek-v4-flash",
+          "reasoning": true,
+          "interleaved": {
+            "field": "reasoning_content"
+          },
+          "limit": {
+            "context": 1048576,
+            "output": 384000
+          },
+          "options": {
+            "reasoningEffort": "max",
+            "thinking": {
+              "type": "enabled"
+            }
+          }
+        }
       }
     },
     "crofai": {
@@ -41,6 +82,42 @@
       }
     }
   },
+
+  "agent": {
+    "build": {
+      "model": "deepseek/deepseek-v4-pro",
+      "temperature": 0.0,
+      "maxTokens": 384000
+    },
+    "plan": {
+      "model": "deepseek/deepseek-v4-pro",
+      "temperature": 0.0,
+      "maxTokens": 384000
+    },
+    "general": {
+      "model": "deepseek/deepseek-v4-pro",
+      "maxTokens": 384000
+    },
+    "explore": {
+      "model": "deepseek/deepseek-v4-flash"
+    },
+    "title": {
+      "model": "deepseek/deepseek-v4-flash"
+    },
+    "compaction": {
+      "model": "deepseek/deepseek-v4-flash"
+    }
+  },
+
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 10000
+  },
+
+  "formatter": true,
+  "lsp": true,
+
   "mcp": {
     "server-brave-search": {
       "type": "local",
@@ -54,6 +131,7 @@
       }
     }
   },
+
   "permission": {
     "skill": {
       "browser-agent": "allow",
