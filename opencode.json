@@ -31,7 +31,9 @@
             "output": 384000
           },
           "options": {
-            "reasoningEffort": "max",
+            "reasoningEffort": "max"
+          },
+          "extra_body": {
             "thinking": {
               "type": "enabled"
             }
@@ -48,7 +50,9 @@
             "output": 384000
           },
           "options": {
-            "reasoningEffort": "max",
+            "reasoningEffort": "max"
+          },
+          "extra_body": {
             "thinking": {
               "type": "enabled"
             }
