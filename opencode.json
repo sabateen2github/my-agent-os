@@ -29,14 +29,6 @@
           "limit": {
             "context": 1048576,
             "output": 384000
-          },
-          "options": {
-            "reasoningEffort": "max"
-          },
-          "extra_body": {
-            "thinking": {
-              "type": "enabled"
-            }
           }
         },
         "deepseek-v4-flash": {
@@ -48,14 +40,6 @@
           "limit": {
             "context": 1048576,
             "output": 384000
-          },
-          "options": {
-            "reasoningEffort": "max"
-          },
-          "extra_body": {
-            "thinking": {
-              "type": "enabled"
-            }
           }
         }
       }
