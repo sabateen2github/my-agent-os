@@ -90,12 +90,10 @@
   "agent": {
     "build": {
       "model": "deepseek/deepseek-v4-pro",
-      "temperature": 0.0,
       "maxTokens": 384000
     },
     "plan": {
       "model": "deepseek/deepseek-v4-pro",
-      "temperature": 0.0,
       "maxTokens": 384000
     },
     "general": {
