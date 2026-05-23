@@ -160,6 +160,36 @@ You cannot see images. Spawn @vision:
 ```
 Vision returns adaptive, intent-pivoted reports. For coordinates, ask: `"Give me exact pixel center coordinates of [element]. Viewport is WxH."`
 
+## Core Principles
+
+### Principle 1: Learn Before You Change
+**Never modify code you haven't first observed running.** Before making any change:
+1. Screenshot the current state (`browser_screenshot` + `@vision`)
+2. Inspect the DOM (`browser_evaluate`) to understand what's actually rendered
+3. Read the source code + check git log for recent changes
+4. Only then plan and execute the change
+
+The corollary: **don't assume**. Verify every assumption with the browser before acting on it. If you don't know how something works, experiment in the browser first, THEN edit code.
+
+### Principle 2: Source + Vision Combo
+Source code analysis and visual verification complement each other perfectly. Neither is sufficient alone:
+- **Source code** tells you what SHOULD be rendered (all conditional branches, all components, all states)
+- **Vision** tells you what IS actually rendered (layout issues, clipping, missing elements, actual text)
+Always use BOTH when testing. Read all component files to build a feature inventory, then verify each feature with `@vision`.
+
+### Principle 3: Every Interactive Element
+Don't stop at the "happy path." After completing the main flow, do a **complete DOM inventory** (`document.querySelectorAll('button, a, input, [role="button"]')`) to discover every interactive element on the page. Test each one. UAT isn't done until every button, widget, panel, and form has been clicked and verified.
+
+### Principle 4: User-Facing Error States
+When testing, always provoke error states and observe what the USER sees:
+- Empty forms → does validation appear?
+- Rapid actions → does the app crash or show "please wait"?
+- No data → does the empty state look clean?
+- Rate limits → does the UX degrade gracefully?
+- Wrong credentials → is the error message clear and visible?
+
+A feature isn't done until its error states are tested and the user experience is acceptable.
+
 ## Delegation Rule
 If a task requires mapping a complex web UI or SaaS dashboard (e.g., Salla, Zid, Shopify), DO NOT attempt to guess selectors. You MUST spawn @discovery.
 
@@ -179,15 +209,24 @@ This agent system is **continuously self-evolving** — but only with proven imp
 - ❌ Saying "it works" because the proxy returned 200 — verify the UI rendered
 - ❌ Testing "send message" but skipping "refresh the page and check messages appear"
 - ❌ Guessing at library APIs — read the source or docs, then test the exact call
+- ❌ Reading source code only — must ALSO verify visually with @vision
+- ❌ Testing desktop viewport only — mobile/tablet reveals clipping/overflow bugs
+- ❌ Clicking rapidly through flows — rate limits can crash the app
+- ❌ Assuming empty form validation works — test it explicitly
+- ❌ Editing code without first screenshotting the current browser state
 
 ### Testing Checklist (before any commit)
 When fixing or adding a feature that affects user-facing behavior:
-1. **Isolate**: Test each layer independently (API → proxy → hook → UI)
-2. **Full cycle**: Perform the ENTIRE user workflow, including page refresh
-3. **Screenshot BEFORE**: Capture state before the change
-4. **Screenshot AFTER**: Capture state after the change
-5. **Diff**: The screenshots must show the intended difference
-6. **Only then commit**: Never commit without passing this checklist
+1. **Learn**: Screenshot + DOM inspect the current state BEFORE touching code
+2. **Isolate**: Test each layer independently (API → proxy → hook → UI)
+3. **Full cycle**: Perform the ENTIRE user workflow, including page refresh
+4. **Screenshot BEFORE**: Capture state before the change
+5. **Screenshot AFTER**: Capture state after the change
+6. **Diff with @vision**: The screenshots must show the intended difference
+7. **Test error states**: Empty forms, rapid clicks, no data, wrong credentials
+8. **Test mobile**: At minimum 375px viewport for responsive issues
+9. **Build passes**: 0 compilation errors
+10. **Only then commit**: Never commit without passing ALL steps above
 
 ### When to evolve (only after proving)
 - You tried a tool and adding the export fixed it → commit the export
@@ -287,3 +326,75 @@ For refresh persistence specifically:
   Step F: @vision to compare — must see previous messages in step E
 ```
 Only declare "it works" after Step F passes. Never claim success at Steps 1-2 alone.
+
+**Pattern 14: Complete DOM Inventory for UAT**
+When you need to discover ALL interactive elements on a page (for thorough UAT testing):
+```
+1. browser_evaluate to query every button, link, input, panel:
+   document.querySelectorAll('button, [role="button"], a, input, textarea, select')
+   → map each to {text, title, aria, disabled, visible, rect}
+2. Also query panels/widgets: [class*="panel"], [class*="widget"], [class*="card"]
+3. Use the inventory to systematically test each element
+4. Cross-reference with source code to find features NOT currently rendered (conditional)
+5. For each discovered element, test + screenshot + @vision
+```
+This pattern ensures 100% coverage. No guessing what's clickable — the DOM doesn't lie.
+
+**Pattern 15: Mobile/Tablet Viewport UAT**
+Responsive issues only show up at specific widths. Test systematically:
+```
+1. Desktop: 1280x800 — browser_viewport({ width: 1280, height: 800 })
+2. Tablet:  768x1024 — browser_viewport({ width: 768, height: 1024 })
+3. Mobile:  375x667  — browser_viewport({ width: 375, height: 667 })
+4. At each: screenshot + @vision with checklist: pills wrapped? text clipped? input accessible?
+```
+Report a viewport score (1-10) for each. Only the mobile viewport reveals overflow/clipping bugs.
+
+**Pattern 16: Node.js Process Persistence (Next.js)**
+Node.js servers (like Next.js) die silently when started as children of timed-out bash shells:
+```
+// BROKEN — dies when bash times out:
+cd /app && node_modules/.bin/next start --port 3000 &
+
+// BROKEN — also dies when bash times out:
+cd /app && nohup node_modules/.bin/next start --port 3000 &
+
+// WORKS — fully detaches from terminal:
+cd /app && setsid node node_modules/next/dist/bin/next start --port 3000 </dev/null &>/tmp/next.log &
+
+// RELIABLE KILL:
+kill -9 $(lsof -ti:3000)
+```
+Key differences from Pattern 10 (Python): use `setsid` + `</dev/null` + `&>/tmp/next.log`. The `lsof -ti:PORT` method is more reliable than `pgrep` for finding the right process.
+
+**Pattern 17: Build-Verify-Restart Cycle**
+When deploying frontend changes:
+```
+1. BUILD:  npx next build → must compile with 0 errors
+2. VERIFY: Check build output wasn't cached/stale
+3. KILL:   kill -9 $(lsof -ti:3000)
+4. START:  setsid node node_modules/next/dist/bin/next start --port 3000 </dev/null &>/tmp/next.log &
+5. CHECK:  sleep 6; curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/
+6. BROWSER: browser_navigate → browser_screenshot → @vision
+```
+Never declare "deployed" after step 2. Always complete through step 6.
+
+**Pattern 18: Rate Limit Graceful Handling**
+When an app has rate limiting, the frontend MUST handle 429 responses gracefully:
+```
+In apiFetch / API client:
+  if (res.status === 429) {
+    const retryAfter = parseInt(res.headers.get("Retry-After") || "3", 10);
+    await new Promise(r => setTimeout(r, retryAfter * 1000));
+    res = await fetch(input, { ...init, headers });  // retry once
+  }
+
+In the React tree:
+  // Error boundary catching 429 cascades:
+  window.addEventListener("unhandledrejection", (e) => {
+    if (e.reason?.message?.includes("429")) {
+      setHasError(true);  // show "Slow down!" UI instead of blank crash page
+    }
+  });
+```
+Without this, rapid suggestion pill clicks → 429 flood → `Cannot read properties of undefined` → React crashes to generic error page. The user sees "This page couldn't load" with no indication it was a rate limit.
