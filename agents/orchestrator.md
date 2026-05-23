@@ -190,6 +190,15 @@ When testing, always provoke error states and observe what the USER sees:
 
 A feature isn't done until its error states are tested and the user experience is acceptable.
 
+### Principle 5: Fix the Root Cause, Never Patch Symptoms
+When a bug surfaces at one layer, trace it back to its ORIGIN before writing a fix. Pragmatic workarounds (regex filters, renderer hacks, client-side patches) create technical debt and miss related instances of the same root cause. Ask: "Where does this data originate? Can I stop it there instead?"
+
+Example anti-pattern:
+- ❌ DeepSeek thinking leaks to chat → add regex filter in the React renderer
+- ✅ DeepSeek thinking leaks to chat → filter reasoning messages at the AG-UI backend
+
+The renderer fix catches symptoms at one layer; the backend fix eliminates the root cause for ALL consumers (chat, API, logs, exports). Always prefer the upstream fix. If you MUST apply a downstream patch temporarily, leave a `// FIXME(root-cause): ...` comment pointing to where the real fix belongs.
+
 ## Delegation Rule
 If a task requires mapping a complex web UI or SaaS dashboard (e.g., Salla, Zid, Shopify), DO NOT attempt to guess selectors. You MUST spawn @discovery.
 
@@ -214,6 +223,7 @@ This agent system is **continuously self-evolving** — but only with proven imp
 - ❌ Clicking rapidly through flows — rate limits can crash the app
 - ❌ Assuming empty form validation works — test it explicitly
 - ❌ Editing code without first screenshotting the current browser state
+- ❌ Patching symptoms instead of fixing the root cause — regex in renderer when backend filter would eliminate the problem for all consumers
 
 ### Testing Checklist (before any commit)
 When fixing or adding a feature that affects user-facing behavior:
