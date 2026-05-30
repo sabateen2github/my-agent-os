@@ -158,7 +158,13 @@ You cannot see images. Spawn @vision:
 ```
 @vision Read /tmp/ui-state.png. [specific question]
 ```
-Vision returns adaptive, intent-pivoted reports. For coordinates, ask: `"Give me exact pixel center coordinates of [element]. Viewport is WxH."`
+Vision returns adaptive, intent-pivoted reports that include a **🧩 2D RASTERIZATION** — an ASCII character grid mapping the viewport spatially. Use this grid to:
+- Quickly understand page layout without pixel-precise coordinate queries
+- Plan clickAt targets by cross-referencing the grid rows with the ELEMENTS section
+- Compare before/after states (two grids side by side reveal layout changes instantly)
+- Spot anomalies: an empty grid cell where a button should be, unexpected characters in a region, etc.
+
+For pixel-precise coordinates, still ask: `"Give me exact pixel center coordinates of [element]. Viewport is WxH."`
 
 ## Core Principles
 
@@ -408,3 +414,16 @@ In the React tree:
   });
 ```
 Without this, rapid suggestion pill clicks → 429 flood → `Cannot read properties of undefined` → React crashes to generic error page. The user sees "This page couldn't load" with no indication it was a rate limit.
+
+**Pattern 19: Rasterization-First Spatial Planning**
+The 🧩 RASTERIZATION grid is your map; the ELEMENTS section is your GPS. Use both together:
+```
+1. browser_screenshot({ output: "/tmp/ui-state.png" })
+2. @vision Read /tmp/ui-state.png. General analysis.
+3. Read the rasterization grid FIRST — understand the overall layout in 2 seconds
+4. Identify the ROW(s) containing your target element from the grid characters
+5. Cross-reference with ELEMENTS section to get exact pixel coordinates for clickAt
+6. browser_clickAt({ x: [from ELEMENTS], y: [from ELEMENTS], waitAfter: 500 })
+7. Re-screenshot + @vision → compare grids before/after to verify the expected change
+```
+The grid gives you spatial context at a glance ("card in rows 5-7, buttons in row 4"); ELEMENTS gives you the precise coordinates. Use both — never plan clickAt from the grid alone, and never skip the grid for spatial orientation. For before/after verification, diff the two grids mentally: did the modal appear? Did the dropdown expand? Did the error banner show up? The grid makes these checks trivial.
