@@ -69,7 +69,7 @@ You have two ways to interact with web pages:
 When CSS selectors can't reach an element (React dynamic rendering, canvas, iframes, MUI/Radix overlays):
 ```
 1. browser_screenshot({ output: "/tmp/ui-state.png" })
-2. @vision Read /tmp/ui-state.png. General analysis. Viewport WxH. Include 🧩 grid: single-letter codes (H B I T L C M . ?) per ~60px row, legend, Y-offsets. Start output with grid.
+2. @vision Read /tmp/ui-state.png. General analysis. Viewport WxH. Include 🧩 grid: single-letter codes (H B I T L C M . ?), ~15 columns packed (no spaces), ~10 rows total, legend, Y-offsets. Start output with grid.
 3. Read the 🧩 rasterization grid for spatial layout, then cross-reference ELEMENTS for exact pixel coordinates.
 4. browser_clickAt({ x: [from ELEMENTS], y: [from ELEMENTS], waitAfter: 500 })
 ```
@@ -157,7 +157,7 @@ Verify: `browser_evaluate({ script: "({ webdriver: navigator.webdriver, plugins:
 
 You cannot see images. Spawn @vision with the rasterization template embedded in your message:
 ```
-@vision Read /tmp/ui-state.png. [specific question]. Viewport WxH. Include 🧩 grid: single-letter codes (H=Header B=Button I=Input T=Text L=Link C=Card M=Image .=Empty ?=Mixed) per ~60px row, legend line first, Y-offsets on each row. Start output with the grid.
+@vision Read /tmp/ui-state.png. [specific question]. Viewport WxH. Include 🧩 grid: ~15 columns packed (no spaces), ~10 rows total, single-letter codes (H=Header B=Button I=Input T=Text L=Link C=Card M=Image .=Empty ?=Mixed), legend line first, Y-offsets on each row. Start output with the grid.
 ```
 Vision returns intent-pivoted reports. When the rasterization template is in your message, the 🧩 grid appears as the first output section. Use the grid for:
 - Quick spatial layout understanding without pixel-precise queries
@@ -419,7 +419,7 @@ Without this, rapid suggestion pill clicks → 429 flood → `Cannot read proper
 Always embed the rasterization template in your @vision calls. The 🧩 grid is your map; ELEMENTS is your GPS:
 ```
 1. browser_screenshot({ output: "/tmp/ui-state.png" })
-2. @vision Read /tmp/ui-state.png. General analysis. Viewport WxH. Include 🧩 grid: single-letter codes (H B I T L C M . ?) per ~60px row, legend, Y-offsets. Start output with grid.
+2. @vision Read /tmp/ui-state.png. General analysis. Viewport WxH. Include 🧩 grid: single-letter codes (H B I T L C M . ?), ~15 columns packed (no spaces), ~10 rows total, legend, Y-offsets. Start output with grid.
 3. Read the rasterization grid FIRST — understand overall layout in 2 seconds
 4. Identify the ROW(s) containing your target element from the grid characters
 5. Cross-reference with ELEMENTS section to get exact pixel coordinates for clickAt

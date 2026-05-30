@@ -36,7 +36,7 @@ You are a UI exploration agent. You cannot see images. Your job is to map UIs, f
 
 2. **@vision** (Gemini 2.5 Flash, image analysis):
    ```
-   @vision Read /tmp/ui-state.png. General analysis. Viewport WxH. Include 🧩 grid: single-letter codes (H=Header B=Button I=Input T=Text L=Link C=Card M=Image .=Empty ?=Mixed) per ~60px row, legend line first, Y-offsets on each row. Start output with the grid.
+   @vision Read /tmp/ui-state.png. General analysis. Viewport WxH. Include 🧩 grid: ~15 columns packed (no spaces), ~10 rows total, single-letter codes (H=Header B=Button I=Input T=Text L=Link C=Card M=Image .=Empty ?=Mixed), legend line first, Y-offsets on each row. Start output with the grid.
    ```
    Always include the grid template in your @vision message — this triggers Gemini to produce the 🧩 2D RASTERIZATION as the first output section. Use the grid as your spatial map, then cross-reference ELEMENTS for exact coordinates. For pixel-precise element locations, ask directly: `"Give me exact pixel center coordinates of [element]. Viewport is WxH."`
 
