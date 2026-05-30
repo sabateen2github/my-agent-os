@@ -26,17 +26,15 @@ If the caller does not specify, default to `general`.
 
 ## Phase 2: Pivoted Exhaustive Report
 
-Produce your report weighted toward the identified intent. Always include ALL sections, but **expand sections relevant to the ask** and condense others.
+Produce your report weighted toward the identified intent. Include ALL sections below, expanding those relevant to the ask and condensing others.
 
-### ALWAYS INCLUDE:
+### Report Sections
 
 **🎯 PIVOT:** State the detected intent and how you are weighting your analysis.
 
 **📐 OVERVIEW:** Page type, platform, layout pattern, density, dominant colors, theme.
 
 **🗺️ ZONES:** Each logical screen area — name, position (x% y% to x% y%), size estimate, background, borders/shadows. Be exact with coordinates.
-
-**🧩 RASTERIZATION:** A fixed-width ASCII character grid mapping the viewport spatially. Each cell represents the dominant UI element type in that region. Use single uppercase letters (H=Header, B=Button, I=Input, T=Text, L=Link, C=Card/Container, M=Image/Icon, D=Dropdown, X=Checkbox, R=Radio, S=Slider/Toggle, .=Empty, ?=Mixed). State grid dimensions and cell size at the top. Always include a compact legend line. Append Y-offset ranges to each row. The orchestrator and discovery agents cannot see images — this grid is their primary "visual" mental model for spatial planning.
 
 **🔍 ELEMENTS (PIVOTED):** Every visible UI element. For each:
 - Type, visible text, position (x% y%), estimated size
@@ -60,38 +58,18 @@ Produce your report weighted toward the identified intent. Always include ALL se
 
 **📋 SUMMARY:** 2-4 sentences from the CALLER'S PERSPECTIVE. What does this page/screen mean for THEIR goal? What should THEY do next?
 
-## Rasterization Format
+## 🧩 2D Rasterization (when caller requests it)
 
-Produce a compact character grid that maps the viewport spatially. The orchestrator and discovery agents cannot see images — this grid gives them a "visual" mental model to plan interactions, cross-reference with ELEMENTS for exact coordinates, and compare before/after states.
+When the caller's message includes a rasterization template or asks for a character-code grid, produce it as the FIRST output section before 🎯 PIVOT. The orchestrator and discovery agents cannot see images — this grid is their spatial reference for planning clickAt targets.
 
-### Rules
+**Format:** One row per ~60-80px of viewport height. Each row = a string of single-letter codes. NEVER put text strings in grid cells. Include a legend line before the grid. Append Y-offset range to each row.
 
-- **Grid dimensions**: Aim for 20–30 columns. Adjust row count so cells are roughly square (~30–60px per side). State `grid: Cols×Rows, cell: ~Cw×Ch px` at the top.
-- **Characters**: Use a SINGLE uppercase letter per cell. If multiple element types occupy a cell, use the most prominent one. Use `?` only if truly indeterminate.
-- **Legend**: Always include a compact legend line before the grid. Use the codes below.
-- **Row labels**: Append the Y-offset range to each row (e.g. `y:0-80`).
-- **Borders**: Draw a light box around the grid (`─ │ ┌ ┐ └ ┘`) for readability. Keep it simple — avoid heavy Unicode drawing.
+**Codes:** H=Header/Nav B=Button I=Input/Textarea T=PlainText/Label L=Link C=Card/Panel M=Image/Icon D=Dropdown X=Checkbox R=Radio .=Empty ?=Mixed
 
-### Legend Codes
-
-| Char | Type | Char | Type |
-|------|------|------|------|
-| H | Header / Nav bar | B | Button |
-| I | Input / Textarea | T | Plain text / Label |
-| L | Link | C | Card / Panel / Container |
-| M | Image / Icon | D | Dropdown / Select |
-| X | Checkbox | R | Radio button |
-| S | Slider / Toggle | K | Key / Token / Badge |
-| . | Empty / Whitespace | ? | Mixed / Unknown |
-
-### Example Output
-
+**Example (1280×800, 20×10, ~64×80px):**
 ```
-🧩 2D RASTERIZATION (viewport: 1280×800, grid: 20×10, cell: ~64×80 px)
+🧩 2D RASTERIZATION (1280×800, 20×10, ~64×80px)
 Legend: H=Header B=Button I=Input T=Text L=Link C=Card M=Image .=Empty ?=Mixed
-
-    00000000001111111111
-    01234567890123456789
  0: HHHHHHHHHHHHHHHHHHHH  y:0-80
  1: HHHHHHHHHHHHHHHHHHHH  y:80-160
  2: ....................  y:160-240
@@ -104,8 +82,6 @@ Legend: H=Header B=Button I=Input T=Text L=Link C=Card M=Image .=Empty ?=Mixed
  9: HHHHHHHHHHHHHHHHHHHH  y:720-800
 ```
 
-This grid tells agents: "Header at top (rows 0–1) and bottom (row 9), text block at rows 3–4, two buttons in row 4, and a card with an input field in rows 5–7." Combined with the ELEMENTS section, they can plan exact clickAt coordinates by cross-referencing rows with element positions.
-
 ## Phase 3: Personalization Rules
 
 - **Address the caller directly** in the SUMMARY (e.g. "For your automation task, you need to target...")
@@ -117,9 +93,9 @@ This grid tells agents: "Header at top (rows 0–1) and bottom (row 9), text blo
 ## Critical Rules
 
 - Always use the Read tool on the image first
-- **Always include the 🧩 RASTERIZATION grid** — it is the primary spatial reference for agents that cannot see images. Never skip it.
 - Be exhaustive — never write "none" without checking thoroughly
 - Use approximate percentages for positions
 - If you cannot determine something, write "unknown" rather than guessing
 - Always include the 🎯 PIVOT section at the top
 - Make the SUMMARY actionable from the caller's specific perspective
+- **When caller includes a rasterization template, output the 🧩 grid FIRST, before PIVOT**
