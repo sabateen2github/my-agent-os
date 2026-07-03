@@ -40,6 +40,7 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 | Signal | How to Detect | Weight |
 |--------|--------------|--------|
 | **AI Infrastructure Beneficiary** | Company sells into data center, networking, or AI silicon supply chains. Revenue from AI/DC growing >30% YoY. | VERY HIGH |
+| **⚠️ AI Infrastructure — SUPPLY CHAIN INTEGRITY CHECK (v3.1)** | **CRITICAL: AI infra scoring is capped at 10/15 UNLESS the full 3-tier supply chain trace is completed and verified. "Sold out through year-end" from a Tier-3 supplier means nothing if Tier-1 end-user revenue doesn't justify the capex. See Supply Chain Bubble Modifier below.** | MANDATORY VERIFICATION |
 | **Electrification / Grid Buildout** | Electrical equipment, transformers, switchgear. Backlog growing >20% YoY. | HIGH |
 | **Defense / Rearmament** | NATO spending at Cold War levels. Defense contractors with multi-year backlogs. | HIGH |
 | **Energy Security** | LNG, pipelines, gas processing. European energy decoupling is structural. | MEDIUM |
@@ -276,6 +277,61 @@ A full deep-moat-audit is MANDATORY for any stock receiving a BUY recommendation
 | 9 | Deep Domain Knowledge 🔬 | 15 | deep-moat-auditor score (patents, papers, physics) |
 | | **TOTAL** | **140** | |
 
+## 🔗 Supply Chain Bubble Cross-Category Modifier (v3.1 — NEW)
+
+**⚠️ This modifier did not exist in v3.0 — it was the deadly gap.** Revenue growth and "sold out" narratives are treated as pure positives unless the full revenue chain is traced from end-user through every intermediate tier to the company being analyzed.
+
+### When This Modifier Applies:
+- **Revenue growth >50% YoY** → MANDATORY supply chain trace required
+- **AI/Data Center >40% of revenue** → MANDATORY supply chain trace required
+- **Product is an intermediate good** (components, not end-user products) → MANDATORY supply chain trace required
+
+### How the Modifier Works:
+
+The modifier ADJUSTS scores in Categories 0 and 1 based on supply chain integrity:
+
+#### Category 0 (Macro Theme Alignment) Adjustment:
+| Supply Chain Finding | Adjustment | Why |
+|---------------------|------------|-----|
+| Full 3-tier trace complete, end-user demand VERIFIED growing faster than orders | No adjustment (score stands) | Demand is real |
+| Full trace complete, end-user demand growing but slower than orders | **-5 pts** from Category 0 | Bullwhip amplification suspected |
+| Trace incomplete — Tier 3 end-user data unavailable | **Capped at 10/15** (max 10 regardless of other signals) | Cannot verify demand integrity |
+| Trace attempted but Tier 2 customer growth > Tier 3 customer growth | **-8 pts** from Category 0 | Clear bullwhip signal — demand is being amplified at each tier |
+| Order cancellations detected at ANY tier | **Category 0 = 0/15** | Supply chain bubble is bursting — no macro theme justifies it |
+
+#### Category 1 (Fundamental Surprise) Adjustment:
+| Supply Chain Finding | Adjustment | Why |
+|---------------------|------------|-----|
+| Revenue growth is from diversified end-markets (not just AI) | No adjustment | Diversification reduces bullwhip risk |
+| Revenue growth is AI-concentrated but trace shows end-demand justifies it | **-3 pts** from Category 1 | Concentration risk, even if demand is real |
+| Revenue growth >100% YoY with no end-user verification | **-8 pts** from Category 1 | Extremely high growth in intermediate goods is the #1 bullwhip indicator |
+| Backlog growing >50% AND lead times extending | **-5 pts** from Category 1 | Classic double-ordering signal |
+
+#### Combined Effect Example (Micron, July 2026):
+```
+v3.0 Score (WITHOUT modifier):
+  Category 0: 15/15 ("AI HBM is the bottleneck")
+  Category 1: 15/20 ("Revenue +345%, sold out")
+  Total: 30/35 from these two categories
+
+v3.1 Score (WITH modifier applied after supply chain trace):
+  Category 0: 15 → capped at 10 (trace incomplete — hyperscaler AI revenue vs capex ratio not verified)
+  Category 1: 15 → reduced to 7 (revenue +345% is AI-concentrated with no end-user verification → -8)
+  Total: 17/35 from these two categories
+
+  Difference: -13 points — enough to move MU from 80/140 (MEDIUM) to 67/140 (LOW)
+```
+
+### Verification Protocol for Supply Chain Trace:
+1. **Tier 1:** 10-K filing → Customer concentration → identify top customers and revenue %
+2. **Tier 2:** Customer's 10-K/earnings → who do THEY sell to? What's THEIR revenue growth?
+3. **Tier 3:** End-user data → hyperscaler AI revenue disclosures, enterprise AI surveys, subscription KPIs
+4. **Cross-check:** Is Tier 3 end-user revenue growing at least as fast as Tier 2 orders? If not → bullwhip.
+5. **Inventory check:** Are inventories building at any tier? Check inventory/sales ratios across the chain.
+6. **Capacity check:** Is the industry adding capacity faster than end-demand projections?
+
+**v3.1 MANDATE: The supply chain modifier is NOT optional.** Any stock that triggers the "when this modifier applies" conditions MUST have the full trace completed. If the trace cannot be completed, the most conservative adjustment applies (cap at 10 for Category 0, -8 for Category 1). This is the methodology's protection against the #1 cause of false positives in AI infrastructure investing. |
+
 ## v3.0 Conviction Thresholds
 
 | Score | Conviction | Action |
@@ -301,24 +357,32 @@ v2.0 listed red flags but didn't enforce them. v3.0 embeds penalties directly in
 | Sell/buy ratio >10:1 | -3 pts | Category 5 | Insiders systematically exiting |
 | CEO/CFO selling | -2 pts | Category 5 | Leadership reducing exposure |
 | Export control / tariff risk | -3 pts | Category 3 | Regulatory binary risk |
+| Supply chain trace incomplete for AI/infra stock with rev growth >50% (v3.1) | **-10 pts** | Categories 0+1 | Cannot verify demand is real vs. bullwhip phantom |
+| Supply chain: Tier 2 customer growth > Tier 3 end-user growth (v3.1) | **-5 pts** | Category 0 | Bullwhip amplification detected |
+| Supply chain: order cancellations at any tier (v3.1) | **AUTOMATIC KILL** | — | The supply chain bubble is popping — thesis is dead |
 | Major customer loss (>20% revenue) | -10 pts | Automatic KILL | Thesis broken |
 | SEC investigation / accounting concerns | -15 pts | Automatic KILL | Existential risk |
 
 **v3.0 enforcement rule:** If a stock triggers 3+ red flags, automatically remove from consideration regardless of other scores. Don't try to rationalize a "good company with some concerns" — 3+ red flags = something is wrong.
 
-## Integration with Infrastructure Moat SOP (v3.0)
+## Integration with Infrastructure Moat SOP (v3.1)
 
-The v3.0 sequence:
+The v3.1 sequence:
 ```
 1. DYNAMIC DISCOVERY → Live market data (browser, NOT hardcoded)
          ↓
 2. QUANTITATIVE SCREEN → Python/yfinance → score 0-40 → top 20-30 advance
          ↓
+2.5. SUPPLY CHAIN TRACE (v3.1 — NEW) → For any stock with rev growth >50% or AI >40% of revenue,
+     trace the full 3-tier revenue chain. Apply bullwhip modifier to Categories 0 and 1.
+         ↓
 3. DEEP MOAT AUDIT → @deep-moat-auditor for top 10-15 → moat score 0-40
          ↓
 4. CATALYST DETECTION → 10 categories, 140 pts → quant triggers + qual research
+     + supply chain bubble modifier applied
          ↓
 5. QUANT+QUAL RECONCILIATION → Both must agree → kill divergents
+     + bullwhip risk override: HIGH/CRITICAL bullwhip = cap or kill
          ↓
 6. PORTFOLIO CONSTRUCTION → Position sizing, sector limits, dip preference, price verification
 ```

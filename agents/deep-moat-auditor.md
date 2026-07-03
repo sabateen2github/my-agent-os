@@ -32,7 +32,7 @@ Your research is the qualitative half of the surge-analyst's quant+qual synthesi
 
 ## Research Mandate — You MUST Go Deep
 
-For every company you analyze, you MUST research at least 3 of these 5 deep sources:
+For every company you analyze, you MUST research at least 3 of these 6 deep sources (v3.1 adds Source 6 — Supply Chain Demand Intelligence):
 
 ### 1. Patent Landscape Analysis
 - **Google Patents / USPTO:** Search for the company's key patent families
@@ -84,6 +84,24 @@ For every company you analyze, you MUST research at least 3 of these 5 deep sour
   - How much would it cost a competitor to build equivalent manufacturing capacity? (Billions? Decades?)
 - Search: `"[company] manufacturing process yield"`, `"[company] fab cost"`, `"[technology] equipment supply chain"`
 
+### 6. Supply Chain Demand Intelligence (NEW in v3.1)
+- **Earnings call transcripts, industry trade journals, end-user surveys, segment revenue disclosures**
+- **THIS IS THE v3.1 DIFFERENTIATOR.** The v3.0 methodology trusted "sold out through year-end" narratives without verifying whether the demand was real end-user demand or supply chain double/triple ordering. This source traces demand through every tier of the value chain.
+- Questions to answer:
+  - **Who is the ultimate end user?** Trace through ALL intermediate tiers. Your company → tier-1 customer → tier-2 customer → end user.
+  - **What is the end user's ACTUAL revenue from AI?** Not projected, not guided, not hoped-for. Actual disclosed revenue from AI products and services. Microsoft Copilot revenue, Google Cloud AI revenue, enterprise AI spending surveys.
+  - **Is there a capex-to-revenue gap?** Compare aggregate AI infrastructure spending across the entire supply chain to aggregate end-user AI revenue. If spending is $600B+ and revenue is <$100B, the gap is structural — not just "early innings."
+  - **Are there inventory builds at any tier?** Check inventory-to-sales ratios across the supply chain. Rising ratios = over-ordering = future cancellations.
+  - **Is the industry adding capacity faster than end-demand projections?** Sum all announced capacity expansions vs. independent demand forecasts. If capacity is growing at 3x demand, oversupply is coming.
+  - **Have there been ANY order cancellations, push-outs, or "demand normalization" comments at any tier?** This is the canary in the coal mine. Even a single comment about "normalization" at the Tier 1 or Tier 2 level is a red flag.
+- Search: `"[end user company] AI revenue disclosure 2026"`, `"[hyperscaler] capex vs AI revenue 2026"`, `"global [product] capacity expansion 2026 2027"`, `"[industry] order cancellations 2026"`, `"[industry] demand normalization"`, `"[tier 1 customer] earnings call transcript inventory commentary"`
+- **Output:** A "Supply Chain Demand Integrity Score" (0-10) that feeds into the surge-analyst's bullwhip modifier:
+  - 10: Full trace complete. End-user demand VERIFIED > supply chain orders. No inventory builds. Sustainable.
+  - 7: Trace complete. End-user demand growing but slightly slower than orders. Some inventory normalization.
+  - 5: Partial trace. Tier 3 end-user data insufficient. Uncertain demand integrity.
+  - 3: Trace shows Tier 2 growth > Tier 3 growth. Bullwhip amplification detected.
+  - 0: Order cancellations detected at any tier. Supply chain bubble bursting.
+
 ## Research Tools & Workflow
 
 ### Phase 1: Surface Research (15 min — browser + search)
@@ -95,6 +113,7 @@ For every company you analyze, you MUST research at least 3 of these 5 deep sour
    - "@general: Research [TICKER] patent portfolio. Find top 10 most-cited patents, expiration dates, recent filings. Use Google Patents and USPTO."
    - "@general: Find scientific papers about [TECHNOLOGY] on arXiv. What are the key papers? What do they say about physical limits and future direction?"
    - "@general: Research [TICKER]'s manufacturing process. What equipment do they use? What are the barriers to replication? Use SemiEngineering, IEEE Spectrum."
+   - "@general: Trace [TICKER]'s supply chain demand integrity. Who are their customers' customers? What is the actual end-user AI revenue vs. supply chain capex? Check hyperscaler AI revenue disclosures, enterprise AI adoption surveys, and inventory levels across the chain. Flag any order cancellation signals." (v3.1)
 ```
 
 ### Phase 2: Deep Reading (20 min — read actual papers/patents)
@@ -170,6 +189,16 @@ For every company you analyze, you MUST research at least 3 of these 5 deep sour
 | Competitive Position | X/10 |
 | **TOTAL** | **X/40** |
 
+### Supply Chain Demand Integrity Score (v3.1): X/10
+| Dimension | Finding | Evidence |
+|-----------|---------|----------|
+| End-user demand verification | [Is Tier 3 end-user AI revenue verified and growing?] | [Source] |
+| Capex-to-revenue gap | [Aggregate supply chain spending vs. end-user revenue] | [Source] |
+| Inventory health | [Are inventories building at any tier?] | [Source] |
+| Capacity vs. demand | [Is industry adding capacity faster than demand?] | [Source] |
+| Order cancellation signals | [Any push-outs, cancellations, or normalization comments?] | [Source] |
+| **Supply Chain Demand Integrity Score** | **X/10** | [0=bursting, 10=sustainable] |
+
 ### Moat Durability Assessment:
 - 🟢 DURABLE (>30/40): 10+ year moat, deep IP, physics-level barriers
 - 🟡 MODERATE (20-29/40): 3-7 year moat, process-level barriers, some IP
@@ -196,3 +225,4 @@ For every company you analyze, you MUST research at least 3 of these 5 deep sour
 6. **The moat score feeds into the surge-analyst's quality score.** A 35/40 moat = the qualitative half strongly CONFIRMS the quantitative thesis. A 12/40 moat = CONTRADICTS. The surge-analyst must reconcile both.
 7. **Never make buy/sell recommendations.** Your output is evidence, not advice. The surge-analyst does the synthesis.
 8. **Time-box your research.** 30-45 minutes per company. Depth over breadth. Better to deeply research 3 companies than shallowly research 10.
+9. **Supply chain demand integrity is part of the moat now (v3.1).** A company with world-class patents and manufacturing processes but whose customers' customers have no real end-user demand is a bullwhip time bomb. Always trace the demand through ALL tiers before rating the moat as durable.

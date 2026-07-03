@@ -364,7 +364,9 @@ For EACH candidate being considered for the final portfolio, you MUST research a
 
 ---
 
-## Step 4: Supply Chain & Macro Resilience
+## Step 4: Supply Chain & Macro Resilience (v3.1 — Revenue Chain Integrity Added)
+
+**v3.1 UPDATE:** Step 4 now includes the critical **4D: Revenue Chain Integrity** check — bullwhip/bubble detection that traces demand through the entire value chain from end-user to supplier. This was identified as a deadly blind spot in v3.0 after the surge-analyst recommended MU based on "sold out through year-end" HBM demand without verifying whether the hyperscaler end-user demand justified $600B+ in AI capex.
 
 ### 4A: Manufacturing / Foundry Dependency
 
@@ -390,11 +392,88 @@ Map the physical supply chain. Identify:
 - Government/defense as primary customer? → political cycle risk
 - Commodity price exposure? → cycle risk
 
+### 4D: Revenue Chain Integrity — Bullwhip / Supply Chain Bubble Detection (NEW in v3.1 — MANDATORY)
+
+**⚠️ CRITICAL GAP FIX (v3.1): The v3.0 methodology treated "revenue growth" and "sold out through year-end" as pure positive signals without EVER asking whether the demand is real end-user demand or supply chain double/triple ordering (bullwhip effect). This is a DEADLY omission — especially in AI infrastructure where every tier of the supply chain is over-ordering to "secure supply."**
+
+#### The Bullwhip Effect in AI Infrastructure:
+
+```
+End Users (consumers/enterprises)
+    │  AI chatbot subscriptions, API usage, enterprise AI adoption
+    │  ACTUAL demand: uncertain, early, potentially far below expectations
+    ▼
+Hyperscalers (MSFT, GOOG, META, AMZN)
+    │  Project AI demand → order GPUs $600B+/year
+    │  Do they have the end-user revenue to justify this? ← THE KEY QUESTION
+    ▼
+GPU Makers (NVDA, AMD)
+    │  Receive hyperscaler orders → order HBM, substrates, packaging
+    │  Over-order to secure supply → bullwhip amplification
+    ▼
+Memory Makers (MU, Samsung, SK Hynix)
+    │  Receive GPU maker orders → "SOLD OUT through year-end"
+    │  Bullwhip at maximum amplitude — every tier inflated orders
+    ▼
+Equipment Makers (ASML, AMAT, LRCX)
+       Receive memory maker orders → building capacity for capacity's sake
+```
+
+**The fatal assumption in v3.0:** "Revenue growth 345% with P/E 22x = amazing opportunity." What if that 345% growth is 50% real demand + 50% supply chain over-ordering? When the music stops, that 50% vanishes overnight — and with it, the "cheap" P/E.
+
+#### Revenue Chain Integrity Checklist (MANDATORY for any stock where revenue growth >50% YoY OR AI/data center is the dominant growth driver):
+
+| Tier | Question | Detection Method | Red Flag Threshold |
+|------|----------|-----------------|--------------------|
+| **Tier 1: Direct Customers** | Who are the top 3-5 customers? What % of revenue? | 10-K filing → "Customer Concentration" section; segment reporting | Any single customer >30% of revenue |
+| **Tier 2: Customers' Customers** | Who do YOUR customers sell to? Are THEY seeing real end demand? | Analyst reports, industry publications, customer earnings calls | Customer's end-market revenue growing slower than their orders from you |
+| **Tier 3: End Users** | What is the ACTUAL end-user revenue from the product/service this supply chain enables? | Hyperscaler AI revenue disclosures, enterprise AI adoption surveys, subscription metrics | End-user revenue < 50% of cumulative supply chain capex |
+| **Inventory Check** | Are inventories building at any tier? | Balance sheet → inventory/sales ratio trending up; channel checks | Inventory/sales ratio up >20% YoY |
+| **Double-Ordering Check** | Are lead times extending AND order books filling simultaneously? (Classic bullwhip signal) | Industry trade journals, competitor commentary, supply chain news | Lead times >2x normal AND backlog growing >50% YoY |
+| **Capacity Expansion Check** | Is the INDUSTRY (not just the company) adding capacity faster than end-demand can absorb? | Sum all announced capacity expansions in the sector vs. projected demand growth | Industry capacity additions >2x projected demand growth |
+
+#### Bullwhip Risk Score (0 to -20 — DEDUCTED from quantitative score):
+
+| Signal | Penalty | How to Detect |
+|--------|---------|---------------|
+| Supply chain trace incomplete — can't identify Tier 2 or Tier 3 customers | **-10 pts** | Research effort exhausted, gap remains |
+| Tier 2 customer (e.g., NVIDIA) revenue growth > Tier 3 customer (e.g., hyperscaler) AI revenue growth | **-5 pts** | Compare growth rates — bullwhip amplification suspected |
+| Hyperscaler AI revenue < 30% of their AI capex (suggesting ROI gap) | **-8 pts** | Microsoft Copilot revenue, Google Cloud AI revenue, etc. vs. their capex |
+| Lead times extending + backlog growing simultaneously (classic bullwhip) | **-5 pts** | Industry trade journals, company commentary |
+| Inventory building at multiple tiers simultaneously | **-3 pts** | Balance sheet analysis across supply chain |
+| Industry-wide capacity additions >3x projected end-demand growth | **-5 pts** | Sum competitor capex plans vs. demand forecasts |
+| ANY tier shows order cancellations or push-outs | **-15 pts** | Earnings call transcripts, industry news — this is the canary |
+| **MAX BULLWHIP PENALTY: -20 pts** (can't exceed even if all signals triggered) | | |
+
+#### Bullwhip Resilience Score (0 to +10 — ADDED to quantitative score):
+
+| Signal | Bonus | How to Detect |
+|--------|-------|---------------|
+| Revenue chain fully traced through all 3 tiers with VERIFIED end-user demand | **+5 pts** | Complete trace with hard data at each tier |
+| End-user AI revenue growing FASTER than supply chain orders (sustainable demand) | **+5 pts** | Hyperscaler AI revenue growth > GPU order growth |
+| Company's customers have diversified end-markets (not just AI) | **+3 pts** | Segment reporting — <40% of customer revenue from AI |
+| Long-term take-or-pay contracts at Tier 1 (not just "backlog" or "orders") | **+3 pts** | 10-K → contractual obligations section |
+
+#### v3.1 Rule: Supply Chain Trace is MANDATORY
+- **For ANY stock where revenue growth >50% YoY:** The full 3-tier trace is MANDATORY. No trace = automatic -10 penalty.
+- **For ANY stock where AI/data center is >40% of revenue:** The full 3-tier trace is MANDATORY. No trace = automatic -10 penalty.
+- **For stocks where the surge-analyst cannot complete the trace:** The bullwhip risk score defaults to -10 (worst-case assumption). The thesis is capped at "HALF" position size maximum.
+- **If order cancellations are detected at ANY tier:** The position is automatically KILLED — no exceptions. This is the supply chain equivalent of insider selling clusters.
+
+#### Bullwhip Risk Levels:
+
+| Bullwhip Score | Risk Level | Position Cap |
+|----------------|------------|-------------|
+| +5 to +10 | 🟢 LOW — Verified end demand supports supply chain orders | Full position eligible |
+| -5 to +4 | 🟡 MODERATE — Some uncertainty, but no clear red flags | Standard position |
+| -10 to -6 | 🟠 HIGH — Bullwhip signals detected, trace incomplete | Half position max |
+| -20 to -11 | 🔴 CRITICAL — Multiple bullwhip signals, potential bubble | **KILL the thesis** |
+
 ### Output Format (Step 4):
 ```
-| Ticker | Mfg Risk | Geo Risk | Customer Risk | Key Vulnerabilities |
-|--------|----------|----------|---------------|---------------------|
-| XXXX | 🟡 MOD | 🔴 HIGH | 🟢 LOW | Taiwan Strait exposure |
+| Ticker | Mfg Risk | Geo Risk | Customer Risk | Bullwhip Risk | Key Vulnerabilities |
+|--------|----------|----------|---------------|---------------|---------------------|
+| XXXX | 🟡 MOD | 🔴 HIGH | 🟢 LOW | 🟠 HIGH (-8) | Taiwan Strait + supply chain over-ordering suspected |
 ```
 
 ---
@@ -415,12 +494,14 @@ After completing all steps, the quantitative screen (Step 1, 0-40) and the quali
 ### Reconciliation Rules:
 | Quant | Qual | Result |
 |-------|------|--------|
-| >25 | >25 | ✅ STRONG BUY — Full position eligible |
+| >25 | >25 | ✅ STRONG BUY — Full position eligible (unless Bullwhip Risk is HIGH/CRITICAL) |
 | >25 | 15-24 | 🟡 CAUTIOUS — Half position max |
 | >25 | <15 | ⚠️ SKIP — Good numbers, fragile business |
 | 15-24 | >25 | 🟡 OPPORTUNITY — Great moat, needs catalyst |
 | 15-24 | 15-24 | 🟠 WEAK — Tracker only |
 | <15 | Any | 🔴 PASS |
+
+**v3.1 Bullwhip Override (NEW):** If Bullwhip Risk from Step 4D is HIGH (-10 to -6) or CRITICAL (-20 to -11), the position is capped at HALF or KILLED regardless of Quant+Qual agreement. Bullwhip risk is an existential supply chain integrity issue that no amount of moat depth or quantitative cheapness can overcome.
 
 ---
 
@@ -436,6 +517,7 @@ After completing all steps, the quantitative screen (Step 1, 0-40) and the quali
 8. **Sector limits.** Max 40% per sector. Min 3 sectors in a 5+ position portfolio.
 9. **Red flags are enforced.** Insider selling, P/E extremes, revenue deceleration — penalties are applied, not noted.
 10. **The backtest doesn't lie, but it's N=1.** v1.0 killed semiconductors. v2.0 overcorrected. v3.0 requires both numbers AND research to agree. When the methodology produces bad results, change the methodology — but give it enough time to prove itself first.
+11. **Revenue growth is a LIABILITY until verified.** (v3.1) High revenue growth in a supply chain with multiple tiers between the company and the end user is a bullwhip risk, not just an opportunity. Trace the full revenue chain through all 3 tiers before trusting the growth number. "Sold out through year-end" means nothing if the end user isn't generating real revenue.
 
 ---
 
