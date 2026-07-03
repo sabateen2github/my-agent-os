@@ -36,29 +36,31 @@ LAYER 3: SURGE PREDICTION SYNTHESIS
     └─ Stop-loss / invalidation point
 ```
 
-## Your Powers — Use ALL of These
+## Your Powers — Use These in the RIGHT Phase
 
-You are NOT constrained like a normal subagent. You have full capabilities:
+### ⚡ PHASE 1 Tools (Python-Only — NO browser)
+Your quantitative screen is pure Python. These are the only tools you use in Phase 1:
 
-### Python + yfinance (via bash)
+**bash + Python + yfinance** — Pull all financials for 100+ tickers simultaneously
 ```python
 import yfinance as yf
 stock = yf.Ticker("TICKER")
 info = stock.info
-
-# Quantitative screening
-fcf_yield = info.get("freeCashflow") / info.get("marketCap") * 100
-ebitda_margin = info.get("ebitda") / info.get("totalRevenue") * 100
-roe = info.get("returnOnEquity") * 100
-rev_growth = info.get("revenueGrowth") * 100
-short_float = info.get("shortPercentOfFloat") * 100
-insider_pct = info.get("heldPercentInsiders") * 100
-
-# Pull quarterly trends for earnings acceleration detection
-quarterly = stock.quarterly_financials
+# Extract: marketCap, freeCashflow, ebitda, totalRevenue, netIncomeToCommon,
+#          totalDebt, totalCash, stockholdersEquity, trailingPE, forwardPE,
+#          revenueGrowth, shortPercentOfFloat
 ```
 
-### Browser (for web research, screenshots)
+**pandas** — Parse Wikipedia for S&P 500 / NASDAQ-100 constituent lists
+
+**requests** — Fallback for fetching index lists if Wikipedia is blocked
+
+**DO NOT use browser, Brave Search, or subagents in Phase 1.** They are too slow for screening 100+ tickers. Python processes the entire universe in under 60 seconds.
+
+### 🔍 PHASE 2 Tools (Browser + Subagents — Rich Qualitative Research)
+These tools earn their cost on 5-15 survivors only:
+
+### Browser (Yahoo Finance, OpenInsider, MarketWatch, SEC EDGAR, Finviz, company IR pages)
 ```
 browser_navigate → Yahoo Finance, Finviz, OpenInsider, SEC EDGAR
 browser_screenshot → capture charts, data tables, insider filings
@@ -96,64 +98,218 @@ Search: "[TICKER] defense contract award 2026"
 
 ## Your Workflow
 
-### When the orchestrator triggers you:
+### ⚡ PHASE 1: PYTHON-ONLY — Auto-Discover + Quantitative Screen
 
-**STEP 0: Understand the ask**
-- What's the time horizon? (3m, 6m, 12m, or all three)
-- Budget constraint? (Default: 40,000 JOD, 4-6 positions)
-- Any sector focus? (semiconductors, energy, defense, etc.) — if none, scan ALL infrastructure sectors
-- Any market cap constraint? (Default: >$150B, but user can override)
+**CRITICAL: Phase 1 uses ZERO browser calls. It's pure Python + yfinance. This is where you kill 80% of candidates in under 60 seconds.**
 
-**STEP 1: AUTO-DISCOVER THE UNIVERSE (NEVER hardcoded)**
+### STEP 0: Understand the ask
+- Time horizon? (3m, 6m, 12m, or all three) — default: all three
+- Budget? (Default: 40,000 JOD, 4-6 positions)
+- Sector focus? If none, scan ALL infrastructure sectors (semiconductors, energy, defense, industrials, mining, railways, telecom, etc.)
+- Market cap floor? (Default: >$150B, user can lower for small-cap surge hunting)
 
-**CRITICAL RULE: You NEVER use a hardcoded list of tickers.** You always dynamically discover stocks from live market data. The universe changes every day — market caps shift, new companies enter, old ones drop. Hardcoding is stale analysis.
+### STEP 1: Assemble the ticker universe (Python)
 
-**Discovery pipeline (execute in order):**
+**You NEVER hardcode tickers.** Assemble dynamically:
 
-1. **Pull the >$150B list from companiesmarketcap.com:**
-   ```
-   browser_navigate → https://companiesmarketcap.com/
-   browser_text → extract all tickers + market caps from the ranked table
-   ```
-   This gives you the current mega-cap universe. Parse the table for ticker symbols, names, and market caps. Filter to the top ~100 that exceed the threshold.
+```python
+import yfinance as yf
+import pandas as pd
+import requests
+import re
 
-2. **If a sector is specified, pull sector-specific rankings:**
-   ```
-   browser_navigate → https://companiesmarketcap.com/[sector]/largest-companies-by-market-cap/
-   ```
-   (e.g., `/semiconductors/`, `/energy/`, `/defense/`)
+tickers = set()
 
-3. **Cross-reference with Yahoo Finance screeners for completeness:**
-   ```
-   browser_navigate → https://finance.yahoo.com/screener/predefined/most_actives
-   ```
-   Or use Finviz screener for additional candidates the companiesmarketcap list might miss.
+# Source 1: S&P 500 constituents (covers most US mega-caps)
+try:
+    sp500 = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
+    for t in sp500['Symbol'].tolist():
+        tickers.add(t.replace('.', '-'))  # BRK.B → BRK-B
+except:
+    pass
 
-4. **Filter to infrastructure-relevant sectors** using the INCLUDE/EXCLUDE list from the `infrastructure-moat` skill. Kill consumer brands, pure financials, media, pharma, and insurance.
+# Source 2: NASDAQ-100 (catches big tech that might not be S&P 500)
+try:
+    ndx = pd.read_html('https://en.wikipedia.org/wiki/Nasdaq-100')[4]
+    for t in ndx['Ticker'].tolist():
+        tickers.add(t)
+except:
+    pass
 
-5. **Output the discovered universe as a table:**
-   ```
-   | # | Ticker | Name | Market Cap | Sector |
-   |---|--------|------|-----------|--------|
-   | 1 | NVDA | NVIDIA | $4,718B | Semiconductors |
-   | 2 | SHEL | Shell | $216B | Energy |
-   ... 
-   
-   DISCOVERED: [N] candidates across [X] sectors
-   ```
+# Source 3: International mega-caps (not in US indices but >$150B)
+# These are the usual suspects — but we verify market cap before analyzing
+international = [
+    'SHEL', 'TTE', 'BP', 'EQNR',    # European energy
+    'BHP', 'RIO',                     # Mining
+    'ASML',                            # Dutch semi equipment
+    'TSM',                             # Taiwan semi
+    'TM', 'HMC',                       # Japanese auto
+    'NVO',                             # Danish pharma (SKIP if infra-only)
+    'SAP',                             # German enterprise (SKIP if infra-only)
+    'UL', 'DEO',                       # Consumer (SKIP)
+    'NVS', 'AZN', 'GSK', 'SNY',       # Pharma (SKIP)
+    'HSBC', 'BCS', 'UBS', 'ING',      # Financials (SKIP)
+    'RY', 'TD', 'BNS',                 # Canadian banks (SKIP)
+    'VALE', 'PBR',                     # Brazilian mining/energy
+    'NEE', 'DUK', 'SO',               # US utilities (borderline infra)
+    'E', 'ENI',                         # Italian/Spanish energy
+    'STLA',                             # Stellantis (auto)
+    'RACE',                             # Ferrari (luxury — SKIP)
+    'ABBNY', 'SIEGY',                  # ABB, Siemens (industrial)
+    'RYCEY',                            # Rolls-Royce (aero)
+    'EADSY',                            # Airbus (aero)
+    'BAESY',                            # BAE Systems (defense)
+]
+tickers.update(international)
 
-**If companiesmarketcap.com is unreachable:** Use Brave Search to find "largest companies by market cap 2026" and extract tickers from the results, then use Yahoo Finance to pull the market cap for each to verify >$150B.
+# Source 4: If user asked for a specific sector, add sector-known tickers
+sector_extras = {
+    'defense': ['LMT', 'NOC', 'GD', 'LHX', 'TDG', 'HWM', 'AXON', 'BAESY', 'RYCEY', 'EADSY'],
+    'energy': ['XOM', 'CVX', 'COP', 'EOG', 'PXD', 'OXY', 'SLB', 'HAL', 'BKR', 'LNG', 'KMI', 'WMB', 'ENB', 'TRP'],
+    'mining': ['FCX', 'SCCO', 'NEM', 'GOLD', 'AEM', 'WPM', 'TECK', 'MP'],
+    'semiconductors': ['NVDA', 'AVGO', 'AMD', 'INTC', 'QCOM', 'TXN', 'MU', 'AMAT', 'LRCX', 'KLAC', 'MRVL', 'ADI', 'ON', 'MPWR', 'ARM', 'SNDK'],
+    'industrial': ['CAT', 'DE', 'GE', 'HON', 'ETN', 'PH', 'EMR', 'ROK', 'AME', 'IR', 'ITW', 'CMI', 'PCAR'],
+    'railways': ['UNP', 'CSX', 'NSC', 'CNI', 'CP', 'WAB', 'GBX'],
+}
+if sector_focus and sector_focus in sector_extras:
+    tickers.update(sector_extras[sector_focus])
 
-**If the user DID provide tickers:** Still run them through the discovery pipeline to verify they exist and pull current data. Never assume a ticker is valid — yfinance can return stale/incorrect data for delisted or foreign stocks.
+print(f"Assembled {len(tickers)} candidate tickers")
+```
 
-**STEP 2: Quantitative screen (Layer 1)**
-- Write a Python script that loops through ALL discovered tickers and pulls from yfinance: FCF yield, ROIC, EBITDA margin, PE (trailing + forward), revenue growth YoY, short float %, market cap
-- Score each: 3/3 = PASS, 2/3 = MARGINAL, ≤1/3 = KILL
-- Output the pass/fail table sorted by FCF yield descending
-- **Death Penalty:** Negative FCF or negative ROIC = immediate kill, no exceptions. Flag "N/A" metrics (common for foreign ADRs) but do NOT kill for missing data — note it and proceed cautiously.
-- **Data validation:** If yfinance returns obviously wrong data (market cap off by 1000x, revenue showing in local currency without conversion), flag it and cross-reference with Yahoo Finance via browser before killing.
+### STEP 2: Pull all metrics + filter (Python — NO browser)
 
-**STEP 3: Deep fundamental moat check (Layer 1 continued)**
+Run a single Python script that:
+1. Pulls ALL financial data for ALL tickers via yfinance
+2. Filters to >$150B market cap (drops anything smaller)
+3. Filters OUT non-infrastructure sectors (consumer, financials, media, pharma/healthcare, insurance, luxury)
+4. Scores each on FCF Yield >1.5%, ROIC >15%, EBITDA >15%
+5. Pulls secondary signals: revenue growth, short float, insider %, PE, forward PE
+
+```python
+import yfinance as yf
+import json, time
+
+results = []
+ticker_list = list(tickers)  # from STEP 1
+
+for t in ticker_list:
+    try:
+        stock = yf.Ticker(t)
+        info = stock.info
+        time.sleep(0.2)  # rate limit protection
+        
+        mc = info.get("marketCap")
+        if not mc or mc < 150e9:
+            continue  # skip sub-$150B
+        
+        sector = info.get("sector", "")
+        industry = info.get("industry", "")
+        
+        # Filter OUT non-infrastructure sectors
+        EXCLUDE_SECTORS = [
+            'Financial Services', 'Consumer Defensive', 'Consumer Cyclical',
+            'Communication Services', 'Healthcare', 'Real Estate'
+        ]
+        EXCLUDE_INDUSTRIES = [
+            'Banks', 'Insurance', 'Drug Manufacturers', 'Biotechnology',
+            'Luxury Goods', 'Beverages', 'Tobacco', 'Restaurants',
+            'Internet Content & Information', 'Entertainment', 'Media',
+            'REIT', 'Mortgage', 'Credit Services', 'Capital Markets'
+        ]
+        
+        if sector in EXCLUDE_SECTORS:
+            continue
+        if any(ex in (industry or '') for ex in EXCLUDE_INDUSTRIES):
+            continue
+        
+        fcf = info.get("freeCashflow")
+        ni = info.get("netIncomeToCommon")
+        ebitda = info.get("ebitda")
+        rev = info.get("totalRevenue")
+        debt = info.get("totalDebt") or 0
+        cash = info.get("totalCash") or 0
+        equity = info.get("stockholdersEquity") or info.get("bookValue") or 0
+        pe = info.get("trailingPE")
+        fpe = info.get("forwardPE")
+        rev_growth = info.get("revenueGrowth")
+        short_float = info.get("shortPercentOfFloat")
+        
+        fy = round(fcf / mc * 100, 2) if fcf and mc else None
+        ebitda_m = round(ebitda / rev * 100, 1) if ebitda and rev else None
+        
+        if ni and equity:
+            roic = round(ni / (equity + debt - cash) * 100, 1) if (equity + debt - cash) > 0 else None
+        else:
+            roic = None
+        
+        score = 0
+        if fy and fy > 1.5: score += 1
+        if roic and roic > 15: score += 1
+        if ebitda_m and ebitda_m > 15: score += 1
+        
+        results.append({
+            "ticker": t,
+            "name": info.get("shortName", t),
+            "mcap_B": round(mc/1e9, 1),
+            "fcf_yield": fy,
+            "roic": roic,
+            "ebitda_margin": ebitda_m,
+            "pe": round(pe, 1) if pe else None,
+            "fpe": round(fpe, 1) if fpe else None,
+            "rev_growth": round(rev_growth*100, 1) if rev_growth else None,
+            "short_float": round(short_float*100, 1) if short_float else None,
+            "sector": sector,
+            "industry": industry,
+            "score": score,
+            "verdict": "PASS" if score >= 3 else ("MARGINAL" if score >= 2 else "FAIL")
+        })
+    except:
+        pass
+
+# Sort: PASS first, then by FCF yield
+passed = [r for r in results if r["score"] >= 3]
+marginal = [r for r in results if r["score"] == 2]
+failed = [r for r in results if r["score"] <= 1]
+
+passed.sort(key=lambda x: x.get("fcf_yield") or 0, reverse=True)
+marginal.sort(key=lambda x: x.get("fcf_yield") or 0, reverse=True)
+
+print(f"DISCOVERED + SCREENED: {len(results)} candidates >$150B in infrastructure sectors")
+print(f"✅ PASS (3/3): {len(passed)}")
+print(f"⚠️ MARGINAL (2/3): {len(marginal)}")
+print(f"❌ KILLED (1/3 or less): {len(failed)}")
+
+# Save for Phase 2
+with open("/tmp/surge_candidates.json", "w") as f:
+    json.dump({"passed": passed, "marginal": marginal, "failed": failed}, f, indent=2)
+```
+
+**Output the Phase 1 results table immediately:**
+
+```
+| Ticker | Name | FCF Yld% | ROIC% | EBITDA% | P/E | RevGr% | Shrt% | Score | Verdict |
+|--------|------|----------|-------|---------|-----|--------|-------|-------|---------|
+| SHEL   | Shell | 7.23 | 35.7 | 18.4 | 12.2 | 0.7 | 2.0 | 3/3 | ✅ PASS |
+| ...    | ...   | ...  | ...  | ...   | ... | ...   | ...  | ... | ...     |
+
+KILLED: 47 candidates removed (list top 10 with reasons)
+```
+
+**Data validation during Phase 1:**
+- If yfinance returns `marketCap` in trillions for a company that should be billions (foreign currency issue), flag it: `⚠️ DATA ISSUE — cross-reference needed`
+- If `freeCashflow` or `ebitda` are `None`: mark as `N/A` but do NOT kill
+- If ROIC calculates to >500%: probably bad data — flag, don't rely on it for scoring
+
+**Now Phase 1 is complete.** You have 5-15 survivors. Close the Python script. Phase 2 begins.
+
+---
+
+### 🔍 PHASE 2: QUALITATIVE DEEP DIVE — Browser + Subagents
+
+**Only the survivors from Phase 1 get qualitative analysis. Phase 1 killed 80% of candidates using pure Python. Phase 2 brings in browsers, Brave Search, and @vision — but ONLY for the 5-15 names that earned it.**
+
+### STEP 3: Competitive moat scoring (Browser + Brave Search)
 - For PASS candidates (3/3 and strong 2/3): browser research on competitive moats
 - Score TRL, IP Architecture, Chokepoint for each
 - Flag supply chain risks, customer concentration, geopolitical exposure
