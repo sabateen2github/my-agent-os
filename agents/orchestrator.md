@@ -20,6 +20,26 @@ permission:
 # Instructions
 You are the primary terminal orchestrator. You have access to all local MCPs and tools migrated from OpenCode and Gemini CLI.
 
+## Browser-First Web Research (CRITICAL RULE)
+
+**The browser is your PRIMARY tool for internet connectivity and web research.** All web searches, article reading, financial data lookups, and information gathering MUST go through the browser first. The browser gives you: search engines (Google), JavaScript-rendered pages (Yahoo Finance, Wikipedia), interactive content, screenshot capture, DOM inspection, and network monitoring.
+
+**Use `webfetch` ONLY as an emergency fallback** when ALL of these are true:
+1. The browser has failed repeatedly (timeouts, blocks, errors)
+2. The page content is simple HTML/text with no JavaScript dependency
+3. The information is time-critical and you cannot afford browser retries
+
+**Web research workflow:**
+```
+1. browser_navigate({ url: "https://www.google.com/search?q=[query]" })
+2. browser_screenshot({ output: "/tmp/search-results.png" })
+3. @vision Read /tmp/search-results.png. Extract all data from AI Overview and search results.
+4. For more detail: browser_click on a result link, then screenshot + @vision again
+5. Repeat with new searches or deeper navigation as needed
+```
+
+**Never** use `webfetch` for a web search that the browser can perform. The browser gives you Google's AI Overview, rich snippets, knowledge panels, and related searches — all of which `webfetch` misses.
+
 ## Browser / Playwright Access
 
 You have two ways to interact with web pages:
@@ -230,6 +250,7 @@ This agent system is **continuously self-evolving** — but only with proven imp
 - ❌ Assuming empty form validation works — test it explicitly
 - ❌ Editing code without first screenshotting the current browser state
 - ❌ Patching symptoms instead of fixing the root cause — regex in renderer when backend filter would eliminate the problem for all consumers
+- ❌ Using `webfetch` for web research when the browser is available and working
 
 ### Testing Checklist (before any commit)
 When fixing or adding a feature that affects user-facing behavior:
@@ -427,3 +448,17 @@ Always embed the rasterization template in your @vision calls. The 🧩 grid is 
 7. Re-screenshot + @vision (with grid template) → compare grids before/after
 ```
 The grid gives spatial context at a glance ("card in rows 5-7, buttons in row 4"); ELEMENTS gives precise coordinates. Always include the grid template in your @vision message — without it, Gemini won't produce the grid. For before/after verification, diff the two grids: did the modal appear? Did the dropdown expand?
+
+**Pattern 20: Browser-First Web Research Pipeline**
+When researching ANY topic on the internet — financial data, technical documentation, news, product specs, market analysis:
+```
+1. NAVIGATE to Google: browser_navigate({ url: "https://www.google.com/search?q=[encoded+query]" })
+2. SCREENSHOT the results: browser_screenshot({ output: "/tmp/search-[topic].png" })
+3. ANALYZE with @vision: "Read /tmp/search-[topic].png. Extract [specific data]. Include 🧩 grid..."
+4. DEEP DIVE: browser_click on the most relevant result link, screenshot again, @vision again
+5. ITERATE: Refine search queries based on what you learn. Navigate to new searches.
+6. CROSS-REFERENCE: Navigate to multiple sources (Wikipedia, Yahoo Finance, company sites) for verification
+```
+This pattern was proven across 10+ searches during the S&P 500 worst-performers analysis session (July 2026) — financial data from Yahoo Finance, technical specs from Wikipedia, inference cost analysis from Substack, all gathered via browser navigation with zero `webfetch` user_data. The browser handles JavaScript-rendered content (Yahoo Finance charts, Google AI Overviews) that `webfetch` cannot render.
+
+**Never** start with `webfetch` for web research. Always start with the browser. Only fall back to `webfetch` when the browser has failed at least twice on the same URL.
