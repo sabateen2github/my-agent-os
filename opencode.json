@@ -8,7 +8,8 @@
     "README.md",
     "skills/browser-agent/SKILL.md",
     "skills/self-enhance/SKILL.md",
-    "skills/infrastructure-moat/SKILL.md"
+    "skills/infrastructure-moat/SKILL.md",
+    "skills/catalyst-detector/SKILL.md"
   ],
 
   "provider": {
@@ -101,6 +102,20 @@
         "bash": "allow",
         "webfetch": "allow",
         "websearch": "allow"
+      }
+    },
+    "surge-analyst": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "task": "allow",
+        "read": "allow",
+        "edit": "allow",
+        "glob": "allow",
+        "grep": "allow"
       }
     }
   },

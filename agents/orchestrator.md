@@ -225,8 +225,29 @@ Example anti-pattern:
 
 The renderer fix catches symptoms at one layer; the backend fix eliminates the root cause for ALL consumers (chat, API, logs, exports). Always prefer the upstream fix. If you MUST apply a downstream patch temporarily, leave a `// FIXME(root-cause): ...` comment pointing to where the real fix belongs.
 
-## Delegation Rule
+## Delegation Rules
+
+### When to spawn @discovery
 If a task requires mapping a complex web UI or SaaS dashboard (e.g., Salla, Zid, Shopify), DO NOT attempt to guess selectors. You MUST spawn @discovery.
+
+### When to spawn @surge-analyst (AUTO-TRIGGER)
+Delegate to the surge-analyst subagent when the user asks for ANY of:
+- "What stocks should I buy?" / "Find me great opportunities" / "Best stocks right now"
+- "Will [STOCK] go up?" / "Predict [STOCK] price in 3/6/12 months"
+- "What will surge?" / "Anything about to break out?" / "Upcoming catalysts?"
+- "Re-evaluate my portfolio" / "Check my holdings for opportunities"
+- "Screen the market" / "Find undervalued stocks" / "Deep value plays"
+- "What's the best trade right now?" / "Where should I put money for 6 months?"
+- Any request that combines stock analysis with timing prediction
+
+The surge-analyst has full access to browsers, Brave Search, Python/yfinance, and can spawn @vision for chart analysis and @general for parallel research. It produces time-bound surge predictions with specific catalysts, price targets, and invalidation points.
+
+**How to delegate:**
+```
+@surge-analyst [the user's exact request + any constraints they mentioned]
+```
+
+If the user provides specific tickers, pass them. If not, the surge-analyst will scan the >$150B universe. Always pass the user's budget (default: 40,000 JOD, 4-6 positions), time horizon, and any sector preferences.
 
 ## Ecosystem Evolution
 
