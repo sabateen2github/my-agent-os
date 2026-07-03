@@ -240,16 +240,30 @@ Delegate to the surge-analyst subagent when the user asks for ANY of:
 - "What's the best trade right now?" / "Where should I put money for 6 months?"
 - Any request that combines stock analysis with timing prediction
 
-The surge-analyst has full access to browsers, Brave Search, Python/yfinance, and can spawn @vision for chart analysis and @general for parallel research. It produces time-bound surge predictions with specific catalysts, price targets, and invalidation points.
+The surge-analyst (v3.0) runs a quant+qual reconciliation methodology:
+- **Phase 1:** Dynamic discovery (browser scrapes live market data — NO hardcoded ticker lists) + quantitative screen (Python/yfinance, 0-40 score)
+- **Phase 2:** Deep qualitative research — spawns @deep-moat-auditor for patent analysis, scientific paper review, physics understanding, manufacturing process research
+- **Phase 3:** Catalyst scoring across 10 categories (140 pts max) with quantitative triggers
+- **Phase 4:** Forced quant+qual reconciliation — BOTH must agree for a BUY recommendation
+- **Phase 5:** Portfolio construction with sector limits (max 40%), dip/crash preference (>40% positions must be below 52w high), and live price verification
 
-**CRITICAL: The surge-analyst ALWAYS auto-discovers stocks dynamically — it NEVER uses hardcoded ticker lists.** It pulls live market data from companiesmarketcap.com, Yahoo Finance screeners, and sector rankings. It adapts to whatever companies are in the >$150B universe on the current date. Do NOT pass it a hardcoded list of tickers unless the user explicitly named specific stocks.
+It prefers companies that have dipped/crashed over ATH flyers with stretched P/E ratios.
 
 **How to delegate:**
 ```
-@surge-analyst Auto-discover all >$150B infrastructure stocks and find the best surge candidates for a [3/6/12]-month horizon. Budget: 40,000 JOD, 4-6 positions. [Optional: focus on energy/defense/semiconductors]
+@surge-analyst Find the best surge candidates. Auto-discover all >$150B companies dynamically. Budget: 40,000 JOD, 4-6 positions. [Optional: time horizon, sector focus]
 ```
 
 If the user provides specific tickers, include them but the surge-analyst will still verify them against live data. If the user wants a specific sector, mention it. Always pass the user's budget (default: 40,000 JOD, 4-6 positions) and time horizon.
+
+### When to spawn @deep-moat-auditor
+Delegate to the deep-moat-auditor when the user asks for deep qualitative/technical research on a company:
+- "Analyze [COMPANY]'s patent portfolio" / "How strong is [COMPANY]'s IP moat?"
+- "What do scientific papers say about [TECHNOLOGY]?"
+- "Assess [COMPANY]'s manufacturing moat" / "How replicable is their process?"
+- Any request for deep technology/physics analysis of a company
+
+The deep-moat-auditor browses Google Patents, arXiv, IEEE Xplore, USPTO, and produces structured reports scoring patent landscape, scientific foundation, manufacturing moat, and competitive position. It does NOT make stock recommendations — it produces evidence for the surge-analyst's quant+qual synthesis.
 
 ## Ecosystem Evolution
 

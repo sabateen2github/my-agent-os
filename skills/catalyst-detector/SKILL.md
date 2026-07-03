@@ -1,250 +1,343 @@
 ---
 name: catalyst-detector
-description: PRIMARY screening methodology for identifying stocks poised to surge in 3-6-12 months. v2.0 BACKTEST-VALIDATED: Now runs FIRST (before infrastructure-moat), adds Macro Theme Alignment and Contrarian Timing categories. Covers catalyst types (earnings surprises, technical breakouts, regulatory events, M&A, short squeezes, insider buying, institutional flows, product launches, spin-offs, sector rotation, secular trends, contrarian setups), signal weighting, time-horizon mapping, and red flags.
+description: PRIMARY screening methodology for identifying stocks poised to surge in 3-6-12 months. v3.0: Adds Deep Domain Knowledge category (10th), quantitative scoring triggers, dip/crash preference scoring, and forced quant+qual reconciliation. 10 categories, 140 points max. Runs AFTER quantitative screen and deep-moat-audit.
 license: MIT
 compatibility: opencode
 metadata:
-  version: "2.0"
+  version: "3.0"
   last_updated: "2026-07-03"
-  backtest_results:
-    v1_pass_avg: "+14.9%"
-    v1_fail_avg: "+116.6%"
-    spy: "+22.3%"
-    root_fix: "Catalyst scoring now runs FIRST and is the primary screen. Infrastructure moat is the quality check, not the gate."
-  categories: 9
-  max_score: 125
+  categories: 10
+  max_score: 140
 ---
 
-# Catalyst Detector — Surge Prediction Methodology v2.0
+# Catalyst Detector — Surge Prediction Methodology v3.0
 
-## Philosophy (v2.0 — Backtest-Hardened)
+## Philosophy (v3.0 — Quant+Qual Reconciliation)
 
-**The v1.0 approach was backwards.** We ran infrastructure-moat screening FIRST (value metrics: FCF yield, ROIC, EBITDA margins), then layered catalyst detection on top. The backtest proved this is exactly wrong: the value screen filtered out the best performers.
+**v1.0**: Quality-first. Killed the winners. (-7.4% alpha)
+**v2.0**: Catalyst-first. Fixed the kill problem but created a narrative problem — catalyst scores were subjective, red flags were acknowledged but ignored, and qualitative research was headline-deep.
+**v3.0**: Quant+Qual Reconciliation. The quantitative screen finds candidates. The qualitative deep-moat-audit validates the moat. The catalyst scoring bridges them. A recommendation requires ALL THREE to agree.
 
-**v2.0 Philosophy:** Catalysts are the ENGINE of stock surges. Quality metrics are the AIRBAG — they protect you from blowups but don't predict acceleration. The surge hunter must identify WHERE the energy is building BEFORE it releases, not after.
+**Core principles:**
+1. Quantitative signals set the baseline (Phase 1 — Python/yfinance)
+2. Deep qualitative research validates the moat (Phase 2 — deep-moat-auditor)
+3. Catalyst scoring grades the surge potential (Phase 3 — 10 categories)
+4. Reconciliation forces agreement (Phase 4 — converge or kill)
 
-**Core insight from backtest:** The biggest surge candidates (semiconductors in the AI supercycle) had LOW FCF yield because they were REINVESTING for hypergrowth. The market rewarded growth trajectory, not current cash generation. A stock with 0.8% FCF yield growing 50% YoY is a BETTER surge candidate than a stock with 2.5% FCF yield growing 3%.
-
-**What actually drives surges:**
-1. **Secular trend alignment** (the tide lifting all boats — #1 missing piece in v1.0)
-2. **Fundamental acceleration** (revenue/FCF growth inflecting upward)
+**What actually drives surges (expanded v3.0):**
+1. **Quantitative acceleration** (revenue/FCF growth inflecting upward — measurable, not subjective)
+2. **Qualitative moat depth** (patents, scientific papers, physics constraints — researched, not assumed)
 3. **Catalyst density** (multiple events forcing repricing within 3-12 months)
-4. **Contrarian timing** (buying when hated, selling when loved)
+4. **Contrarian timing** (buying dips/crashes, not ATHs — asymmetric upside)
+5. **Secular trend alignment** (the tide lifting all boats)
 
-**Value investing tells you WHAT to buy. Catalyst detection tells you WHEN. v2.0 runs catalyst detection FIRST.**
+## The 10 Catalyst Categories (v3.0 — expanded from 9)
 
-## The 9 Catalyst Categories (v2.0 — expanded from 7)
+### 0. 🌊 MACRO THEME ALIGNMENT (15 points)
 
-### 0. 🌊 MACRO THEME ALIGNMENT (3-12 month horizon) — NEW in v2.0
-
-**This is the #1 missing piece from v1.0.** Secular mega-trends create a rising tide that lifts even mediocre boats. Stocks aligned with dominant macro themes get multiple expansion, analyst upgrades, and institutional flows simply from sector exposure.
+Secular mega-trends create a rising tide. Stocks aligned with dominant macro themes get multiple expansion, analyst upgrades, and institutional flows simply from sector exposure.
 
 | Signal | How to Detect | Weight |
 |--------|--------------|--------|
 | **AI Infrastructure Beneficiary** | Company sells into data center, networking, or AI silicon supply chains. Revenue from AI/DC growing >30% YoY. | VERY HIGH |
 | **Electrification / Grid Buildout** | Electrical equipment, transformers, switchgear. Backlog growing >20% YoY. | HIGH |
-| **Reshoring / Industrial Renaissance** | US manufacturing, construction, automation. Benefiting from CHIPS Act, IRA, defense spending. | HIGH |
-| **Defense Supercycle** | NATO spending at Cold War levels. Defense contractors with multi-year backlogs. | HIGH |
+| **Defense / Rearmament** | NATO spending at Cold War levels. Defense contractors with multi-year backlogs. | HIGH |
 | **Energy Security** | LNG, pipelines, gas processing. European energy decoupling is structural. | MEDIUM |
+| **Reshoring / Industrial Renaissance** | US manufacturing, construction, automation. Benefiting from CHIPS Act, IRA. | HIGH |
+| **Nuclear Renaissance** | SMR deployment, uranium, nuclear services. AI data centers driving baseload demand. | HIGH |
 | **Contrarian: Sector Out of Favor** | Sector trading at 10-year low P/E but fundamentals improving. Rotation candidate. | HIGH |
 
-**Detection method:**
-- **CRITICAL: Identify dominant macro themes BEFORE screening individual stocks.**
-- Browser: Yahoo Finance → Sector performance → which sectors are leading/rebounding?
-- Search: `"hyperscaler CapEx 2026"` → how much are MSFT/GOOG/AMZN/META spending on AI infra?
-- Search: `"grid investment 2026 forecast"` → what's the TAM for electrical infrastructure?
-- Search: `"[SECTOR] sector rotation 2026"` → which sectors are analysts rotating into?
-- Use yfinance to check sector ETF performance (XLK, XLE, XLI, XLB, etc.)
-
 **Scoring:** 0-15 points
-- 15: Core beneficiary of the dominant macro theme with >30% revenue exposure
-- 10: Secondary beneficiary, indirect exposure
-- 5: Weak thematic alignment
-- 0: No macro theme — stock must win on idiosyncratic catalysts alone
+- 15: Core beneficiary with >30% revenue exposure, VERIFIED by segment reporting
+- 10: Secondary beneficiary, indirect but confirmed exposure
+- 5: Weak or unverified thematic alignment
+- 0: No macro theme — must win on idiosyncratic catalysts alone
+
+**Detection method:**
+- Identify dominant macro themes BEFORE screening stocks (Phase 1, Step 0)
+- Browser: Yahoo Finance → Sector performance → which sectors are leading/rebounding?
+- Brave Search: "hyperscaler CapEx 2026", "grid investment 2026 forecast", "NATO defense spending 2026"
+- Use yfinance to check sector ETF performance (XLK, XLE, XLI, XLB, etc.)
+- Verify theme alignment through company segment reporting, NOT assumptions
 
 ---
 
-### 1. 🧮 FUNDAMENTAL SURPRISE CATALYSTS (3-6 month horizon)
+### 1. 🧮 FUNDAMENTAL SURPRISE CATALYSTS (20 points)
 
-These are the most reliable — the market consistently underestimates earnings power. **v2.0 adds growth trajectory metrics.**
+**v3.0: QUANTITATIVE TRIGGERS.** No more subjective "revenue is growing nicely" → give it 15 points. Specific thresholds auto-score:
 
-| Signal | How to Detect | Weight |
-|--------|--------------|--------|
-| **Revenue acceleration** | Revenue growth rate INCREASING QoQ for 2+ quarters (the derivative matters more than the level) | VERY HIGH |
-| **FCF trajectory inflection** | FCF transitioning from negative to positive, OR FCF growth accelerating >20% QoQ | VERY HIGH |
-| **Earnings acceleration** | EPS growth rate increasing QoQ for 2+ quarters | HIGH |
-| **Margin expansion surprise** | Operating/EBITDA margins expanding faster than consensus expects | HIGH |
-| **Guidance raise pattern** | Company raised guidance 2+ quarters in a row — analysts lagging | HIGH |
-| **Return of capital surprise** | Initiated/increased buyback or dividend unexpectedly | MEDIUM |
+| Signal | Auto-Score | How to Verify |
+|--------|-----------|---------------|
+| Revenue growth >50% YoY | 10 pts | `info.get("revenueGrowth")` > 0.50 |
+| Revenue growth >30% YoY | 8 pts | `info.get("revenueGrowth")` > 0.30 |
+| Revenue growth >15% YoY | 5 pts | `info.get("revenueGrowth")` > 0.15 |
+| Revenue growth >5% YoY | 3 pts | `info.get("revenueGrowth")` > 0.05 |
+| Revenue ACCELERATING QoQ (growth rate increasing) | +3 pts | Compare quarterly revenue: (Q1-Q2)/Q2 > (Q3-Q4)/Q4 |
+| Earnings growth > Revenue growth (operating leverage) | +3 pts | `earningsGrowth` > `revenueGrowth` |
+| 3+ consecutive quarters beating estimates | +2 pts | Yahoo Finance → Earnings History → beat pattern |
+| FCF trajectory inflecting positive | +2 pts | FCF was negative 2Q ago, now positive |
+| Revenue DECELERATING 3+ quarters | -5 pts | Growth rate declining QoQ for 3+ quarters — growth story broken |
+| **MAX: 20 pts** (can't exceed even if all triggers hit) | | |
 
-**Detection method:**
-- Pull last 4-6 quarters of revenue, EBITDA, FCF via yfinance
-- Compare QoQ growth rates — **inflection points are the signal, not absolute levels**
-- A company growing revenue at 5% QoQ but ACCELERATING from 2% last quarter is MORE interesting than one growing at 10% but decelerating from 15%
-- Check analyst estimates (Yahoo Finance → Analysis tab) vs actuals — gap = opportunity
-- Search: `"[TICKER] earnings surprise 2026"` for recent beat/miss pattern
-- **FCF inflection check:** Is FCF negative now but tracking to positive within 2 quarters? If yes → VERY HIGH signal
-
-### 2. 📈 TECHNICAL / CHART CATALYSTS (1-6 month horizon)
-
-Chart patterns that historically precede breakouts.
-
-| Signal | How to Detect | Weight |
-|--------|--------------|--------|
-| **Golden cross** | 50-day MA crossing above 200-day MA | HIGH |
-| **Volume surge on breakout** | Price breaking resistance with 2x+ normal volume | HIGH |
-| **Cup & handle formation** | U-shaped recovery + consolidation on weekly chart | MEDIUM |
-| **RSI oversold reversal** | RSI < 30, then bouncing with volume | MEDIUM |
-| **Short interest > 20% float** + price stabilizing | Squeeze setup | VERY HIGH |
-| **Institutional accumulation** | Rising price on above-average volume for 4+ weeks | HIGH |
+**v3.0 distinction:** "Revenue growing at 50% but decelerating from 80% last quarter" scores lower than "Revenue growing at 20% but accelerating from 10%." Acceleration > absolute level.
 
 **Detection method:**
-- **CRITICAL: Use @vision subagent for ALL chart analysis.** You cannot see images.
+- Pull last 4-6 quarters via `stock.quarterly_financials`
+- Compute QoQ growth rates — the derivative matters more than the level
+- Check analyst estimates (Yahoo Finance → Analysis tab) vs actuals
+- Brave Search: `"[TICKER] earnings surprise 2026"` for beat/miss pattern
+- **FCF inflection check:** Is FCF negative now but tracking to positive within 2 quarters? → +2 pts
+
+---
+
+### 2. 📈 TECHNICAL / CHART CATALYSTS (15 points)
+
+**MUST use @vision for ALL chart analysis.** You cannot see images.
+
+| Signal | Auto-Score | How to Detect |
+|--------|-----------|---------------|
+| @vision chart score (0-8) | 0-8 pts | Screenshot Yahoo Finance 1Y chart → @vision: "Analyze this chart. Trend, support/resistance, volume, MA crossovers, RSI/MACD. Score the bullish setup 0-8." |
+| Short float >30% of float | +7 pts | `info.get("shortPercentOfFloat")` > 0.30 |
+| Short float >20% of float | +5 pts | `info.get("shortPercentOfFloat")` > 0.20 |
+| Short float >10% of float | +2 pts | `info.get("shortPercentOfFloat")` > 0.10 |
+| **MAX: 15 pts** | | |
+
+**Detection:**
 - Navigate browser to Yahoo Finance → ticker → Full Screen Chart → 1Y view
-- Screenshot → `@vision Analyze this chart. Identify: trend direction, support/resistance levels, volume patterns, moving average crossovers, RSI/MACD signals. Is there a breakout setup?`
-- Also check: Finviz, TradingView, StockCharts via browser for multi-timeframe analysis
-- For short squeeze candidates: check `info.get("shortPercentOfFloat")` via yfinance
+- Screenshot → `@vision Analyze this chart. Identify: trend direction, support/resistance levels, volume patterns, moving average crossovers, RSI/MACD signals. Is there a breakout setup? Score 0-8.`
+- For short squeeze candidates: yfinance `info.get("shortPercentOfFloat")` and `info.get("shortRatio")`
 
-### 3. 🏛️ REGULATORY / POLICY CATALYSTS (3-12 month horizon)
+---
 
-Government action can reprice entire sectors overnight.
+### 3. 🏛️ REGULATORY / POLICY CATALYSTS (15 points)
 
-| Signal | How to Detect | Weight |
-|--------|--------------|--------|
-| **FDA approval / Phase 3 results** | PDUFA dates, clinical trial readout calendars | VERY HIGH |
-| **Export control changes** | BIS rule changes, CHIPS Act funding announcements | HIGH |
-| **Antitrust resolution** | DOJ/FTC case resolution, merger clearance | HIGH |
-| **Tax policy shifts** | Corporate tax rate changes, investment tax credits | MEDIUM |
-| **Defense contract awards** | DoD announcements, NATO procurement | HIGH |
-| **Energy policy / permitting reform** | Pipeline approvals, drilling permits, LNG export licenses | HIGH |
-
-**Detection method:**
-- Search: `"[TICKER] FDA approval date 2026"` or `"[TICKER] regulatory catalyst 2026"`
-- Search: `"[TICKER] CHIPS Act grant award"` for semiconductor companies
-- Search: `"[TICKER] defense contract award 2026"`
-- For energy: monitor DOE export license approvals, FERC permits
-- Check company investor presentations for regulatory timelines
-
-### 4. 🤝 M&A / CORPORATE ACTION CATALYSTS (3-12 month horizon)
-
-| Signal | How to Detect | Weight |
-|--------|--------------|--------|
-| **Spin-off announcement** | Company splitting into 2+ entities | VERY HIGH |
-| **Activist investor involvement** | 13D filing, activist letter to management | HIGH |
-| **Strategic review announced** | Company exploring "strategic alternatives" | HIGH |
-| **M&A target speculation** | Industry consolidation wave, peer acquisitions | MEDIUM |
-| **ADR → ordinary share conversion** | Moving primary listing to US (TotalEnergies pattern) | MEDIUM |
+| Signal | Auto-Score | How to Detect |
+|--------|-----------|---------------|
+| FDA approval / Phase 3 results with CONFIRMED PDUFA date | 10 pts | FDA calendar, company guidance |
+| Export control / CHIPS Act / IRA award with CONFIRMED ANNOUNCEMENT | 10 pts | Government press releases |
+| Defense contract award >$1B | 10 pts | DoD announcements |
+| Energy permit / license approval | 8 pts | DOE, FERC announcements |
+| Regulatory event EXPECTED but no confirmed date | 5 pts | Analyst reports, company guidance |
+| Export control or tariff RISK exposure | -3 pts | Geographic revenue breakdown, supply chain analysis |
+| **MAX: 15 pts** | | |
 
 **Detection method:**
-- Search: `"[TICKER] activist investor 2026"` or `"[TICKER] spin-off 2026"`
-- Search: `"[TICKER] strategic alternatives"` or `"[TICKER] merger talks"`
-- Check WhaleWisdom / Dataroma for hedge fund 13F filings
-- Monitor: Wall Street Journal, Bloomberg, Reuters deal reporters
+- Brave Search: `"[TICKER] FDA approval date 2026"`, `"[TICKER] CHIPS Act grant award"`, `"[TICKER] defense contract 2026"`
+- Browser: SEC EDGAR → risk factors section for regulatory exposure
+- Company IR page → investor presentation → regulatory timeline slides
 
-### 5. 💰 INSIDER / SMART MONEY FLOW (1-6 month horizon)
+---
 
-Follow the people who know the business best.
+### 4. 🤝 M&A / CORPORATE ACTION CATALYSTS (15 points)
 
-| Signal | How to Detect | Weight |
-|--------|--------------|--------|
-| **CEO/CFO buying cluster** | 3+ insiders buying within 30 days | VERY HIGH |
-| **Institutional accumulation** | 13F filings showing new/increased positions | HIGH |
-| **Share buyback acceleration** | Company repurchasing shares at elevated pace | MEDIUM |
-| **Insider selling absence** | Zero insider sales during stock weakness | MEDIUM |
+| Signal | Auto-Score | How to Detect |
+|--------|-----------|---------------|
+| Spin-off announcement (confirmed by company) | 15 pts | Company press release, 8-K filing |
+| Activist investor with 13D filing | 12 pts | SEC EDGAR 13D filing |
+| Strategic review announced by company | 10 pts | Company press release |
+| M&A target speculation (analyst chatter, media reports) | 5 pts | Financial media |
+| No M&A catalyst | 0 pts | |
+| **MAX: 15 pts** | | |
 
 **Detection method:**
-- Search: `"[TICKER] insider buying 2026"` 
-- OpenInsider.com via browser — check recent cluster buys
-- Search: `"[TICKER] share buyback program 2026"`
-- For institutional: WhaleWisdom, Dataroma, or search `"[TICKER] hedge fund position 2026"`
+- Brave Search: `"[TICKER] activist investor 2026"`, `"[TICKER] spin-off announcement"`
+- Brave Search: `"[TICKER] strategic alternatives"`, `"[TICKER] merger talks"`
+- Browser: SEC EDGAR → 13D, 13F filings
+- Browser: Dataroma / WhaleWisdom for hedge fund 13F filings
 
-### 6. 📡 SENTIMENT / NARRATIVE CATALYSTS (1-3 month horizon)
+---
 
-When the story changes, the multiple changes.
+### 5. 💰 INSIDER / SMART MONEY FLOW (10 points — v3.0 STRICTER)
 
-| Signal | How to Detect | Weight |
-|--------|--------------|--------|
-| **Analyst upgrade cluster** | 3+ analyst upgrades in 2 weeks | HIGH |
-| **Short report debunked** | Short thesis proven wrong by earnings/data | HIGH |
-| **Index inclusion** | Added to S&P 500, NASDAQ-100, or major ETF | HIGH |
-| **Media narrative shift** | Positive coverage replacing negative coverage | MEDIUM |
-| **Conference presentation catalyst** | Major product reveal at industry conference | MEDIUM |
-| **Short interest decline** | Shorts covering without price rising much — coiled spring | HIGH |
+**v3.0: Insider selling is PENALIZED, not noted. Red flags are enforced.**
+
+| Signal | Auto-Score | How to Detect |
+|--------|-----------|---------------|
+| 3+ insiders BUYING within 30 days | 10 pts | OpenInsider.com → cluster buys |
+| 1-2 insiders buying within 30 days | 6 pts | OpenInsider.com |
+| No buying, no selling | 4 pts (neutral) | OpenInsider.com |
+| ANY insider selling (even 10b5-1 plan) | 0 pts | OpenInsider.com |
+| Cluster selling >$5M in 90 days | -5 pts PENALTY | OpenInsider.com → significant sales |
+| Sell/buy ratio >10:1 | -3 pts PENALTY | Count transactions |
+| CEO/CFO selling | additional -2 pts | Check role of sellers |
+| **MAX: 10 pts, MIN: -10 pts** | | |
+
+**v3.0 rule:** Insider selling is NOT a "yellow flag to note and ignore." It DEDUCTS from the total catalyst score. If AVGO insiders sold $30M, that's -5 points from whatever else AVGO scores. This prevents v2.0's "great catalysts but insiders are fleeing" paradox.
+
+**Detection method:**
+- Browser: OpenInsider.com → search ticker → screenshot cluster buys/sells
+- Browser: SEC EDGAR → Form 4 filings (insider transactions)
+- Brave Search: `"[TICKER] insider buying 2026"`, `"[TICKER] insider selling cluster"`
+
+---
+
+### 6. 📡 SENTIMENT / NARRATIVE CATALYSTS (15 points)
+
+| Signal | Auto-Score | How to Detect |
+|--------|-----------|---------------|
+| 3+ analyst upgrades in 2 weeks | 10 pts | Yahoo Finance → Analysis → Ratings trend |
+| 1-2 analyst upgrades in 2 weeks | 5 pts | Yahoo Finance |
+| Short interest declining >20% while price is flat (shorts trapped) | 8 pts | yfinance short float trend + price chart |
+| Consensus PT >20% above current price | +3 pts | `info.get("targetMeanPrice")` / `currentPrice` > 1.20 |
+| Stock ABOVE consensus analyst price target | -5 pts | `currentPrice` > `targetMeanPrice` |
+| **MAX: 15 pts, MIN: -5 pts** | | |
 
 **Detection method:**
 - Browser: Yahoo Finance → ticker → Analysis tab → analyst ratings trend
-- Search: `"[TICKER] analyst upgrade 2026"`
-- Search: `"[TICKER] short report"` or `"[TICKER] short interest"`
-- Check short interest trend: yfinance `info.get("shortPercentOfFloat")` and `info.get("shortRatio")`
-- Reddit: `"[TICKER] reddit wallstreetbets"` for retail sentiment spike
+- Brave Search: `"[TICKER] analyst upgrade 2026"`, `"[TICKER] price target raised"`
+- yfinance: `info.get("targetMeanPrice")`, `info.get("targetHighPrice")`, `info.get("targetLowPrice")`
+- Brave Search: `"[TICKER] short interest trend"`
 
-### 7. 📅 CALENDAR CATALYSTS (Known Dates That Move Stocks)
+---
 
-| Signal | How to Detect | Weight |
-|--------|--------------|--------|
-| **Earnings date** | Quarterly earnings announcement | VERY HIGH |
-| **Investor day / Analyst day** | Company hosting multi-hour strategy presentation | HIGH |
-| **Product launch event** | Apple keynote, Tesla AI Day, NVIDIA GTC equivalent | HIGH |
-| **Options expiration** | Monthly/quarterly OPEX — gamma/short-delta effects | LOW |
-| **Index rebalancing** | S&P/NASDAQ quarterly rebalance | MEDIUM |
-| **Tax-loss harvesting reversal** | January effect for beaten-down stocks | LOW |
+### 7. 📅 CALENDAR CATALYSTS (10 points)
+
+| Signal | Auto-Score | How to Detect |
+|--------|-----------|---------------|
+| Earnings within 30 days | 10 pts | Yahoo Finance → Earnings tab |
+| Earnings within 60 days | 7 pts | Yahoo Finance |
+| Investor day / Analyst day confirmed | 8 pts | Company IR website → Events |
+| Product launch event confirmed | 8 pts | Company press releases |
+| Index rebalancing (S&P/NASDAQ) | 5 pts | Index provider announcements |
+| No calendar event within 90 days | 0 pts | |
+| **MAX: 10 pts** | | |
 
 **Detection method:**
 - Yahoo Finance → ticker → earnings tab → next earnings date
 - Company IR website → events calendar
-- Search: `"[TICKER] investor day 2026"` or `"[TICKER] product launch 2026"`
+- Brave Search: `"[TICKER] investor day 2026"`, `"[TICKER] product launch date 2026"`
 
-### 8. 🎯 CONTRARIAN TIMING / DEEP VALUE SETUP (3-12 month horizon) — NEW in v2.0
+---
 
-The biggest surges often come from stocks the market has given up on — but where fundamentals are quietly improving. This category captures mean-reversion and "hated stock, improving business" setups.
+### 8. 🎯 CONTRARIAN / DIP SETUP (10 points — v3.0 ENHANCED)
 
-| Signal | How to Detect | Weight |
-|--------|--------------|--------|
-| **Sector out of favor + fundamentals improving** | Stock in worst-performing sector (bottom 3 of 11) BUT revenue/earnings growth accelerating | VERY HIGH |
-| **Post-earnings pullback on non-structural news** | Stock drops >20% on earnings but the miss was one-time (derivative timing, FX, weather) | VERY HIGH |
-| **52-week low + insider buying** | Stock near 52-week low AND 3+ insiders buying within 30 days | VERY HIGH |
-| **Analyst capitulation** | >50% of analysts downgraded in past 3 months, but company just beat estimates | HIGH |
-| **Short interest spike + price stabilizing** | Short interest increased >50% but price stopped falling — shorts trapped | HIGH |
-| **Valuation anomaly** | Stock trading at 5-year low P/E, P/B, or EV/EBITDA despite stable/improving business | MEDIUM |
-| **Neglected mega-cap** | $150B+ company with <15 analyst coverage (underfollowed = mispricing opportunity) | MEDIUM |
+**v3.0: This category now explicitly prefers dip/crash candidates over ATH flyers.**
 
-**Detection method:**
-- Browser: Yahoo Finance → ticker → Statistics tab → 52-week range
-- Search: `"[TICKER] 52-week low"` or `"[TICKER] analyst downgrade 2026"`
-- Check short interest: `info.get("shortPercentOfFloat")` and `info.get("shortRatio")` via yfinance
-- Browser: Finviz screener → "52-week low" filter + "insider buying"
-- Search: `"[TICKER] worst performing sector 2026"`
-- Check if the bad news is STRUCTURAL (business model broken) or TEMPORARY (one-time charges, cycle timing, acquisition noise)
+| Signal | Auto-Score | How to Detect |
+|--------|-----------|---------------|
+| Stock >25% below 52-week high AND revenue growth >5% AND FCF improving | 10 pts | Compare current price to `fiftyTwoWeekHigh`; verify rev growth and FCF trajectory |
+| Stock >25% below 52-week high AND insider buying detected | 10 pts | Same + OpenInsider check |
+| Stock >15% below 52-week high AND fundamentals improving | 8 pts | Price vs 52w high + growth check |
+| Sector in bottom 3 of 11 by YTD performance, company beat last 2 quarters | 8 pts | Sector ETF ranking + earnings history |
+| Stock at 52-week low + 3+ insiders buying | 10 pts | 52w low check + OpenInsider |
+| Post-earnings crash >15% on NON-STRUCTURAL issue | 8 pts | Check earnings date vs price drop; verify if issue is one-time |
+| Stock at ATH with P/E >2x industry average | -5 pts PENALTY | `trailingPE` vs sector median PE |
+| Stock up >100% in 12 months with NO earnings growth | -10 pts PENALTY | Price return vs earnings growth |
+| **MAX: 10 pts, MIN: -10 pts** | | |
 
 **CRITICAL DISTINCTION — Contrarian vs. Value Trap:**
-- ✅ **Contrarian:** Temporary headwinds, fixing itself in 3-12 months. Business IS improving but the market doesn't see it yet.
-- ❌ **Value Trap:** Structural decline, management in denial. Stock is cheap for a reason that won't change.
+- ✅ **Contrarian:** Temporary headwinds, fixing itself in 3-12 months. Business IS improving but the market doesn't see it yet. VERIFY with quantitative data.
+- ❌ **Value Trap:** Structural decline, management in denial. Stock is cheap for a reason that won't change. If you can't articulate the SPECIFIC catalyst → kill it.
 
-If you can't articulate the SPECIFIC catalyst that will change the narrative within 12 months → it's a value trap, not a contrarian play. Kill it.
+**Detection method:**
+- yfinance: `info.get("fiftyTwoWeekHigh")`, `info.get("fiftyTwoWeekLow")`, current price comparison
+- Browser: Finviz screener → "52-week low" filter + "insider buying"
+- Brave Search: `"[TICKER] worst performing sector YTD 2026"`
+- Check if the bad news is STRUCTURAL (business model broken) or TEMPORARY (one-time charges, cycle timing)
 
-| # | Category | Max Points | Score | Rationale |
-|---|----------|-----------|-------|-----------|
-| 0 | **Macro Theme Alignment** | 15 | ? | [Secular trend + revenue exposure evidence] |
-| 1 | **Fundamental Surprise** | 20 | ? | [Revenue/FCF acceleration, margin expansion, guidance pattern] |
-| 2 | **Technical Breakout** | 15 | ? | [Chart pattern + @vision confirmation] |
-| 3 | **Regulatory/Policy** | 15 | ? | [Specific event + date] |
-| 4 | **M&A/Corporate Action** | 15 | ? | [Spin-off, activist, or merger signal] |
-| 5 | **Insider/Smart Money** | 10 | ? | [Recent buying patterns] |
-| 6 | **Sentiment/Narrative** | 15 | ? | [Analyst upgrades, media shift] |
-| 7 | **Calendar Event** | 10 | ? | [Known dates that force repricing] |
-| 8 | **Contrarian Timing** | 10 | ? | [Hated stock, improving fundamentals, temporary vs structural] |
-| | **TOTAL** | **125** | **?** | |
+---
 
-### Conviction Thresholds (v2.0 — adjusted for 9 categories / 125 max):
-- **100+ points:** 🟢 HIGH CONVICTION — Multiple strong catalysts across categories, dominant macro theme, clear timeline
-- **80-99 points:** 🟡 MEDIUM CONVICTION — Good catalysts but some uncertainty on timing or magnitude
-- **60-79 points:** 🟠 LOW CONVICTION — Interesting but insufficient catalyst density; size position smaller
-- **<60 points:** 🔴 NO SURGE THESIS — Avoid unless dividend/income play
+### 9. 🔬 DEEP DOMAIN KNOWLEDGE (15 points — NEW in v3.0)
 
-### v2.0 Weighting Note:
-The new categories (0: Macro Theme, 8: Contrarian Timing) redistribute weight. A stock that scores 0 on Category 0 (no macro theme) needs 80+ from the remaining 8 categories to hit medium conviction — it can still qualify, but must work harder. This correctly biases the system toward secular trend beneficiaries while allowing idiosyncratic winners through.
+**This category did not exist in v2.0.** It is scored ENTIRELY from the @deep-moat-auditor's research report. The qualitative deep-dive on patents, scientific papers, physics, and manufacturing processes feeds directly into this category.
 
-## Time Horizon Mapping (v2.0)
+| Signal | Auto-Score | Source |
+|--------|-----------|--------|
+| Deep-moat-auditor score 30-40/40 | 15 pts | deep-moat-auditor report: "10+ year durable moat with physics-level barriers" |
+| Deep-moat-auditor score 20-29/40 | 10 pts | deep-moat-auditor report: "Moderate 3-7 year moat, mostly process/scale" |
+| Deep-moat-auditor score 10-19/40 | 5 pts | deep-moat-auditor report: "Weak moat, short duration, limited IP" |
+| Deep-moat-auditor score <10/40 | 0 pts | deep-moat-auditor report: "No durable moat — commodity business" |
+| NO deep-moat-audit performed | 0 pts | Must do the research to score this category |
+| **MAX: 15 pts** | | |
+
+**The deep-moat-auditor researches:**
+1. **Patent Landscape:** Core patents, expiration dates, citation networks, competitive circumvention
+2. **Scientific Foundation:** Seminal papers, physics soundness, physical limits, disruption risk from new research
+3. **Manufacturing Moat:** Process complexity, equipment dependencies, replication cost, raw material control
+4. **Competitive Position:** Technology leadership vs peers, startup threats, customer lock-in depth
+
+A full deep-moat-audit is MANDATORY for any stock receiving a BUY recommendation. Without it, the qualitative half of the quant+qual reconciliation is missing.
+
+---
+
+## Complete Scoring Table (v3.0)
+
+| # | Category | Max Points | Scoring Method |
+|---|----------|-----------|----------------|
+| 0 | Macro Theme Alignment | 15 | Qualitative + verified segment revenue |
+| 1 | Fundamental Surprise | 20 | **QUANTITATIVE TRIGGERS** (see table above) |
+| 2 | Technical / Chart | 15 | @vision (0-8) + short float bonus (0-7) |
+| 3 | Regulatory / Policy | 15 | Event + date verification |
+| 4 | M&A / Corporate Action | 15 | Filing-verified signals |
+| 5 | Insider / Smart Money | 10 | **STRICT: Selling = 0 or negative** |
+| 6 | Sentiment / Narrative | 15 | Analyst upgrades + short interest + target price |
+| 7 | Calendar Event | 10 | Date proximity |
+| 8 | Contrarian / Dip Setup | 10 | **PENALTY for ATH/P/E extremes** |
+| 9 | Deep Domain Knowledge 🔬 | 15 | deep-moat-auditor score (patents, papers, physics) |
+| | **TOTAL** | **140** | |
+
+## v3.0 Conviction Thresholds
+
+| Score | Conviction | Action |
+|-------|-----------|--------|
+| **120-140** | 🟢 VERY HIGH | Quant + Qual + Catalysts all aligned. Maximum conviction. |
+| **100-119** | 🟢 HIGH | Strong across multiple categories. Confident. |
+| **80-99** | 🟡 MEDIUM | Good but some uncertainty. Size moderately. |
+| **60-79** | 🟠 LOW | Interesting but insufficient evidence. Half size or tracker. |
+| **<60** | 🔴 NO SURGE THESIS | Skip entirely. Don't fabricate weak theses. |
+| **<0** | 🔴 RED FLAG OVERLOAD | Insider selling + overbought + deceleration = actively avoid |
+
+## Red Flags — WITH ENFORCED PENALTIES (v3.0)
+
+v2.0 listed red flags but didn't enforce them. v3.0 embeds penalties directly in the scoring:
+
+| Red Flag | Penalty | Category Affected | Why |
+|----------|---------|-------------------|-----|
+| Insider selling cluster (>$5M in 90 days) | -5 pts | Category 5 | The people who know best are getting out |
+| Stock at ATH with P/E >2x industry | -5 pts | Category 8 | Priced for perfection — asymmetric downside |
+| Stock up >100% in 12 months, no earnings growth | -10 pts | Category 8 | Pure momentum, no fundamentals |
+| Revenue deceleration 3+ quarters | -5 pts | Category 1 | Growth story broken — value trap forming |
+| Stock ABOVE all analyst PTs | -5 pts | Category 6 | No Street support — limited upside |
+| Sell/buy ratio >10:1 | -3 pts | Category 5 | Insiders systematically exiting |
+| CEO/CFO selling | -2 pts | Category 5 | Leadership reducing exposure |
+| Export control / tariff risk | -3 pts | Category 3 | Regulatory binary risk |
+| Major customer loss (>20% revenue) | -10 pts | Automatic KILL | Thesis broken |
+| SEC investigation / accounting concerns | -15 pts | Automatic KILL | Existential risk |
+
+**v3.0 enforcement rule:** If a stock triggers 3+ red flags, automatically remove from consideration regardless of other scores. Don't try to rationalize a "good company with some concerns" — 3+ red flags = something is wrong.
+
+## Integration with Infrastructure Moat SOP (v3.0)
+
+The v3.0 sequence:
+```
+1. DYNAMIC DISCOVERY → Live market data (browser, NOT hardcoded)
+         ↓
+2. QUANTITATIVE SCREEN → Python/yfinance → score 0-40 → top 20-30 advance
+         ↓
+3. DEEP MOAT AUDIT → @deep-moat-auditor for top 10-15 → moat score 0-40
+         ↓
+4. CATALYST DETECTION → 10 categories, 140 pts → quant triggers + qual research
+         ↓
+5. QUANT+QUAL RECONCILIATION → Both must agree → kill divergents
+         ↓
+6. PORTFOLIO CONSTRUCTION → Position sizing, sector limits, dip preference, price verification
+```
+
+## Position Sizing Rules (v3.0):
+
+| Quant Score | Qual Score | Catalyst Score | Max Position | Label |
+|-------------|------------|----------------|-------------|-------|
+| >30/40 | >30/40 | 120+ | 22% | FULL |
+| >30/40 | >25/40 | 100-119 | 18% | FULL |
+| >25/40 | >25/40 | 80-99 | 15% | STANDARD |
+| >25/40 | >20/40 | 80-99 | 12% | MODERATE |
+| >20/40 | >15/40 | 60-79 | 8% | HALF |
+| <20/40 | Any | <60 | 0% | PASS |
+
+**Sector Limits:** Max 40% per sector. Min 3 sectors in 5+ position portfolio.
+**Dip Preference:** At least 40% of positions must be in dip/crash candidates (>10% below 52w high).
+
+## Time Horizon Mapping
 
 | Catalyst Type | Typical Time to Price Impact |
 |--------------|------------------------------|
@@ -260,66 +353,15 @@ The new categories (0: Macro Theme, 8: Contrarian Timing) redistribute weight. A
 | Index inclusion | Announcement to effective date (2-4 weeks) |
 | Short squeeze | Days to weeks (violent) |
 | Activist campaign | 3-12 months |
-| Contrarian mean reversion | 3-12 months (requires catalyst to trigger)
-
-## Red Flags — Kill the Surge Thesis (v2.0)
-
-Even if catalysts look strong, kill the surge prediction if:
-
-| Red Flag | Why It Kills the Surge |
-|----------|----------------------|
-| **Insider selling cluster** | The people who know best are getting out |
-| **Short interest <2% with price declining** | Not a squeeze candidate; genuine selling pressure |
-| **Revenue deceleration (3+ quarters)** | Growth story broken; value trap forming — **this is the #1 killer for Path A stocks** |
-| **SEC investigation / accounting concerns** | Existential risk trumps any catalyst |
-| **CEO/CFO departure (unplanned)** | Leadership vacuum — catalysts don't materialize without execution |
-| **Debt covenant breach risk** | Bankruptcy risk overrides all catalysts |
-| **Major customer loss** | >20% revenue concentration with client loss = thesis broken |
-| **Technological obsolescence** | Core product being replaced |
-| **VALUE TRAP ALERT** (new v2.0) | Stock is cheap but for STRUCTURAL reasons — no catalyst to change the narrative within 12 months |
-
-### v2.0 Red Flag Nuance:
-A company CAN have low FCF yield and still be a great surge candidate — IF it's in a secular trend with revenue growing >10% and FCF trajectory improving. The red flag is NOT "low FCF yield" — it's "low FCF yield with NO growth and NO catalyst." That's a value trap. The backtest proved this distinction is everything.
+| Contrarian mean reversion | 3-12 months (requires catalyst) |
+| Deep domain knowledge moat | 6-24 months (IP/patent durability timeline) |
 
 ## Verification Protocol
 
-**Never rely on a single source for catalyst detection.** For each catalyst identified:
-
-1. **Primary source:** Company filings, official announcements, government databases
+1. **Primary source:** Company filings (10-K, 10-Q, 8-K, 13D), government databases
 2. **Secondary source:** Financial media (Reuters, Bloomberg, WSJ)
-3. **Tertiary:** Analyst reports, expert commentary, industry publications
-4. **Contrarian check:** Search for bear case — `"[TICKER] bear thesis"` or `"[TICKER] short case"`
-5. **Timeline verification:** Exact date if calendar catalyst; date range if event-driven
-
-## Integration with Infrastructure Moat SOP (v2.0 — ORDER FLIPPED)
-
-**The v1.0 sequence was WRONG** (backtest-proven). The v2.0 sequence:
-
-```
-catalyst-detector FIRST     →  "Will this stock SURGE in 3/6/12 months and WHY?"
-         ↓
-   Filter: Only stocks with 60+ catalyst score advance
-         ↓
-infrastructure-moat SECOND  →  "Is this a GOOD BUSINESS or a risky trade?"
-         ↓
-   Quality score determines POSITION SIZE, not inclusion
-         =
-   HIGH-CONVICTION SURGE PREDICTION with quality-calibrated sizing
-```
-
-### Position Sizing Rules (v2.0):
-
-| Catalyst Score | Quality Score | Action | Max Position Size |
-|---------------|---------------|--------|-------------------|
-| 100+ | 3/3+ (Path A or B) | 🟢 **FULL SIZE** — Holy grail. Surge + quality. | 25% of portfolio |
-| 100+ | 1-2/3 | 🟡 **SIZE 75%** — Great catalyst, weaker business. Trade, not investment. | 18% |
-| 80-99 | 3/3+ | 🟡 **SIZE 75%** — Good catalyst, great business. | 18% |
-| 80-99 | 1-2/3 | 🟠 **HALF SIZE** — Good catalyst, risky business. | 12% |
-| 60-79 | 3/3+ | 🟠 **HALF SIZE** — Weak catalyst, great business. Income play. | 12% |
-| 60-79 | 1-2/3 | 🔴 **TRACKER ONLY** — Not enough catalyst OR quality. Watch, don't buy. | 0% |
-| <60 | Any | 🔴 **PASS** — No surge thesis. | 0% |
-
-### Key v2.0 Insight:
-A company with 100+ catalyst score and 1/3 quality (e.g., MU at 0.69% FCF yield but in AI supercycle with FCF inflecting positive) is a **BETTER surge candidate** than a company with 70 catalyst score and 3/3 quality (e.g., a slow-growth utility with a buyback). The backtest proved this by 101.7 percentage points.
-
-**The quality score is a RISK CALIBRATOR, not a GATE.** It tells you how much pain you'll endure if the catalyst takes longer than expected. High quality = you can wait. Low quality = if the catalyst doesn't fire on schedule, you get hurt.
+3. **Tertiary:** Analyst reports, industry publications
+4. **Deep source (v3.0):** arXiv papers, Google Patents, IEEE Spectrum, SemiEngineering
+5. **Contrarian check:** Brave Search: `"[TICKER] bear thesis"` or `"[TICKER] short case"`
+6. **Timeline verification:** Exact date if calendar catalyst; date range if event-driven
+7. **Price verification:** Browser → Yahoo Finance → live price confirmation before final recommendation

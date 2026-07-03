@@ -1,278 +1,372 @@
 ---
 name: infrastructure-moat
-description: Rigorous 3-stage SOP for analyzing physical infrastructure moat stocks. Use when screening stocks for FCF yield, ROIC, EBITDA margins, competitive moats (patents, chokepoints), and supply chain resilience. CRITICAL v2.0 UPDATE: Backtest (Jul 2025-2026) proved strict FCF filters kill the best surge candidates. NOW USES: Secular Growth Override, FCF Trajectory scoring, sector-specific thresholds, and Cyclical Rebound Override. Designed for concentrated high-conviction portfolios (4-6 positions).
+description: Rigorous 4-stage SOP for analyzing infrastructure moat stocks. v3.0: Adds deep qualitative analysis (patents, scientific papers, physics, manufacturing processes), P/E valuation context, and dip/crash preference. Quantitative screen now feeds INTO qualitative deep-moat-audit. Designed for concentrated high-conviction portfolios (4-6 positions).
 license: MIT
 compatibility: opencode
 metadata:
-  sop_version: "2.0"
+  sop_version: "3.0"
   last_updated: "2026-07-03"
-  backtest_results:
-    v1_3of3_pass_avg_return: "+14.9%"
-    v1_0to1_fail_avg_return: "+116.6%"
-    spy_return: "+22.3%"
-    v1_alpha_vs_spy: "-7.4%"
-    root_cause: "FCF yield >1.5% filter eliminated semiconductor sector during AI supercycle"
   criteria:
-    fcf_yield_base: 1.5
-    fcf_yield_growth_override: 0.5
-    fcf_yield_cyclical_override: 0.0
-    roic_min: 15
-    ebitda_margin_base: 15
-    ebitda_margin_growth_override: 10
+    fcf_yield_contextual: "Depends on sector and growth phase — not a kill threshold"
+    roic_min: 10
+    ebitda_margin_min: 10
     revenue_growth_qoq_min: 5
     market_cap_min_b: 150
+    pe_max_guideline: 50
+    dip_preference: "Prefer candidates >10% below 52-week high"
 ---
 
-# Infrastructure Moat Analyzer — 4-Stage SOP v2.0
+# Infrastructure Moat Analyzer — 4-Stage SOP v3.0
 
 ## Overview
 
-This methodology has been **backtest-validated and overhauled**. The v1.0 approach (strict FCF yield filter, kill-early philosophy) produced a **14.9% average return vs 22.3% for the S&P 500** over the Jul 2025-2026 period — an embarrassing -7.4% alpha. Meanwhile, the stocks it rejected averaged **+116.6%**.
+**v3.0 Philosophy: Quantitative excellence is necessary but not sufficient.** A company with great FCF yield and ROIC but a patent portfolio about to expire in 18 months is a value trap dressed in quality metrics. A company with low FCF but 35 patents on a physics-level manufacturing process that competitors have spent 10 years failing to replicate — that's a moat.
 
-**Root cause:** The FCF yield > 1.5% filter systematically eliminated every semiconductor stock riding the AI infrastructure supercycle. The methodology rewarded slow-growth dividend payers and punished companies reinvesting for hypergrowth.
+**v3.0 adds a NEW Step 2.5: Deep Qualitative Moat Audit.** This is now MANDATORY for any stock receiving a BUY recommendation. The quantitative screen (Steps 0-2) finds candidates. The qualitative audit (Step 2.5) validates the moat. Steps 3-4 assess supply chain and macro resilience.
 
-**v2.0 Philosophy:** Catalysts and growth trajectory come FIRST. Quality metrics are a SAFETY NET, not a gate. The methodology now has two screening paths:
-- **Path A (Growth/Surge):** For companies in secular mega-trends — relaxed thresholds, emphasis on FCF trajectory and revenue acceleration
-- **Path B (Value/Quality):** For mature infrastructure plays — traditional thresholds still apply
-
-The methodology is designed for concentrated portfolios (4-6 positions, 40K+ JOD / ~$56K USD).
+### The v3.0 Funnel:
+```
+DYNAMIC DISCOVERY (browser — no hardcoded tickers)
+    │
+    ▼
+Step 0: SECULAR TREND IDENTIFICATION (Macro context first)
+    │
+    ▼
+Step 1: QUANTITATIVE SCREEN (0-40 pts, no auto-kill)
+    │  Revenue growth, FCF trajectory, ROIC, EBITDA, P/E, dip context
+    │
+    ▼
+Step 2: QUALITATIVE MOAT AUDIT (0-40 pts) ← NEW in v3.0
+    │  2A: Patent Landscape (0-10)
+    │  2B: Scientific Foundation (0-10)
+    │  2C: Manufacturing Moat (0-10)
+    │  2D: Competitive Technology Position (0-10)
+    │
+    ▼
+Step 3: VALUATION CONTEXT ← NEW in v3.0
+    │  P/E vs sector, P/E vs history, dip/crash detection
+    │
+    ▼
+Step 4: SUPPLY CHAIN & MACRO RESILIENCE
+    │  Manufacturing dependency, geopolitical risk, customer concentration
+    │
+    ▼
+QUANT + QUAL RECONCILIATION → Both must agree for BUY recommendation
+```
 
 ## The Universe
 
-Pull all publicly traded companies with **market cap > $150 billion USD**. Filter to sectors relevant to physical infrastructure:
+**v3.0: NO HARDCODED TICKER LISTS.** The universe is dynamically discovered from live market data:
 
-| INCLUDE (infrastructure sectors) | EXCLUDE (consumer / financial / media) |
-|----------------------------------|----------------------------------------|
+1. **Browser → companiesmarketcap.com** — scrape largest companies by sector
+2. **Browser → Yahoo Finance screeners** — filter by market cap >$150B
+3. **Fallback: Wikipedia indices + Brave Search** — only if browser fails
+
+Filter to sectors relevant to physical infrastructure:
+
+| INCLUDE (infrastructure sectors) | EXCLUDE |
+|----------------------------------|---------|
 | Semiconductors & Equipment | Consumer brands / luxury |
 | Data Center & Networking | Pure financials (banks, insurance) |
-| Energy Infrastructure (oil, gas, LNG, pipelines, nuclear) | Media / advertising / streaming |
-| Mining & Commodities | Insurance conglomerates |
-| Industrial Automation & Electrical | Social media |
-| Railways & Transportation | Pure software / SaaS (no physical assets) |
-| Defense & Aerospace | Retail / consumer goods |
-| Telecom & Tower Infrastructure | Healthcare / pharma |
-| Battery & EV Supply Chain | Gaming |
-| Industrial Gases & Chemicals | Food & beverage |
+| Energy Infrastructure | Media / advertising / streaming |
+| Mining & Commodities | Social media |
+| Industrial Automation & Electrical | Pure software / SaaS |
+| Railways & Transportation | Retail / consumer goods |
+| Defense & Aerospace | Healthcare / pharma (unless diagnostic equipment) |
+| Telecom & Tower Infrastructure | Gaming |
+| Battery & EV Supply Chain | Food & beverage |
+| Industrial Gases & Chemicals | — |
+| Nuclear / Advanced Energy | — |
 | Water & Environmental Infrastructure | — |
-
-## SOP Step 0: Secular Trend Identification (NEW — v2.0)
-
-**CRITICAL: This step runs BEFORE any quantitative filters. It determines which screening path to use.**
-
-### Active Secular Mega-Trends (as of 2026):
-
-| Trend | Sectors Affected | Why It Overrides Value Filters |
-|--------|-----------------|-------------------------------|
-| **AI Infrastructure Buildout** | Semiconductors, data center, networking, power/electrical | Hyperscalers spending $300B+/yr on AI infra. Every semi company reinvesting FCF for capacity. Low FCF yield is NORMAL — it means they're building capacity for demand they can't yet meet. |
-| **Electrification / Grid Modernization** | Electrical equipment, transformers, switchgear, cables | Global grid investment doubling by 2030. Backlogs at all-time highs. Low FCF yield = capacity expansion for decade-long demand wave. |
-| **Reshoring / Industrial Renaissance** | US manufacturing, construction equipment, automation | CHIPS Act, IRA, defense spending driving multi-decade capex cycle |
-| **Defense / Geopolitical Rearmament** | Aerospace, defense contractors, shipbuilding | NATO spending at Cold War levels. Multi-year production ramps. |
-| **Energy Security / LNG Infrastructure** | LNG, pipelines, gas processing | European decoupling from Russian gas is structural, not cyclical |
-
-### How to Use This Step:
-
-1. For each stock, ask: **"Is this company a direct beneficiary of a verified secular mega-trend?"**
-2. If YES → **Route to Path A (Growth/Surge)** with relaxed thresholds
-3. If NO → **Route to Path B (Value/Quality)** with traditional thresholds
-4. You MUST cite specific evidence: capital spending trends, industry backlog data, government policy, hyperscaler CapEx guidance
-
-### Path Selection Decision Tree:
-```
-Is the company in a verified secular mega-trend?
-├── YES → Has revenue growth >10% YoY?
-│   ├── YES → PATH A: Growth/Surge (relaxed thresholds)
-│   └── NO  → PATH B: Value/Quality (traditional thresholds — check if at cyclical trough)
-└── NO  → PATH B: Value/Quality (traditional thresholds)
-```
 
 ---
 
-## SOP Step 1: The Quantitative Filter — Dual-Path v2.0
+## Step 0: Secular Trend Identification (NEW in v2.0, enhanced in v3.0)
 
-**This is NOT a kill gate anymore. It's a scoring system. No stock is auto-killed — every stock gets a quantified score with overrides applied.**
+**Run BEFORE quantitative screen. Identifies which macro themes matter RIGHT NOW.**
 
-### Path A: Growth/Surge Thresholds (for secular trend beneficiaries)
+### Active Secular Mega-Trends (update continuously):
 
-| Metric | Threshold | Why Relaxed |
-|--------|-----------|-------------|
-| **FCF Yield** | **> 0.5%** (or positive FCF trajectory) | Companies in secular booms SHOULD reinvest cash. FCF yield is temporarily suppressed by capacity buildout. The trajectory matters more than the absolute yield. |
-| **Revenue Growth (YoY)** | **> 10%** | Growth is the primary signal. If revenue is growing fast in a secular trend, the company is capturing demand. |
-| **FCF Trajectory** | **Improving QoQ OR positive YoY** | Even if absolute FCF yield is low, is it getting better? Inflection point > current level. |
-| **ROIC** | **> 12%** | Slightly relaxed — growth companies may have temporarily depressed ROIC during capex cycles |
-| **EBITDA Margin** | **> 10%** | Slightly relaxed — capacity buildout depresses margins temporarily |
+| Trend | Sectors | Why It Matters |
+|-------|---------|----------------|
+| **AI Infrastructure Buildout** | Semis, data centers, networking, power | Hyperscalers $300B+/yr CapEx. Every data center needs chips, networking, and power. |
+| **Electrification / Grid Modernization** | Electrical equipment, transformers, switchgear | Global grid investment doubling by 2030. 100+ week lead times on transformers. |
+| **Defense / Geopolitical Rearmament** | Aerospace, defense, shipbuilding | NATO spending at Cold War levels. Multi-year production ramps. |
+| **Energy Security / LNG** | LNG, pipelines, gas processing | European gas decoupling is structural. LNG demand +65% by 2050. |
+| **Reshoring / Industrial Renaissance** | Manufacturing, construction, automation | CHIPS Act, IRA, defense spending. Multi-decade capex cycle. |
+| **Nuclear Renaissance** | SMR, uranium, nuclear services | AI data centers require 24/7 baseload. SMR orders beginning. |
 
-### Path B: Value/Quality Thresholds (for mature infrastructure)
+### How to Use This Step:
+1. For each stock, determine: **Is this company a direct beneficiary of a verified secular mega-trend?**
+2. If YES: Growth metrics weighted higher. Low FCF is contextual (reinvestment). P/E tolerance slightly expanded.
+3. If NO: Must win on standalone quality and valuation. Stricter value metrics apply.
+4. **CITE SPECIFIC EVIDENCE:** Hyperscaler CapEx guidance, industry backlog data, government policy, segment revenue breakdown.
 
-| Metric | Threshold | Why |
-|--------|-----------|-----|
-| **FCF Yield** | **> 1.5%** | Mature companies with no secular growth tailwind must return cash to shareholders NOW. |
-| **ROIC** | **> 15%** | Standard quality threshold — capital efficiency matters when growth is slow |
-| **EBITDA Margin** | **> 15%** | Standard profitability threshold |
+---
 
-### Override Mechanisms (apply to BOTH paths):
+## Step 1: Quantitative Screen v3.0 (Score 0-40)
 
-#### 1. FCF Trajectory Override
-If FCF yield is below threshold BUT:
-- FCF has been growing > 20% QoQ for 2+ quarters → **override to PASS on FCF**
-- Company is transitioning from FCF-negative to FCF-positive this quarter → **override to PASS**
-- FCF is temporarily depressed by a one-time acquisition/integration cost → **flag and manually assess**
+**v3.0: This is a SCORING SYSTEM, not a kill gate. Every stock is scored 0-40. No hardcoded Path A/B — the scoring handles context automatically.**
 
-#### 2. Cyclical Rebound Override
-If the company is at a **verified cyclical trough** (semiconductor downcycle, energy capex trough, industrial recession) with a **known catalyst for recovery** (capacity absorption, new product cycle, policy tailwind):
-- FCF yield threshold → **WAIVED entirely**
-- ROIC threshold → reduced to **> 8%**
-- Must cite: specific evidence of cycle bottom + recovery catalyst + timeline
-- Flag as: "CYCLICAL REBOUND — higher risk, higher reward"
+### Quantitative Scoring Rubric:
 
-#### 3. Monopoly / Chokepoint Override
-If the company has a **genuine single-vendor monopoly** with zero competitors for 5+ years:
-- FCF yield → waived down to 0.5%
-- ROIC → waived down to 10%
-- Must explicitly justify with evidence of moat durability
+#### 1A. Growth (0-12 points)
+| Metric | Threshold | Points |
+|--------|-----------|--------|
+| Revenue Growth YoY | >50% | 10 |
+| Revenue Growth YoY | >30% | 8 |
+| Revenue Growth YoY | >15% | 5 |
+| Revenue Growth YoY | >5% | 3 |
+| Revenue Growth YoY | >0% | 1 |
+| Revenue ACCELERATING QoQ (bonus) | Growth rate increasing | +2 |
 
-### Scoring (Path-Aware):
-- **Path A — 4/5 or 5/5 = ✅ STRONG PASS** → advance to Step 2
-- **Path A — 3/5 = ⚠️ CONDITIONAL** → advance with caveat (identify what needs to improve)
-- **Path A — 1-2/5 = 🟠 WEAK** → high risk, but still advance if catalyst score > 70
-- **Path B — 3/3 = ✅ PASS** → advance to Step 2
-- **Path B — 2/3 = ⚠️ PASS** → advance with caveat noted
-- **Path B — 0-1/3 = 🟠 WEAK** → advance ONLY if catalyst score > 80
+#### 1B. Profitability (0-8 points)
+| Metric | Threshold | Points |
+|--------|-----------|--------|
+| ROIC | >50% | 4 |
+| ROIC | >25% | 3 |
+| ROIC | >15% | 2 |
+| ROIC | >10% | 1 |
+| EBITDA Margin | >40% | 4 |
+| EBITDA Margin | >25% | 3 |
+| EBITDA Margin | >15% | 2 |
+| EBITDA Margin | >10% | 1 |
 
-**CRITICAL v2.0 RULE: NO STOCK IS AUTO-KILLED AT STEP 1.** Even a 0/3 Path B stock with a monster catalyst (spin-off, FDA approval, short squeeze) gets analyzed. The quality score determines PORTFOLIO WEIGHT, not inclusion/exclusion.
+#### 1C. Valuation / Dip Context (0-12 points)
+| Metric | Threshold | Points |
+|--------|-----------|--------|
+| Trailing P/E | <15 | 6 |
+| Trailing P/E | <20 | 5 |
+| Trailing P/E | <25 | 3 |
+| Trailing P/E | <35 | 1 |
+| Trailing P/E | >50 | -2 (penalty) |
+| Trailing P/E | >100 | -4 (penalty) |
+| % Below 52-week high | >25% below | 4 |
+| % Below 52-week high | >15% below | 2 |
+| % Below 52-week high | >5% below | 1 |
 
-### Sector-Specific Normal FCF Yield Ranges (for context):
+#### 1D. Momentum / Sentiment (0-5 points)
+| Metric | Threshold | Points |
+|--------|-----------|--------|
+| Short float | >20% | 3 |
+| Short float | >10% | 1 |
+| Price below analyst consensus | Yes | 2 |
+| Price above analyst consensus | Yes | -2 |
 
-| Sector | Normal FCF Yield Range | Why |
-|--------|----------------------|-----|
-| Semiconductors (growth phase) | 0.3% – 2.0% | Heavy reinvestment for capacity |
-| Semiconductors (mature) | 2.0% – 6.0% | Capex lightens after capacity built |
-| Energy (oil & gas) | 3.0% – 10.0% | Capital returns prioritized |
-| Industrial / Electrical | 1.5% – 4.0% | Moderate capex requirements |
-| Aerospace / Defense | 1.5% – 5.0% | Long-cycle production |
-| Mining / Commodities | 2.0% – 8.0% | Cyclical — high at peak, low at trough |
-| Data Center REITs | 2.0% – 6.0% | REIT structure, high payout ratios |
-| Telecom / Tower | 4.0% – 10.0% | Mature infrastructure, high payout |
+#### 1E. Quality / FCF Context (0-3 points)
+| Metric | Threshold | Points |
+|--------|-----------|--------|
+| FCF Yield | >3% | 3 |
+| FCF Yield | >1.5% | 2 |
+| FCF Yield | >0.5% | 1 |
 
-### Data Source
-Use `yfinance` Python library for TTM financial data. **v2.0 adds quarterly data for trajectory analysis:**
+**Note:** Low FCF yield is NOT penalized (v2.0 backtest lesson). It's contextual — companies in secular trends reinvest cash for growth.
 
+**Total: 0-40 points.** Top 20-30 by score advance to Step 2.
+
+### Data Source:
 ```python
 import yfinance as yf
 stock = yf.Ticker("TICKER")
 info = stock.info
 
-# TTM metrics
-market_cap = info.get("marketCap")
-revenue_ttm = info.get("totalRevenue")
-ebitda_ttm = info.get("ebitda")
-fcf = info.get("freeCashflow")
-net_income = info.get("netIncomeToCommon")
-total_debt = info.get("totalDebt") or 0
-total_cash = info.get("totalCash") or 0
-total_equity = info.get("stockholdersEquity") or info.get("bookValue") or 0
-
-# v2.0: Growth metrics
-revenue_growth_yoy = info.get("revenueGrowth")  # YoY %
-earnings_growth_yoy = info.get("earningsGrowth")  # YoY %
-quarterly_revenue_growth = info.get("quarterlyRevenueGrowth")  # QoQ %
-
-# Quarterly data for FCF trajectory (last 4 quarters)
-qf = stock.quarterly_financials
-qcf = stock.quarterly_cashflow
-
-# Extract last 4 quarters of FCF
-fcf_quarters = []
-for i in range(min(4, len(qcf.columns))):
-    col = qcf.columns[i]
-    ocf = qcf.loc["Total Cash From Operating Activities", col] if "Total Cash From Operating Activities" in qcf.index else 0
-    capex = qcf.loc["Capital Expenditures", col] if "Capital Expenditures" in qcf.index else 0
-    fcf_quarters.append(ocf + capex)  # capex is negative
-
-# FCF trajectory: is FCF accelerating?
-if len(fcf_quarters) >= 4:
-    fcf_qoq_growth = [(fcf_quarters[i] - fcf_quarters[i+1]) / abs(fcf_quarters[i+1]) * 100 
-                      for i in range(len(fcf_quarters)-1) if fcf_quarters[i+1] != 0]
-    fcf_accelerating = all(g > 0 for g in fcf_qoq_growth) if fcf_qoq_growth else False
-    fcf_inflecting = (fcf_quarters[0] > 0 and fcf_quarters[-1] < 0)  # turned positive
-
 # Core metrics
-fcf_yield = (fcf / market_cap * 100) if fcf and market_cap else None
-ebitda_margin = (ebitda_ttm / revenue_ttm * 100) if ebitda_ttm and revenue_ttm else None
+mc = info.get("marketCap")
+fcf = info.get("freeCashflow")
+ni = info.get("netIncomeToCommon")
+ebitda = info.get("ebitda")
+rev = info.get("totalRevenue")
+debt = info.get("totalDebt") or 0
+cash = info.get("totalCash") or 0
+equity = info.get("stockholdersEquity") or info.get("bookValue") or 0
+pe = info.get("trailingPE")
+fpe = info.get("forwardPE")
+peg = info.get("pegRatio")
+pb = info.get("priceToBook")
 
-if net_income and total_equity:
-    invested_capital = total_equity + total_debt - total_cash
-    roic = (net_income / invested_capital * 100) if invested_capital > 0 else None
+# Growth (v3.0: check acceleration, not just level)
+rev_growth = info.get("revenueGrowth")
+earn_growth = info.get("earningsGrowth")
+
+# Valuation context
+price = info.get("currentPrice") or info.get("regularMarketPrice")
+high_52w = info.get("fiftyTwoWeekHigh")
+low_52w = info.get("fiftyTwoWeekLow")
+target_mean = info.get("targetMeanPrice")
+short_float = info.get("shortPercentOfFloat")
+
+# Key ratios
+fy = round(fcf / mc * 100, 2) if (fcf and mc) else None
+ebitda_m = round(ebitda / rev * 100, 1) if (ebitda and rev) else None
+pct_from_high = round((price - high_52w) / high_52w * 100, 1) if price and high_52w else None
+
+if ni and equity:
+    ic = equity + debt - cash
+    roic = round(ni / ic * 100, 1) if ic > 0 else None
 else:
     roic = None
 
-# Determine path
-in_secular_trend = False  # Set based on Step 0 analysis
-if in_secular_trend and revenue_growth_yoy and revenue_growth_yoy > 0.10:
-    path = "PATH_A"  # Growth/Surge
-else:
-    path = "PATH_B"  # Value/Quality
+# Acceleration check: pull last 4 quarters
+try:
+    qf = stock.quarterly_financials
+    q_revs = []
+    for i in range(min(4, len(qf.columns))):
+        col = qf.columns[i]
+        r = qf.loc["Total Revenue", col] if "Total Revenue" in qf.index else None
+        if r: q_revs.append(float(r))
+    rev_accelerating = len(q_revs) >= 4 and (
+        (q_revs[0] - q_revs[1]) / abs(q_revs[1]) > (q_revs[2] - q_revs[3]) / abs(q_revs[3])
+    ) if all(q_revs) else False
+except:
+    rev_accelerating = False
 ```
 
-### Output Format (Step 1 v2.0):
-
+### Output Format (Step 1):
 ```
-| Ticker | Trend? | Path | FCF Y% | FCF Traj | RevG% | ROIC% | EBITDA% | Score | Verdict |
-|--------|--------|------|--------|----------|-------|-------|---------|-------|---------|
-| AVGO   | AI ✅  | A    | 0.85   | ACCEL ↑  | +84%  | 64.7  | 55.8    | 4/5   | ✅ STRONG (Growth) |
-| CVX    | N      | B    | 3.49   | stable    | N/A   | 27.5  | 20.4    | 3/3   | ✅ PASS (Value) |
-| NVDA   | AI ✅  | A    | 0.98   | ACCEL ↑  | +112% | N/A   | 65.3    | 4/5   | ✅ STRONG (Growth — WAS KILLED in v1!) |
-| MU     | AI ✅  | A    | 0.69   | INFLECT ↑ | +55%  | N/A   | 75.6    | 3/5   | ⚠️ COND (FCF inflecting positive) |
+| Ticker | Name | Quant | P/E | RevG% | ROIC% | EB% | FY% | FromHi% | Short% | Accel? |
+|--------|------|-------|-----|-------|-------|-----|-----|---------|--------|--------|
+| XXXX | ... | 32/40 | 18.5 | +45% | 62.7 | 48.3 | 0.85 | -8.2% | 5.2% | YES |
 ```
 
-## SOP Step 2: Technology Reality Check (Domain Expertise)
+---
 
-For companies that pass Step 1, evaluate three dimensions:
+## Step 2: Qualitative Moat Audit v3.0 (Score 0-40) ← DEEP RESEARCH REQUIRED
 
-### 2A: Technology Readiness Level (TRL) — Scale of 1-9
+**THIS STEP DID NOT EXIST IN v2.0.** It is the qualitative half of the quant+qual reconciliation.
 
-| TRL | Definition | Signal |
-|-----|-----------|--------|
-| 1-3 | Basic research / lab prototype | ❌ FAIL — speculative |
-| 4-6 | Pilot / demonstration | ⚠️ Risky — not yet revenue-generating at scale |
-| 7-8 | Production ramp / early deployment | ⚠️ Acceptable if growing fast |
-| 9 | High-volume production, deployed at scale | ✅ The only acceptable TRL for an infrastructure play |
+### Research Mandate
 
-**Action:** If core revenue-driving products are below TRL 8, flag as "R&D-dependent" and downgrade conviction.
+For EACH candidate being considered for the final portfolio, you MUST research at least 3 of the 5 deep sources below. This is delegated to @deep-moat-auditor subagents, but you should ALSO do your own research:
 
-### 2B: IP Architecture — Scale of 1-5
+#### Source 1: Patent Landscape → Google Patents / USPTO
+- What are the 3-5 most cited patents this company owns?
+- When do their core patents expire? Is there a patent cliff approaching?
+- Who is citing their patents? (Reveals who's trying to work around them)
+- Have they filed NEW patents recently that extend their moat?
+- Are competitors filing patents that could circumvent their moat?
 
-| Score | Definition | Example |
-|-------|-----------|---------|
-| 5 | Single-vendor monopoly — patents + trade secrets, 10+ year barrier | ASML EUV |
-| 4 | Duopoly/oligopoly with proprietary technology, 5-10 year barrier | GE/RTX aircraft engines |
-| 3 | Process engineering + scale moat, 3-5 year barrier | Linde industrial gases |
-| 2 | Commodity with some differentiation, 1-3 year barrier | Amphenol connectors |
-| 1 | Commodity — no durable IP | Pure oil producers |
+#### Source 2: Scientific Papers → arXiv, IEEE Xplore, Google Scholar
+- What are the seminal papers in this technology domain?
+- Is the company's approach backed by published research?
+- Are there papers describing superior approaches from competitors?
+- What does the latest research say about the technology's physical limits?
+- Are there breakthrough papers that could obsolete this technology?
 
-### 2C: Infrastructure Chokepoint — Scale of 1-5
+#### Source 3: Technology Physics → IEEE Spectrum, SemiEngineering, Wikipedia technical articles
+- How does the technology actually WORK at the physics level?
+- What are the fundamental physical constraints? (thermal, power, materials, quantum effects)
+- Why can't competitors replicate this? Is it physics, process know-how, or just capital?
+- Is the technology on an S-curve that's about to flatten?
 
-| Score | Definition | Example |
-|-------|-----------|---------|
-| 5 | The broader tech ecosystem literally cannot function without this | ASML (no chips without EUV), TSMC (no advanced fab) |
-| 4 | Critical but alternatives exist at much higher cost/time | Broadcom networking silicon |
-| 3 | Important but substitutable over time | Industrial gases, connectors |
-| 2 | Useful but easily replaced | Commodity chemicals |
-| 1 | No chokepoint value | Retail, consumer goods |
+#### Source 4: Competitive Technology → Competitor IR pages, benchmarks, analyst tech notes
+- What is the competitor's technical approach, and how does it differ?
+- Is the competitor ahead, behind, or parallel on the technology roadmap?
+- Has the competitor published benchmarks or performance comparisons?
+- Are there startup challengers with novel approaches?
 
-**Action:** Score each dimension. Companies scoring TRL<8, IP<3, or Chokepoint<3 should be downgraded significantly.
+#### Source 5: Manufacturing Process → SemiEngineering, trade journals, company technical docs
+- What is the manufacturing process, and why is it hard to replicate?
+- What are the key equipment dependencies? (Who makes the machines that make their machines?)
+- What is the yield learning curve? How long to reach competitive yields?
+- What raw materials or rare elements are required? Who controls them?
 
-### Output Format (Step 2):
+### Qualitative Scoring Rubric (0-40):
 
+#### 2A: Patent Landscape (0-10)
+| Score | Definition |
+|-------|-----------|
+| 10 | Single-vendor monopoly. Multiple blocking patents with 10+ year duration. Competitors actively paying licensing fees. Citation network shows industry dependence. |
+| 8 | Strong IP position. Key patents with 5-10 year duration. Some licensing revenue. Competitors need workarounds that degrade performance. |
+| 6 | Moderate IP. Patents exist but some expiring within 3-5 years. Competitors have partial workarounds. |
+| 4 | Weak IP. Patents are narrow or easily circumvented. Expiration imminent. |
+| 2 | Minimal patent protection. Trade secrets only. |
+| 0 | No IP moat. Commodity business. |
+
+#### 2B: Scientific Foundation (0-10)
+| Score | Definition |
+|-------|-----------|
+| 10 | Technology grounded in fundamental physics with well-understood limits. Company's approach is validated by peer-reviewed research. No known alternative physics that could disrupt. |
+| 8 | Strong scientific foundation. Some physical limits known but still 5+ years out. |
+| 6 | Moderate foundation. Technology works but physics understanding is empirical rather than fundamental. |
+| 4 | Weak foundation. Technology is "black box" with no peer-reviewed validation. |
+| 2 | Questionable science. Claims contradict established physics. |
+| 0 | Pseudoscience or unsupported claims. |
+
+#### 2C: Manufacturing Moat (0-10)
+| Score | Definition |
+|-------|-----------|
+| 10 | Process requires $10B+ and 5-10 years to replicate. Single-source equipment. Yield learning curve is the moat. |
+| 8 | $1-10B and 3-5 years to replicate. Limited equipment sources. |
+| 6 | $100M-1B and 1-3 years to replicate. Equipment is commercially available. |
+| 4 | <$100M to replicate. Process is well-understood. |
+| 2 | Standard manufacturing. Contract manufacturers available. |
+| 0 | No manufacturing — pure services/software. |
+
+#### 2D: Competitive Technology Position (0-10)
+| Score | Definition |
+|-------|-----------|
+| 10 | Unchallenged technology leader. Competitors are 1-2 generations behind. Customers cannot switch without major performance degradation. |
+| 8 | Clear leader but competitors 1 generation behind. Switching costs high but not prohibitive. |
+| 6 | Among leaders but competitors at parity on some dimensions. |
+| 4 | Middle of pack. Technology is comparable to competitors. |
+| 2 | Lagging behind. Competitors have superior technology. |
+| 0 | Obsolete technology being displaced. |
+
+**Total Qualitative Moat Score: 0-40**
+
+| Score | Moat Durability |
+|-------|----------------|
+| 30-40 | 🟢 DURABLE — 10+ year moat, physics-level barriers |
+| 20-29 | 🟡 MODERATE — 3-7 year moat, process/scale barriers |
+| 10-19 | 🟠 WEAK — 1-3 year moat, mostly capital barriers |
+| <10 | 🔴 NO MOAT — Commodity business, no durable advantage |
+
+### Qualitative Audit Output Format:
 ```
-| Ticker | TRL | IP Score | Chokepoint | Moats Identified | Verdict |
-|--------|-----|----------|------------|------------------|---------|
-| XXXX   | 9   | 5        | 5          | Patent monopoly, 50+ year installed base | ✅ STRONG |
-| YYYY   | 9   | 3        | 3          | Scale + contracts, no tech IP | ⚠️ MODERATE |
+| Ticker | Patent | Science | Mfg | Competitive | TOTAL | Durability |
+|--------|--------|---------|-----|-------------|-------|------------|
+| XXXX | 9/10 | 8/10 | 9/10 | 9/10 | 35/40 | 🟢 DURABLE |
+| YYYY | 4/10 | 3/10 | 6/10 | 5/10 | 18/40 | 🟠 WEAK |
 ```
 
-## SOP Step 3: Macro & Supply Chain Resilience
+---
 
-### 3A: Manufacturing / Foundry Dependency
+## Step 3: Valuation Context (NEW in v3.0)
+
+**v3.0 adds explicit valuation context to avoid buying overhyped stocks at peak multiples.**
+
+### Valuation Checks:
+
+| Metric | Green (GOOD) | Yellow (CAUTION) | Red (DANGER) |
+|--------|-------------|------------------|-------------|
+| Trailing P/E vs 5-year median | Below median | At median | >2x median |
+| Trailing P/E vs sector | Below sector | At sector | >2x sector |
+| Forward P/E vs trailing P/E | FPE < TPE (expanding) | FPE ≈ TPE | FPE > TPE (contracting) |
+| PEG ratio | <1.0 | 1.0-2.0 | >2.0 |
+| EV/EBITDA vs sector | Below sector | At sector | >2x sector |
+| Price vs 52-week high | >15% below | Within 10% | At ATH |
+| Price vs analyst consensus | Below consensus | At consensus | Above all targets |
+
+**Scoring (adds to/reduces quantitative score):**
+- 3+ green: +5 bonus points
+- 3+ red: -5 penalty points
+- Mostly green with some yellow: ideal
+
+### Dip/Crash Detection:
+
+| Signal | Action |
+|--------|--------|
+| >25% below 52w high + fundamentals improving | 🟢 STRONG DIP BUY — +5 bonus |
+| >25% below 52w high + insider buying | 🟢 DIP WITH INSIDER CONFIRMATION — +7 bonus |
+| >15% below 52w high + P/E below 5yr avg | 🟢 VALUE DIP — +3 bonus |
+| At ATH + P/E >2x sector | 🔴 OVERBOUGHT — -5 penalty |
+| At ATH + stock above all analyst PTs | 🔴 PRICED FOR PERFECTION — -8 penalty |
+
+---
+
+## Step 4: Supply Chain & Macro Resilience
+
+### 4A: Manufacturing / Foundry Dependency
 
 Map the physical supply chain. Identify:
 - **Where is the core product made?** (country, specific facility)
@@ -281,154 +375,79 @@ Map the physical supply chain. Identify:
 
 | Risk Level | Definition |
 |-----------|------------|
-| 🔴 HIGH | Single facility, single country, no backup (e.g., TSMC Taiwan fabs for NVIDIA) |
+| 🔴 HIGH | Single facility, single country, no backup |
 | 🟡 MODERATE | Multiple facilities but concentrated region |
 | 🟢 LOW | Globally distributed manufacturing |
 
-### 3B: Geopolitical & Export Risk
-
+### 4B: Geopolitical & Export Risk
 - **Tariffs:** Is the product caught in US-China/EU trade disputes?
 - **Export controls:** Can the government ban sales to key markets?
 - **Sanctions risk:** Is the company exposed to sanctioned countries?
 - **Conflict risk:** Are facilities near active or potential conflict zones?
 
-### 3C: Customer Concentration
-
-- Any single customer > 20% of revenue? → +1 risk level
+### 4C: Customer Concentration
+- Any single customer >20% of revenue? → +1 risk level
 - Government/defense as primary customer? → political cycle risk
 - Commodity price exposure? → cycle risk
 
-### Output Format (Step 3):
-
+### Output Format (Step 4):
 ```
 | Ticker | Mfg Risk | Geo Risk | Customer Risk | Key Vulnerabilities |
 |--------|----------|----------|---------------|---------------------|
-| XXXX   | 🟡 MOD   | 🔴 HIGH  | 🟢 LOW        | Taiwan Strait, TSMC dependency |
-| YYYY   | 🟢 LOW   | 🟢 LOW   | 🟡 MOD        | 20% customer concentration (Meta) |
+| XXXX | 🟡 MOD | 🔴 HIGH | 🟢 LOW | Taiwan Strait exposure |
 ```
 
-## Final Report Format
+---
 
-After completing all 3 stages, produce:
+## Final Report Integration
 
-### Portfolio Recommendation Table
+After completing all steps, the quantitative screen (Step 1, 0-40) and the qualitative moat audit (Step 2, 0-40) MUST BE RECONCILED before any BUY recommendation:
 
-| # | Ticker | Name | Allocation (JOD) | % | Conviction | Role |
-|---|--------|------|-----------------|---|------------|------|
-| 1 | XXXX | ... | X,XXX | XX% | HIGH/MED | [1-line thesis] |
-
-### Risk Concentration Audit
-
-| Risk Scenario | Impact | Mitigation |
-|---------------|--------|------------|
-| [Scenario] | [Which positions hit] | [What protects] |
-
-### Excluded Candidates (with reasons)
-
-List companies that were analyzed but not selected, with a 1-line reason for exclusion.
-
-## Python Analysis Template v2.0
-
-Use this template to pull and process data for the full universe with dual-path scoring:
-
-```python
-import yfinance as yf
-
-TICKERS = ["list", "of", "tickers"]  # Populate from universe scan
-results = []
-
-# Define secular trend beneficiaries (from Step 0 analysis)
-SECULAR_TREND_TICKERS = set()  # e.g. {"AVGO", "NVDA", "AMD", "MRVL", "ANET", "ETN", ...}
-
-for t in TICKERS:
-    try:
-        stock = yf.Ticker(t)
-        info = stock.info
-        
-        mc = info.get("marketCap")
-        rev = info.get("totalRevenue")
-        ebitda = info.get("ebitda")
-        fcf = info.get("freeCashflow")
-        ni = info.get("netIncomeToCommon")
-        debt = info.get("totalDebt") or 0
-        cash = info.get("totalCash") or 0
-        equity = info.get("stockholdersEquity") or info.get("bookValue") or 0
-        
-        # Growth metrics (v2.0)
-        rev_growth = info.get("revenueGrowth")
-        earn_growth = info.get("earningsGrowth")
-        
-        fy = round(fcf / mc * 100, 2) if (fcf and mc) else None
-        ebitda_m = round(ebitda / rev * 100, 1) if (ebitda and rev) else None
-        
-        if ni and equity:
-            ic = equity + debt - cash
-            roic = round(ni / ic * 100, 1) if ic > 0 else None
-        else:
-            roic = None
-        
-        # Determine path
-        in_trend = t in SECULAR_TREND_TICKERS
-        rev_ok = rev_growth and rev_growth > 0.10
-        path = "A" if (in_trend and rev_ok) else "B"
-        
-        # Score based on path
-        score = 0
-        max_score = 5 if path == "A" else 3
-        
-        if path == "A":
-            # Growth/Surge path: 5 metrics
-            if fy and fy > 0.5: score += 1
-            if rev_growth and rev_growth > 0.10: score += 1
-            if roic and roic > 12: score += 1
-            if ebitda_m and ebitda_m > 10: score += 1
-            # FCF trajectory (check if FCF improving QoQ)
-            # Simplified: if earnings_growth > 0 and rev_growth > 0: score += 1
-            if earn_growth and earn_growth > 0 and rev_growth and rev_growth > 0: score += 1
-        else:
-            # Value/Quality path: 3 metrics
-            if fy and fy > 1.5: score += 1
-            if roic and roic > 15: score += 1
-            if ebitda_m and ebitda_m > 15: score += 1
-        
-        # Verdict (v2.0: no auto-kill)
-        if path == "A":
-            verdict = "STRONG" if score >= 4 else ("CONDITIONAL" if score >= 3 else "WEAK")
-        else:
-            verdict = "PASS" if score >= 3 else ("MARGINAL" if score >= 2 else "WEAK")
-        
-        results.append({
-            "ticker": t,
-            "name": info.get("shortName", t),
-            "path": path,
-            "in_trend": in_trend,
-            "mcap_B": round(mc/1e9, 1) if mc else None,
-            "fcf_yield": fy,
-            "roic": roic,
-            "ebitda_margin": ebitda_m,
-            "rev_growth": round(rev_growth*100,1) if rev_growth else None,
-            "score": f"{score}/{max_score}",
-            "verdict": verdict,
-        })
-    except Exception as e:
-        results.append({"ticker": t, "error": str(e)})
-
-# Print results
-for r in results:
-    if "error" in r:
-        print(f"{r['ticker']:<8} ERROR: {r['error']}")
-    else:
-        print(f"{r['ticker']:<8} {r['name']:<25} Path={r['path']} Trend={'Y' if r.get('in_trend') else 'N'} FY={r['fcf_yield']}% RevG={r.get('rev_growth')}% ROIC={r['roic']}% EB={r['ebitda_margin']}% Score={r['score']} {r['verdict']}")
+### Reconciliation Table:
+```
+| Ticker | Quant (0-40) | Qual (0-40) | Agreement | Recommendation |
+|--------|-------------|-------------|-----------|----------------|
+| XXXX | 34 | 35 | ✅ STRONG | BUY — Both confirm |
+| YYYY | 28 | 12 | ❌ DIVERGE | CAUTION — Quant good, qual weak |
+| ZZZZ | 18 | 36 | ❌ DIVERGE | INVESTIGATE — Great moat, weak numbers |
 ```
 
-## Key Principles (v2.0)
+### Reconciliation Rules:
+| Quant | Qual | Result |
+|-------|------|--------|
+| >25 | >25 | ✅ STRONG BUY — Full position eligible |
+| >25 | 15-24 | 🟡 CAUTIOUS — Half position max |
+| >25 | <15 | ⚠️ SKIP — Good numbers, fragile business |
+| 15-24 | >25 | 🟡 OPPORTUNITY — Great moat, needs catalyst |
+| 15-24 | 15-24 | 🟠 WEAK — Tracker only |
+| <15 | Any | 🔴 PASS |
 
-1. **Catalysts first, cash flow second.** The biggest surges come from companies in secular trends with improving fundamentals — NOT from companies that already look perfect on TTM metrics. Quality is a safety net, not a gate.
-2. **Growth trajectory > current yield.** A company with 0.8% FCF yield growing FCF at 50% CAGR is BETTER than one with 2% yield that's flat. The inflection point is where the money is made.
-3. **Never auto-kill at Step 1.** Even a 0/3 stock with a monster catalyst gets analyzed. The quality score determines portfolio weight (smaller for low-quality, larger for high-quality), not inclusion/exclusion.
-4. **Sector context matters.** A 0.8% FCF yield is NORMAL for a semiconductor company in a capacity buildout phase. It's terrible for a utility. Compare within sectors, not across them.
-5. **Physical moats > brand moats.** A patent on chip lithography is worth more than a brand name. Infrastructure is about physics, not marketing.
-6. **Concentration is a feature.** The methodology produces 4-6 names. If you have 15, you're doing it wrong.
-7. **Geopolitical risk is real.** A Taiwan Strait conflict makes 40% of semiconductor stocks untouchable. Flag it, don't ignore it.
-8. **Re-evaluate quarterly.** Secular trends shift, moats erode, cash flows change. Run the SOP fresh every quarter.
-9. **The backtest doesn't lie.** v1.0 produced -7.4% alpha because it rewarded value and punished growth during an AI supercycle. If the methodology consistently underperforms, change the methodology — not the facts.
+---
+
+## Key Principles (v3.0)
+
+1. **Quantitative finds, qualitative validates.** Numbers alone can be misleading. Patents, papers, and physics tell you whether the numbers will persist.
+2. **NO HARDCODED TICKERS.** Discover dynamically from live market data every time.
+3. **NO AUTO-KILL.** Every stock gets scored. Quality score determines position size, not inclusion/exclusion.
+4. **PREFER DIPS.** Companies >10% below 52-week highs with improving fundamentals have asymmetric upside. Companies at ATH with stretched P/Es have asymmetric downside.
+5. **DEEP RESEARCH IS MANDATORY.** Google Patents, arXiv, IEEE Spectrum — not Yahoo Finance headlines.
+6. **RECONCILE QUANT + QUAL.** If they disagree, investigate deeper or kill the thesis. Never override data with gut feeling.
+7. **FCF trajectory > FCF yield.** A company with 0.8% FCF yield growing 50% CAGR is better than one with 2.5% flat. Context matters.
+8. **Sector limits.** Max 40% per sector. Min 3 sectors in a 5+ position portfolio.
+9. **Red flags are enforced.** Insider selling, P/E extremes, revenue deceleration — penalties are applied, not noted.
+10. **The backtest doesn't lie, but it's N=1.** v1.0 killed semiconductors. v2.0 overcorrected. v3.0 requires both numbers AND research to agree. When the methodology produces bad results, change the methodology — but give it enough time to prove itself first.
+
+---
+
+## Sector-Specific Normal Ranges (for context, not hard gates):
+
+| Sector | Normal FCF Yield | Normal P/E | Normal EV/EBITDA | Why |
+|--------|-----------------|-----------|------------------|-----|
+| Semiconductors (growth) | 0.3% – 2.0% | 15-30x | 10-20x | Heavy reinvestment |
+| Semiconductors (mature) | 2.0% – 6.0% | 12-20x | 8-15x | Capex lightens |
+| Energy (oil & gas) | 3.0% – 10.0% | 8-15x | 4-8x | Capital returns prioritized |
+| Industrial / Electrical | 1.5% – 4.0% | 15-25x | 10-18x | Moderate capex |
+| Aerospace / Defense | 1.5% – 5.0% | 15-25x | 10-20x | Long-cycle production |
+| Mining / Commodities | 2.0% – 8.0% | 8-20x | 4-12x | Cyclical |
+| Data Center REITs | 2.0% – 6.0% | 15-25x | 15-25x | REIT structure |
+| Telecom / Tower | 4.0% – 10.0% | 10-20x | 10-20x | Mature infrastructure |

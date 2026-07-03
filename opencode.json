@@ -95,13 +95,17 @@
     "compaction": {
       "model": "deepseek/deepseek-v4-flash"
     },
-    "financial-analyst": {
+    "deep-moat-auditor": {
       "model": "deepseek/deepseek-v4-pro",
       "mode": "subagent",
       "permission": {
         "bash": "allow",
         "webfetch": "allow",
-        "websearch": "allow"
+        "websearch": "allow",
+        "task": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow"
       }
     },
     "surge-analyst": {
