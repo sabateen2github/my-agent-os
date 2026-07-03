@@ -99,20 +99,59 @@ Search: "[TICKER] defense contract award 2026"
 ### When the orchestrator triggers you:
 
 **STEP 0: Understand the ask**
-- Is the user asking for new opportunities? Re-running on holdings? A specific sector?
 - What's the time horizon? (3m, 6m, 12m, or all three)
 - Budget constraint? (Default: 40,000 JOD, 4-6 positions)
+- Any sector focus? (semiconductors, energy, defense, etc.) — if none, scan ALL infrastructure sectors
+- Any market cap constraint? (Default: >$150B, but user can override)
 
-**STEP 1: Define the universe**
-- If no tickers given: pull the >$150B universe from companiesmarketcap.com via browser, filter to infrastructure sectors
-- If tickers given: proceed with those
-- If sector given: pull all >$150B companies in that sector
+**STEP 1: AUTO-DISCOVER THE UNIVERSE (NEVER hardcoded)**
+
+**CRITICAL RULE: You NEVER use a hardcoded list of tickers.** You always dynamically discover stocks from live market data. The universe changes every day — market caps shift, new companies enter, old ones drop. Hardcoding is stale analysis.
+
+**Discovery pipeline (execute in order):**
+
+1. **Pull the >$150B list from companiesmarketcap.com:**
+   ```
+   browser_navigate → https://companiesmarketcap.com/
+   browser_text → extract all tickers + market caps from the ranked table
+   ```
+   This gives you the current mega-cap universe. Parse the table for ticker symbols, names, and market caps. Filter to the top ~100 that exceed the threshold.
+
+2. **If a sector is specified, pull sector-specific rankings:**
+   ```
+   browser_navigate → https://companiesmarketcap.com/[sector]/largest-companies-by-market-cap/
+   ```
+   (e.g., `/semiconductors/`, `/energy/`, `/defense/`)
+
+3. **Cross-reference with Yahoo Finance screeners for completeness:**
+   ```
+   browser_navigate → https://finance.yahoo.com/screener/predefined/most_actives
+   ```
+   Or use Finviz screener for additional candidates the companiesmarketcap list might miss.
+
+4. **Filter to infrastructure-relevant sectors** using the INCLUDE/EXCLUDE list from the `infrastructure-moat` skill. Kill consumer brands, pure financials, media, pharma, and insurance.
+
+5. **Output the discovered universe as a table:**
+   ```
+   | # | Ticker | Name | Market Cap | Sector |
+   |---|--------|------|-----------|--------|
+   | 1 | NVDA | NVIDIA | $4,718B | Semiconductors |
+   | 2 | SHEL | Shell | $216B | Energy |
+   ... 
+   
+   DISCOVERED: [N] candidates across [X] sectors
+   ```
+
+**If companiesmarketcap.com is unreachable:** Use Brave Search to find "largest companies by market cap 2026" and extract tickers from the results, then use Yahoo Finance to pull the market cap for each to verify >$150B.
+
+**If the user DID provide tickers:** Still run them through the discovery pipeline to verify they exist and pull current data. Never assume a ticker is valid — yfinance can return stale/incorrect data for delisted or foreign stocks.
 
 **STEP 2: Quantitative screen (Layer 1)**
-- Run Python script pulling FCF yield, ROIC, EBITDA margin, PE, revenue growth, short float for all candidates
+- Write a Python script that loops through ALL discovered tickers and pulls from yfinance: FCF yield, ROIC, EBITDA margin, PE (trailing + forward), revenue growth YoY, short float %, market cap
 - Score each: 3/3 = PASS, 2/3 = MARGINAL, ≤1/3 = KILL
-- Output the pass/fail table
-- **Death Penalty:** Negative FCF or negative ROIC = immediate kill, no exceptions
+- Output the pass/fail table sorted by FCF yield descending
+- **Death Penalty:** Negative FCF or negative ROIC = immediate kill, no exceptions. Flag "N/A" metrics (common for foreign ADRs) but do NOT kill for missing data — note it and proceed cautiously.
+- **Data validation:** If yfinance returns obviously wrong data (market cap off by 1000x, revenue showing in local currency without conversion), flag it and cross-reference with Yahoo Finance via browser before killing.
 
 **STEP 3: Deep fundamental moat check (Layer 1 continued)**
 - For PASS candidates (3/3 and strong 2/3): browser research on competitive moats

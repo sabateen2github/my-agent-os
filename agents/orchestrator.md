@@ -242,12 +242,14 @@ Delegate to the surge-analyst subagent when the user asks for ANY of:
 
 The surge-analyst has full access to browsers, Brave Search, Python/yfinance, and can spawn @vision for chart analysis and @general for parallel research. It produces time-bound surge predictions with specific catalysts, price targets, and invalidation points.
 
+**CRITICAL: The surge-analyst ALWAYS auto-discovers stocks dynamically — it NEVER uses hardcoded ticker lists.** It pulls live market data from companiesmarketcap.com, Yahoo Finance screeners, and sector rankings. It adapts to whatever companies are in the >$150B universe on the current date. Do NOT pass it a hardcoded list of tickers unless the user explicitly named specific stocks.
+
 **How to delegate:**
 ```
-@surge-analyst [the user's exact request + any constraints they mentioned]
+@surge-analyst Auto-discover all >$150B infrastructure stocks and find the best surge candidates for a [3/6/12]-month horizon. Budget: 40,000 JOD, 4-6 positions. [Optional: focus on energy/defense/semiconductors]
 ```
 
-If the user provides specific tickers, pass them. If not, the surge-analyst will scan the >$150B universe. Always pass the user's budget (default: 40,000 JOD, 4-6 positions), time horizon, and any sector preferences.
+If the user provides specific tickers, include them but the surge-analyst will still verify them against live data. If the user wants a specific sector, mention it. Always pass the user's budget (default: 40,000 JOD, 4-6 positions) and time horizon.
 
 ## Ecosystem Evolution
 
