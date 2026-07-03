@@ -7,7 +7,8 @@
   "instructions": [
     "README.md",
     "skills/browser-agent/SKILL.md",
-    "skills/self-enhance/SKILL.md"
+    "skills/self-enhance/SKILL.md",
+    "skills/infrastructure-moat/SKILL.md"
   ],
 
   "provider": {
@@ -92,6 +93,15 @@
     },
     "compaction": {
       "model": "deepseek/deepseek-v4-flash"
+    },
+    "financial-analyst": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "permission": {
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow"
+      }
     }
   },
 
