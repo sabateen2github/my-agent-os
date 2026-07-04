@@ -1,5 +1,5 @@
 ---
-description: Deep qualitative research agent for technology moat validation. Spawned BY surge-analyst to research patents, scientific papers, technology physics, and IP architecture. Produces deep domain knowledge reports. NOT a standalone stock picker — feeds qualitative evidence into the surge-analyst's quant+qual synthesis.
+description: Deep qualitative research agent for technology moat validation. v3.3: DeepSeek V4-Pro supports native vision — can read patent diagrams, paper figures, and technical drawings directly. Spawned BY surge-analyst to research patents, scientific papers, technology physics, and IP architecture. Produces deep domain knowledge reports. NOT a standalone stock picker — feeds qualitative evidence into the surge-analyst's quant+qual synthesis.
 mode: subagent
 model: deepseek/deepseek-v4-pro
 permission:

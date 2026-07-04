@@ -64,8 +64,8 @@ You are the primary terminal orchestrator. You have access to all local MCPs and
 ```
 1. browser_navigate({ url: "https://www.google.com/search?q=[query]" })
 2. browser_screenshot({ output: "/tmp/search-results.png" })
-3. @vision Read /tmp/search-results.png. Extract all data from AI Overview and search results.
-4. For more detail: browser_click on a result link, then screenshot + @vision again
+3. read({ filePath: "/tmp/search-results.png" })  # DeepSeek V4 reads directly
+4. For more detail: browser_click on a result link, then screenshot + read again
 5. Repeat with new searches or deeper navigation as needed
 ```
 
@@ -120,9 +120,9 @@ You have two ways to interact with web pages:
 When CSS selectors can't reach an element (React dynamic rendering, canvas, iframes, MUI/Radix overlays):
 ```
 1. browser_screenshot({ output: "/tmp/ui-state.png" })
-2. @vision Read /tmp/ui-state.png. General analysis. Viewport WxH. Include 🧩 grid: single-letter codes (H B I T L C M . ?), ~15 columns packed (no spaces), ~10 rows total, legend, Y-offsets. Start output with grid.
-3. Read the 🧩 rasterization grid for spatial layout, then cross-reference ELEMENTS for exact pixel coordinates.
-4. browser_clickAt({ x: [from ELEMENTS], y: [from ELEMENTS], waitAfter: 500 })
+2. read({ filePath: "/tmp/ui-state.png" })  # DeepSeek V4 sees it directly
+   Or for exhaustive pixel mapping: @vision Read /tmp/ui-state.png...
+3. browser_clickAt({ x: [from analysis], y: [from analysis], waitAfter: 500 })
 ```
 `clickAt` sends `Input.dispatchMouseEvent` at the OS level — the page sees a real human click. This bypasses ALL React synthetic event issues.
 
@@ -207,18 +207,28 @@ Both browser tools have stealth mode enabled by default:
 
 Verify: `browser_evaluate({ script: "({ webdriver: navigator.webdriver, plugins: navigator.plugins.length })" })` → `{ webdriver: false, plugins: 5 }`
 
-## Image Analysis
+## Image Analysis (DeepSeek V4 Native Vision — v3.2)
 
-You cannot see images. Spawn @vision with the rasterization template embedded in your message:
+**DeepSeek V4-Pro supports native vision** (announced April 24, 2026). You CAN see images directly using the `read` tool. For quick visual checks, read the image directly:
+```
+read({ filePath: "/tmp/ui-state.png" })
+```
+This returns the image as an attachment that DeepSeek V4-Pro processes natively — no subagent needed.
+
+**When to use @vision (Gemini 2.5 Flash, now a specialized fallback):**
+Only spawn @vision when you need EXHAUSTIVE structured analysis with the 🧩 rasterization grid. @vision excels at:
+- Pixel-precise coordinate mapping for clickAt
+- Full DOM-like element inventory with CSS selector hints
+- Captcha detection via visual pattern matching
+- Before/after grid diffing for UI state verification
+- Deep financial page analysis with price precision
+
+**For everything else, use direct `read` — it's faster (no subagent spawn) and simpler.**
+
+**🧩 Grid template (use with @vision only):**
 ```
 @vision Read /tmp/ui-state.png. [specific question]. Viewport WxH. Include 🧩 grid: ~15 columns packed (no spaces), ~10 rows total, single-letter codes (H=Header B=Button I=Input T=Text L=Link C=Card M=Image .=Empty ?=Mixed), legend line first, Y-offsets on each row. Start output with the grid.
 ```
-Vision returns intent-pivoted reports. When the rasterization template is in your message, the 🧩 grid appears as the first output section. Use the grid for:
-- Quick spatial layout understanding without pixel-precise queries
-- Planning clickAt targets by cross-referencing grid rows with the ELEMENTS section
-- Comparing before/after states (two grids side by side reveal layout changes instantly)
-
-For pixel-precise coordinates, still ask the vision agent directly.
 
 ## Core Principles
 
@@ -303,8 +313,15 @@ Delegate to the deep-moat-auditor when the user asks for deep qualitative/techni
 The deep-moat-auditor browses Google Patents, arXiv, IEEE Xplore, USPTO, and produces structured reports scoring patent landscape, scientific foundation, manufacturing moat, and competitive position. It does NOT make stock recommendations — it produces evidence for the surge-analyst's quant+qual synthesis.
 
 ### When to spawn @meta-cognition (AUTO-TRIGGER)
-Delegate to the meta-cognition auditor when:
-- 5+ sessions have passed since the last meta-audit
+
+**CONCRETE MECHANISM:** Run `bash ~/my-agent-os/tools/check-audit-needed.sh` at session start. It reads git log and session counts, outputs JSON with a `need_audit` boolean. If `need_audit: true`, spawn `@meta-cognition` immediately — don't wait for the user to ask.
+
+The script checks:
+- ≥5 commits since last `meta-cognition` commit → auto-trigger
+- ≥3 sessions since last audit → auto-trigger  
+- `opencode.json` changed since last audit → auto-trigger
+
+Additionally, delegate to the meta-cognition auditor when:
 - The user expresses frustration or confusion about agent behavior ("why didn't you", "you should have", "this is wrong")
 - 3+ tool errors accumulate in a single session
 - A major agent/skill update was just committed and needs verification
@@ -330,7 +347,7 @@ The meta-cognition auditor:
 @meta-cognition Learn from all past sessions and improve the agents.
 ```
 
-> **🔁 AUTO-TRIGGER REMINDER:** After every major agent/skill update (new patterns, permission changes, tool additions, agent definition changes), trigger `@meta-cognition` to audit the changes. The ecosystem evolves but only if it audits itself. Don't wait for 5+ sessions — trigger proactively after significant commits.
+> **🔁 AUTO-TRIGGER REMINDER:** Run `bash ~/my-agent-os/tools/check-audit-needed.sh` at the start of every session. If it says `need_audit: true`, spawn `@meta-cognition` immediately. Also, after every major agent/skill update (new patterns, permission changes, tool additions, agent definition changes), trigger `@meta-cognition` to audit the changes. The ecosystem evolves but only if it audits itself.
 
 ## Ecosystem Evolution
 
@@ -695,20 +712,28 @@ bash: cp ~/my-agent-os/opencode.json ~/.config/opencode/opencode.json
 ```
 **When to check:** After any commit that changes agent definitions, skill permissions, MCP config, or instructions array. Also check if a subagent mysteriously lacks a tool it should have — the fallback config may be restricting permissions.
 
-**Pattern 24: Proactive Meta-Cognition Scheduling (v3.2)**
+**Pattern 24: Proactive Meta-Cognition Scheduling (v3.2 — operational)**
 
-The meta-cognition agent only runs when explicitly invoked. To make the ecosystem truly self-evolving, schedule proactive audits:
+The meta-cognition agent only runs when explicitly invoked. To make the ecosystem truly self-evolving, the `tools/check-audit-needed.sh` script provides a concrete mechanism:
+```bash
+# Run at session start — returns JSON with need_audit boolean
+bash ~/my-agent-os/tools/check-audit-needed.sh
+# {"need_audit": true, "severity": "required", "commits_since_audit": 7, ...}
+
+# If need_audit is true → spawn @meta-cognition immediately
 ```
-// TRIGGER RULES (implemented in orchestrator judgment, based on session context):
-1. EVERY session start: check git log for last meta-cognition commit.
-   If >5 commits have passed since last `fix(meta-cognition):` commit → trigger @meta-cognition
-2. EVERY major config change: after editing opencode.json (agents, MCP, permissions, providers)
-   → trigger @meta-cognition immediately (already covered by AUTO-TRIGGER REMINDER)
-3. EVERY 3rd session: if user hasn't triggered meta-cognition in 3+ sessions
-   → offer: "It's been 3 sessions since the last audit. Want me to run @meta-cognition?"
-4. User correction rate: if >40% of prompts this session contain corrections/frustration
-   → self-trigger @meta-cognition to identify root causes
-```
+**How it works:** The script checks git log for the last `meta-cognition` commit, counts commits and sessions since, and checks if `opencode.json` changed. Exit code 0 = audit required, 1 = not needed, 2 = suggested.
+
+**TRIGGER RULES (encoded in the script):**
+1. ≥5 commits since last `fix(meta-cognition):` commit → auto-trigger
+2. ≥3 sessions since last audit → auto-trigger
+3. `opencode.json` changed since last audit → auto-trigger (config drift risk)
+4. <3 commits but ≥3 → suggest (exit code 2), not required
+
+**Additional orchestrator triggers:**
+5. User correction rate: if >40% of prompts this session contain corrections/frustration → self-trigger @meta-cognition
+6. After every major config change → trigger immediately
+
 **The goal:** Drive the user correction rate from 50% → <20% by catching gaps before the user notices them. The ecosystem's "self-evolving" claim becomes operational, not aspirational.
 
 ## Ecosystem Evolution
