@@ -162,6 +162,70 @@ def untrack_page(page):
         active_page = newest
 
 
+# ── Captcha auto-bypass ────────────────────────────────────────────────
+
+CAPTCHA_INDICATORS = [
+    "verify you are human",
+    "verify you're human",
+    "unusual traffic",
+    "are you a robot",
+    "prove you are human",
+    "captcha",
+    "one more step",
+    "please verify",
+]
+
+
+def _auto_dismiss_captcha(page):
+    """Try to auto-dismiss common captcha challenges (Bing checkbox, Cloudflare, etc).
+    Runs after every navigation — fast no-op if no captcha is present."""
+    try:
+        body_text = page.evaluate("() => document.body?.innerText?.toLowerCase() || ''")
+        has_captcha = any(indicator in body_text for indicator in CAPTCHA_INDICATORS)
+        if not has_captcha:
+            return
+
+        log("Captcha detected — attempting auto-bypass")
+
+        # Strategy 1: Click the reCAPTCHA iframe checkbox
+        recaptcha_frame = page.locator(
+            'iframe[title*="reCAPTCHA"], iframe[src*="recaptcha"], iframe[src*="captcha"]'
+        ).first
+        if recaptcha_frame.count() > 0:
+            try:
+                box = recaptcha_frame.bounding_box()
+                if box:
+                    # Click center of the iframe (typical 28x28px checkbox area)
+                    page.mouse.click(box["x"] + 28, box["y"] + 28)
+                    page.wait_for_timeout(3000)
+                    log("  → Clicked reCAPTCHA iframe checkbox")
+            except Exception:
+                pass
+
+        # Strategy 2: Click any checkbox near "verify you are human" text
+        try:
+            checkboxes = page.locator('input[type="checkbox"], [role="checkbox"]')
+            for i in range(checkboxes.count()):
+                cb = checkboxes.nth(i)
+                if cb.is_visible():
+                    cb.click(timeout=2000)
+                    page.wait_for_timeout(2000)
+                    log("  → Clicked captcha checkbox")
+                    break
+        except Exception:
+            pass
+
+        # Strategy 3: Press Enter (some captchas submit on Enter)
+        try:
+            page.keyboard.press("Enter")
+            page.wait_for_timeout(1500)
+        except Exception:
+            pass
+
+    except Exception as e:
+        log(f"Captcha bypass attempt failed (non-fatal): {e}")
+
+
 # ── Log eviction thread ──────────────────────────────────────────────
 
 
@@ -373,7 +437,7 @@ def recycle_page():
 
         if current_url and current_url != "about:blank":
             try:
-                new_page.goto(current_url, wait_until="load", timeout=15000)
+                new_page.goto(current_url, wait_until="domcontentloaded", timeout=15000)
             except Exception:
                 pass
         log(f"Page recycled (was at {current_url}), {len(managed_pages)} tabs active")
@@ -646,14 +710,18 @@ def handle_command(cmd):
     try:
         # ── navigate ──
         if action == "navigate":
-            # Default: "load" avoids hanging on tracking pixels that never settle.
-            # Use "networkidle" explicitly for SPAs that need full JS hydration.
-            wait_strategy = cmd.get("waitUntil") or "load"
+            # "domcontentloaded" fires as soon as HTML is parsed — never hangs
+            # on tracking pixels OR heavy JS. For SPAs that need full render,
+            # pass waitUntil: "networkidle" explicitly.
+            wait_strategy = cmd.get("waitUntil") or "domcontentloaded"
+            timeout = cmd.get("timeout", 30000)
             page.goto(
                 cmd["url"],
                 wait_until=wait_strategy,
-                timeout=cmd.get("timeout", 30000),
+                timeout=timeout,
             )
+            # Auto-dismiss common captcha obstacles after navigation
+            _auto_dismiss_captcha(page)
             touch_page(page)
             return {"status": "ok", "title": page.title(), "url": page.url}
 
