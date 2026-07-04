@@ -174,7 +174,15 @@ Filter to sectors relevant to physical infrastructure:
 
 **Total: 0-40 points.** Top 20-30 by score advance to Step 2.
 
-### Data Source:
+### Data Source (v3.2 RESEARCH-HEAVY):
+
+**🔥 MANDATORY: Every quantitative data point must be verified against 3+ sources. Never trust a single yfinance call.**
+
+1. **Primary pull (Python/yfinance):** Pull ALL metrics listed below. But yfinance is ONLY the starting point.
+2. **SEC cross-check (MANDATORY):** For every stock, verify revenue, net income, FCF, and EBITDA against the LATEST 10-K or 10-Q on SEC EDGAR. If yfinance and SEC data diverge >3%, use SEC data.
+3. **Competitor pull (MANDATORY):** Pull same metrics for top 2-3 competitors. Is this company outperforming or just riding industry tailwinds?
+4. **Historical context (MANDATORY):** Pull 5 years of annual data + 6 quarters of quarterly data — not just snapshot. Compute trends, not just levels.
+5. **Earnings call verification (MANDATORY):** Read latest earnings call transcript for revenue guidance, one-time items, segment commentary.
 ```python
 import yfinance as yf
 stock = yf.Ticker("TICKER")
@@ -363,7 +371,33 @@ The document establishes that Tier 3 AGI emergence requires Autonomous Telemetry
 
 ---
 
-## Step 3: Valuation Context (NEW in v3.0)
+## Step 3: Valuation Context (NEW in v3.0, v3.2 research-heavy)
+
+**v3.2: Valuation context must be verified against MULTIPLE sources, not just yfinance P/E.**
+
+**🔥 RESEARCH-HEAVY VALUATION VERIFICATION:**
+
+1. **P/E verification (3 sources):**
+   - yfinance: `info.get("trailingPE")` + `info.get("forwardPE")`
+   - Browser → Yahoo Finance → ticker → Statistics → trailing + forward P/E
+   - Browser → MarketWatch → ticker → valuation section
+   - Cross-check: all 3 must agree within 5%. If not, flag.
+
+2. **5-year historical P/E range (2 sources):**
+   - yfinance: pull 5-year historical P/E data → compute median, range
+   - Brave Search: `"[TICKER] 5 year average PE ratio"` + `"[TICKER] historical valuation multiple"`
+   - Is current P/E above or below 5-year median? Above = caution, below = potential opportunity.
+
+3. **Sector comparison (3 sources):**
+   - yfinance: pull P/E, EV/EBITDA, P/B for sector median
+   - Browser → Finviz → ticker → compare to sector averages
+   - Brave Search: `"[SECTOR] average PE ratio 2026"` + `"[TICKER] valuation vs peers"`
+
+4. **Dip/crash verification (4 sources — see Category 8 detection):**
+   - Identify crash date from 1Y chart
+   - Read earnings transcript from crash quarter
+   - Search for crash cause: temporary or structural?
+   - Check insider activity during the dip
 
 **v3.0 adds explicit valuation context to avoid buying overhyped stocks at peak multiples.**
 

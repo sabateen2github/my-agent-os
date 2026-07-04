@@ -108,9 +108,11 @@ Before screening a single stock, answer:
 
 ### STEP 1: Dynamically Assemble the Ticker Universe
 
+**🔥 v3.2 RESEARCH-HEAVY: Dynamic discovery is NOT a quick scrape. You must exhaustively collect tickers from ALL available sources and verify each against live data.**
+
 **DO NOT use hardcoded ticker lists. Discover dynamically from live market data.**
 
-Use at least 2 of these 3 sources:
+Use at least **ALL 3** of these sources (v3.2: was 2 of 3 — increased for completeness):
 
 #### Source A: CompaniesMarketCap.com (browser)
 ```
@@ -516,20 +518,51 @@ For the top 10-15 candidates by quantitative score, spawn @deep-moat-auditor age
 
 **Minimum requirement:** At least 5 top candidates must get a deep-moat-audit. For the final 4-6 picks, ALL must have deep moat audits.
 
-### STEP 4: Perform Your Own Deep Research (Browser)
+### STEP 4: Perform Your Own Deep Research (Browser) — v3.2 RESEARCH-HEAVY
 
-While deep-moat-auditors work, do your own deep qualitative research:
+**🔥 v3.2: This step is now EXHAUSTIVE. Minimum 30+ minutes of deep browser research per candidate.**
+
+While deep-moat-auditors work, do your own deep qualitative research. You MUST open and read the actual pages — not just screenshot search results:
 
 ```
-Browser research (DO NOT just read headlines — open the actual pages):
-1. Google Patents search per ticker → screenshot top patents
-2. arXiv search for key technology papers → browser_navigate to arxiv.org 
-3. IEEE Spectrum / SemiEngineering for manufacturing deep dives
-4. Company IR page → latest investor presentation → technology roadmap slides
-5. Competitor IR pages → compare technology claims
+Browser research (v3.2 — EXHAUSTIVE, not a quick scan):
+
+1. Google Patents (3+ queries per ticker):
+   - Search: "[COMPANY] [TECHNOLOGY] patent" → open top 5 patents → read CLAIMS (not just titles)
+   - Search: "[TECHNOLOGY] patent landscape [YEAR]" → understand competitive patent environment
+   - Search: "[COMPANY] patent expiration [YEAR]" → identify patent cliff risks
+   - Screenshot key patent claims → @vision extract
+
+2. arXiv / Google Scholar (3+ queries per ticker):
+   - Search: "[TECHNOLOGY] state of the art 2026" → open top 3 papers → read abstracts AND conclusions
+   - Search: "[TECHNOLOGY] physical limits breakthrough" → identify disruption risks
+   - Search: "[TECHNOLOGY] manufacturing process yield" → understand manufacturing barriers
+   - Screenshot key papers → @vision extract methodology and conclusions
+
+3. IEEE Spectrum / SemiEngineering / Trade Journals (2+ articles per ticker):
+   - Search: "[COMPANY] [TECHNOLOGY] manufacturing process deep dive"
+   - Search: "[TECHNOLOGY] equipment supply chain bottleneck"
+   - Read FULL articles, not just headlines
+
+4. Company IR page (exhaustive):
+   - Investor presentation → ALL slides, especially technology roadmap, segment breakdown, deployment numbers
+   - Annual report → CEO letter, business description, risk factors, segment data
+   - Earnings transcripts → last 3 quarters, FULL transcripts (not summaries)
+   - Screenshot key slides → @vision extract
+
+5. Competitor IR pages (2+ competitors):
+   - Compare technology claims against each other
+   - Compare deployment numbers, manufacturing capacity, capex guidance
+   - Compare risk factors → who has more supply chain risk?
+
+6. Robotics / Physical AI trade journals (v3.2 NEW):
+   - Robotics Business Review: "[COMPANY] deployment fleet size 2026"
+   - The Robot Report: "[COMPANY] production capacity robots per year"
+   - Industry analysis: "humanoid robot installed base forecast 2026 2030"
+   - Cross-check deployment claims against independent estimates
 ```
 
-**CRITICAL: For browser research, do NOT just screenshot search results. Click into the actual papers/patents/articles. Read the content. Extract specific claims, data, and evidence.**
+**🔥 MINIMUM: 15+ distinct browser pages opened and read per candidate. If you haven't opened 15+ pages, you haven't researched enough.**
 
 ---
 

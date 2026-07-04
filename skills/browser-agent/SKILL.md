@@ -363,3 +363,52 @@ This renders in the browser just like Google/Bing — screenshot + @vision to ex
 ## Ecosystem
 
 This skill is part of a self-evolving agent ecosystem. When new browser patterns are discovered during real work, they get baked into `orchestrator.md` and this SKILL.md. The tools in `browser.ts` are kept in sync with what `server.py` actually supports via the `self-enhance` skill.
+
+## 🔥 v3.2 Research Depth — Browser Research is Exhaustive
+
+**The browser is not a quick-look tool. It is a deep research instrument. Every browser session should open 10+ distinct pages, read full content, and cross-verify across sources.**
+
+### Research Depth Checklist (for every research task):
+
+Before concluding any research task, verify you have:
+- [ ] Opened 10+ distinct URLs (not just search result pages — actual content pages)
+- [ ] Read 3+ full articles/papers (not just abstracts or snippets)
+- [ ] Screenshotted 5+ key findings for @vision extraction
+- [ ] Searched 2+ different search engines (Google + Bing or DDG) for the same query
+- [ ] Accessed 2+ independent source types (e.g., company filing + trade journal + analyst report)
+- [ ] Found and read at least 1 contrarian/opposing view
+- [ ] Cross-checked quantitative claims against original source documents (not summaries)
+
+### Multi-Engine Research Pattern:
+
+For every research query, run variants across engines:
+```
+1. browser_navigate({ url: "https://www.google.com/search?q=[query]" })
+   → screenshot → @vision extract
+2. browser_navigate({ url: "https://www.bing.com/search?q=[query]" })
+   → screenshot → @vision extract (different results, different ranking)
+3. browser_navigate({ url: "https://duckduckgo.com/?q=[query]" })
+   → screenshot → @vision extract (no personalization bubble)
+4. Compare: did all 3 engines return the same top results? If not, dig into the differences.
+```
+
+### Deep Page Reading Protocol:
+
+When you land on an article/paper/filing:
+```
+1. browser_screenshot({ fullPage: true }) → @vision: "Read entire page. Extract ALL data points."
+2. browser_text({ selector: "article, .content, #main" }) → read full text
+3. browser_evaluate({ script: "document.querySelectorAll('a[href]').length" }) → how many links?
+4. Follow 3+ internal links to related content within the same domain
+5. browser_url() → save the URL for citation
+6. If behind paywall: try textise dot iitty, text version, or archive.org
+```
+
+### Source Quality Hierarchy:
+
+When researching financial/technical topics, prefer sources in this order:
+1. **Original:** Company SEC filings, government databases, patent claims, arXiv full papers
+2. **Industry-validated:** IEEE Spectrum, SemiEngineering, trade journals, Gartner/IDC reports
+3. **Financial media:** Reuters, Bloomberg, WSJ, Financial Times (full articles)
+4. **Aggregators:** Yahoo Finance, MarketWatch, Seeking Alpha (cross-check against higher-tier sources)
+5. **Social/forums:** Reddit, Twitter, StockTwits (use ONLY for sentiment, never for facts)
