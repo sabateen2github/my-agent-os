@@ -95,12 +95,62 @@
     "compaction": {
       "model": "deepseek/deepseek-v4-flash"
     },
+    "discovery": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "permission": {
+        "bash": "allow",
+        "task": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "browser_navigate": "allow",
+        "browser_click": "allow",
+        "browser_clickAt": "allow",
+        "browser_clickFrame": "allow",
+        "browser_type": "allow",
+        "browser_press": "allow",
+        "browser_scroll": "allow",
+        "browser_screenshot": "allow",
+        "browser_evaluate": "allow",
+        "browser_text": "allow",
+        "browser_html": "allow",
+        "browser_waitFor": "allow",
+        "browser_url": "allow",
+        "browser_networkLogs": "allow",
+        "browser_consoleLogs": "allow",
+        "browser_clearLogs": "allow",
+        "browser_cookies": "allow",
+        "browser_localStorage": "allow",
+        "browser_sessionStorage": "allow",
+        "browser_status": "allow",
+        "browser_viewport": "allow",
+        "browser_intercept": "allow",
+        "browser_stopIntercept": "allow",
+        "browser_hover": "allow",
+        "browser_select": "allow",
+        "browser_goBack": "allow",
+        "browser_goForward": "allow",
+        "browser_reload": "allow",
+        "browser_listTabs": "allow",
+        "browser_switchTab": "allow",
+        "browser_newTab": "allow",
+        "browser_closeTab": "allow",
+        "browser_telemetry": "allow",
+        "browser_reactSetValue": "allow",
+        "browser_triggerForm": "allow",
+        "browser_close": "allow",
+        "external_directory": {
+          "/tmp/*": "allow",
+          "/tmp/opencode/*": "allow"
+        }
+      }
+    },
     "deep-moat-auditor": {
       "model": "deepseek/deepseek-v4-pro",
       "mode": "subagent",
       "permission": {
         "bash": "allow",
-        "webfetch": "allow",
         "websearch": "allow",
         "task": "allow",
         "read": "allow",
@@ -123,6 +173,8 @@
         "browser_viewport": "allow",
         "browser_listTabs": "allow",
         "browser_switchTab": "allow",
+        "browser_newTab": "allow",
+        "browser_closeTab": "allow",
         "browser_status": "allow",
         "external_directory": {
           "/tmp/*": "allow",
@@ -135,7 +187,6 @@
       "mode": "subagent",
       "permission": {
         "bash": "allow",
-        "webfetch": "allow",
         "websearch": "allow",
         "task": "allow",
         "read": "allow",
@@ -159,6 +210,8 @@
         "browser_viewport": "allow",
         "browser_listTabs": "allow",
         "browser_switchTab": "allow",
+        "browser_newTab": "allow",
+        "browser_closeTab": "allow",
         "browser_status": "allow",
         "external_directory": {
           "/tmp/*": "allow",
@@ -176,8 +229,11 @@
         "write": "allow",
         "glob": "allow",
         "grep": "allow",
-        "webfetch": "allow",
         "task": "allow",
+        "browser_listTabs": "allow",
+        "browser_switchTab": "allow",
+        "browser_newTab": "allow",
+        "browser_closeTab": "allow",
         "external_directory": {
           "/home/ubuntu/my-agent-os/*": "allow",
           "/home/ubuntu/.local/share/opencode/log/*": "allow",
@@ -198,6 +254,7 @@
   "lsp": true,
 
   "mcp": {
+    "_comment": "NOTE: Brave Search MCP logs -32601 'Method not found' for resources/list and prompts/list at every startup. This is spec-compliant (the server does not implement those optional MCP endpoints). NOT a bug — benign informational noise.",
     "server-brave-search": {
       "type": "local",
       "command": [

@@ -72,6 +72,8 @@ Tab management:
 ```
 30. browser_listTabs   → list all open tabs/pages (id, url, title, active flag)
 31. browser_switchTab  → switch active tab by numeric tabId or 0-based index
+32. browser_newTab     → create a new isolated tab (returns tabId) — use for subagent isolation
+33. browser_closeTab   → close a tab by tabId or index (keeps last tab alive)
 ```
 
 ## Typical workflows

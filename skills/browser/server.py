@@ -1254,6 +1254,90 @@ def handle_command(cmd):
                 "tabCount": len(managed_pages),
             }
 
+        # ── newTab ──
+        elif action == "newTab":
+            # Enforce MAX_TABS limit
+            maybe_cleanup_tabs()
+            if len(managed_pages) >= MAX_TABS:
+                return {
+                    "status": "error",
+                    "message": f"Tab limit reached ({MAX_TABS} max). Close unused tabs with browser_closeTab before creating new ones.",
+                    "currentTabs": len(managed_pages),
+                }
+            url = cmd.get("url", "about:blank")
+            new_page = browser_context.new_page()
+            setup_page(new_page)
+            track_page(new_page)
+            if url and url != "about:blank":
+                try:
+                    new_page.goto(url, wait_until="domcontentloaded", timeout=15000)
+                except Exception as e:
+                    log(f"newTab: navigation to {url} failed: {e}")
+            meta = managed_pages[new_page]
+            log(f"New tab #{meta['id']} created (total: {len(managed_pages)})")
+            return {
+                "status": "ok",
+                "tabId": meta["id"],
+                "url": new_page.url,
+                "title": new_page.title(),
+                "totalTabs": len(managed_pages),
+            }
+
+        # ── closeTab ──
+        elif action == "closeTab":
+            tab_id = cmd.get("tabId")
+            index = cmd.get("index")
+            target = None
+
+            if tab_id is not None:
+                for pg, meta in managed_pages.items():
+                    if meta["id"] == tab_id:
+                        target = pg
+                        break
+            elif index is not None:
+                sorted_pages = sorted(managed_pages.items(), key=lambda x: x[1]["id"])
+                if 0 <= index < len(sorted_pages):
+                    target = sorted_pages[index][0]
+
+            if target is None:
+                return {
+                    "status": "error",
+                    "message": f"Tab not found (tabId={tab_id}, index={index}). Use browser_listTabs to see available tabs.",
+                }
+
+            # Don't close the last tab
+            if len(managed_pages) <= 1:
+                # Just navigate it to about:blank instead
+                try:
+                    target.goto(
+                        "about:blank", wait_until="domcontentloaded", timeout=5000
+                    )
+                except Exception:
+                    pass
+                meta = managed_pages.get(target, {})
+                log(f"Last tab kept alive (navigated to blank)")
+                return {
+                    "status": "ok",
+                    "closed": False,
+                    "keptAlive": True,
+                    "reason": "last tab",
+                }
+
+            meta = managed_pages.get(target, {})
+            tab_id_closed = meta.get("id") if meta else None
+            try:
+                target.close()
+            except Exception:
+                pass
+            untrack_page(target)
+            log(f"Tab #{tab_id_closed} closed (remaining: {len(managed_pages)})")
+            return {
+                "status": "ok",
+                "closed": True,
+                "tabId": tab_id_closed,
+                "remainingTabs": len(managed_pages),
+            }
+
         # ── triggerForm ──
         elif action == "triggerForm":
             methods = []

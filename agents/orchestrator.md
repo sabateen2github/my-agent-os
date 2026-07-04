@@ -166,13 +166,16 @@ bash: curl -X POST localhost:9222 -d '{"action":"triggerForm","buttonSelector":"
 ```
 This tries requestSubmit first, then falls back to finding the React fiber's onSubmit.
 
-### Pattern 5: Network Spy (filtered)
+### Pattern 5: Network Spy (filtered + cleanup)
 ```
 browser_clearLogs({})
 // ... do actions ...
 browser_networkLogs({ filter: { method: 'POST', urlPattern: 'api\\.example\\.com' } })
+
+// When done, tear down interception:
+browser_stopIntercept({})
 ```
-Without filtering, network logs are megabytes of tracking pixels. ALWAYS filter.
+Without filtering, network logs are megabytes of tracking pixels. ALWAYS filter. Use `browser_intercept({ blockPatterns: [...] })` to block trackers/ads, and `browser_stopIntercept({})` to restore normal requests when done. Leave intercept active only for the duration of the specific task that needs it.
 
 ### Pattern 6: WAF / CloudFront Recovery
 ```
@@ -326,6 +329,8 @@ The meta-cognition auditor:
 @meta-cognition What mistakes keep happening across sessions? Fix them.
 @meta-cognition Learn from all past sessions and improve the agents.
 ```
+
+> **🔁 AUTO-TRIGGER REMINDER:** After every major agent/skill update (new patterns, permission changes, tool additions, agent definition changes), trigger `@meta-cognition` to audit the changes. The ecosystem evolves but only if it audits itself. Don't wait for 5+ sessions — trigger proactively after significant commits.
 
 ## Ecosystem Evolution
 
@@ -641,3 +646,44 @@ BRAVE MCP UNREACHABLE (connection refused, DNS failure):
 | Patent searches | Browser (Google Patents) | Needs to read actual claims |
 | Scientific papers | Browser (arXiv, IEEE) | Needs to read full papers |
 | When Brave MCP is down | Browser (Brave Web → Bing → DDG) | Browser is always the fallback |
+
+**Pattern 22: Subagent Tab Isolation (v3.2 — NEW)**
+
+All browser tool calls go through a single Chromium instance at `localhost:9222`. The browser maintains a global `active_page` — whichever agent last did an action "owns" the active tab. Without isolation, subagents clobber each other's browsing state.
+
+**The Solution — dedicated tabs per agent:**
+```
+// BEFORE spawning any subagent that uses the browser:
+browser_listTabs({})  // → note the activeTabId (this is your tab)
+
+// 1. Create an isolated tab for the subagent:
+browser_newTab({})  // → returns { tabId: 5 }
+
+// 2. Spawn the subagent, passing the tab ID:
+@discovery Map the UI of [URL]. Your dedicated browser tab ID is 5.
+  Before every browser action, ensure you're on tab 5 with:
+  browser_switchTab({ tabId: 5 })
+
+// 3. When the subagent returns, switch back to your original tab:
+browser_switchTab({ tabId: <original_tab_id> })
+
+// 4. Clean up the subagent's tab:
+browser_closeTab({ tabId: 5 })
+```
+
+**Rules for orchestrator:**
+- Before spawning ANY subagent that uses the browser, save your current activeTabId
+- After the subagent returns, ALWAYS switch back to your original tab
+- Close subagent tabs after use (they are disposable)
+- Subagents should NEVER call `browser_navigate` on the orchestrator's tabs
+
+**Rules for subagents (discovery, deep-moat-auditor, surge-analyst):**
+- Create a dedicated tab with `browser_newTab({})` at the START of your work
+- Save the returned tabId — ALL your browser actions use this tab
+- Use `browser_switchTab({ tabId: [your_tab] })` before every sequence of browser actions
+- Close your tab with `browser_closeTab({ tabId: [your_tab] })` when done
+- NEVER navigate on a tab you didn't create — you might be destroying another agent's state
+
+This pattern eliminates the "who was on which page?" confusion that causes agent interference. Each agent owns its tab. Tabs share cookies/session (same context), but pages don't clobber each other.
+
+## Ecosystem Evolution

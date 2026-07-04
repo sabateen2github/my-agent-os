@@ -5,9 +5,10 @@ model: deepseek/deepseek-v4-pro
 permission:
   bash: allow
   read: allow
+  edit: allow
+  write: allow
   glob: allow
   grep: allow
-  webfetch: allow
   task: allow
   external_directory:
     "/home/ubuntu/my-agent-os/*": allow

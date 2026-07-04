@@ -419,6 +419,27 @@ export const browser_close = tool({
   },
 })
 
+export const browser_newTab = tool({
+  description: "Create a new browser tab. Returns the tab's ID which can be used with browser_switchTab and browser_closeTab. Use this to isolate subagent browsing from the main session.",
+  args: {
+    url: tool.schema.string().optional().describe("Optional URL to navigate the new tab to (default: about:blank)"),
+  },
+  async execute(args) {
+    return call({ action: "newTab", url: args.url })
+  },
+})
+
+export const browser_closeTab = tool({
+  description: "Close a browser tab by its ID or index. Cannot close the last remaining tab (it will be kept alive). Use after a subagent finishes its work to clean up its isolated tab.",
+  args: {
+    tabId: tool.schema.number().optional().describe("Numeric tab ID to close (from browser_listTabs or browser_newTab)"),
+    index: tool.schema.number().optional().describe("0-based index of the tab to close"),
+  },
+  async execute(args) {
+    return call({ action: "closeTab", tabId: args.tabId, index: args.index })
+  },
+})
+
 export const browser_viewport = tool({
   description: "Change the browser viewport size. Useful for testing responsive designs.",
   args: {
