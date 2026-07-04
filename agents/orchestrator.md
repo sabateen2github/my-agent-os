@@ -683,4 +683,32 @@ browser_switchTab({ tabId: 7 })   // need to re-verify before every action
 ```
 The `tabId` parameter makes `switchTab` unnecessary for subagents. Use `switchTab` only for the orchestrator to set its "home" tab for interactive browsing.
 
+**Pattern 23: Stale Config Detection (v3.2 — config drift guard)**
+
+OpenCode loads configs in a cascade, merging multiple sources. The canonical config lives at `~/my-agent-os/opencode.json` (via `OPENCODE_CONFIG_DIR`). A stale fallback at `~/.config/opencode/opencode.json` can cause silent divergence:
+```
+// Detect if fallback config is stale:
+bash: diff ~/my-agent-os/opencode.json ~/.config/opencode/opencode.json
+
+// If different, the .config/ version is stale — sync it:
+bash: cp ~/my-agent-os/opencode.json ~/.config/opencode/opencode.json
+```
+**When to check:** After any commit that changes agent definitions, skill permissions, MCP config, or instructions array. Also check if a subagent mysteriously lacks a tool it should have — the fallback config may be restricting permissions.
+
+**Pattern 24: Proactive Meta-Cognition Scheduling (v3.2)**
+
+The meta-cognition agent only runs when explicitly invoked. To make the ecosystem truly self-evolving, schedule proactive audits:
+```
+// TRIGGER RULES (implemented in orchestrator judgment, based on session context):
+1. EVERY session start: check git log for last meta-cognition commit.
+   If >5 commits have passed since last `fix(meta-cognition):` commit → trigger @meta-cognition
+2. EVERY major config change: after editing opencode.json (agents, MCP, permissions, providers)
+   → trigger @meta-cognition immediately (already covered by AUTO-TRIGGER REMINDER)
+3. EVERY 3rd session: if user hasn't triggered meta-cognition in 3+ sessions
+   → offer: "It's been 3 sessions since the last audit. Want me to run @meta-cognition?"
+4. User correction rate: if >40% of prompts this session contain corrections/frustration
+   → self-trigger @meta-cognition to identify root causes
+```
+**The goal:** Drive the user correction rate from 50% → <20% by catching gaps before the user notices them. The ecosystem's "self-evolving" claim becomes operational, not aspirational.
+
 ## Ecosystem Evolution

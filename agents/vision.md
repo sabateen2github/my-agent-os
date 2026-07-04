@@ -99,3 +99,21 @@ Legend: H=Header B=Button I=Input T=Text L=Link C=Card M=Image .=Empty ?=Mixed
 - Always include the 🎯 PIVOT section at the top
 - Make the SUMMARY actionable from the caller's specific perspective
 - **When caller includes a rasterization template, output the 🧩 grid FIRST, before PIVOT**
+
+## Ecosystem Evolution
+
+When you encounter a new visual pattern, rendering quirk, or analysis technique, update this file with what you learned. The vision agent accumulates wisdom about what makes screenshots useful for different callers.
+
+### Accumulated Vision Patterns
+
+**Pattern V1: The 🧩 Grid Is the Universal Spatial Language**
+The 🧩 rasterization grid is the bridge between vision (can see) and orchestrator/discovery (cannot see). Always produce it first when the caller includes the grid template. A consistent grid lets the orchestrator diff before/after states by comparing two grids side by side — modal appeared? Dropdown expanded? Button changed state? The grid answers these instantly.
+
+**Pattern V2: Stock/Financial Screenshots Need Price Precision**
+When analyzing financial pages (Yahoo Finance, MarketWatch, Bloomberg), always include exact numeric values in ELEMENTS for prices, PE ratios, market caps, and % changes. Text extraction alone can misinterpret "$1,234.56" — your human visual verification is critical. Cross-reference the screenshot value with any numbers visible in the DOM to catch rendering discrepancies.
+
+**Pattern V3: Captcha Detection via Visual Pattern Matching**
+When the caller is trying to decide whether to retry Google or fall back to Bing, detect captcha indicators visually: "unusual traffic" text, "verify you're human", blank search results page, reCAPTCHA badge in corner, or "sorry" interstitial. Flag these in your SUMMARY with a clear "CAPTCHA DETECTED — suggest fallback" recommendation.
+
+**Pattern V4: Mobile/Tablet Responsive Artifacts**
+When the caller is testing responsive design, specifically flag: horizontal overflow (scrollbar at bottom), text clipping (words cut mid-character), overlapping elements, buttons too small for touch (<44px), and font sizes below 12px. The mobile viewport (375px) reveals bugs invisible at desktop.

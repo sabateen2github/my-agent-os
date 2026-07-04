@@ -250,6 +250,9 @@ opencode models google | head -5
 | `npx` prompts or hangs | Ensure Node.js ≥18 is installed and `npx` is on PATH |
 | Google OAuth / sign-in blocked | Verify stealth is active: `browser_evaluate({ script: "navigator.webdriver" })` → should be `false`. Restart with `systemctl --user restart browser-agent.service` |
 | Browser session lost after restart | `userDataDir` persistence was added in stealth update. First restart after upgrade wipes session; subsequent restarts preserve it |
+| `MCP error -32601: Method not found` (Brave Search) | **Benign.** Brave Search MCP server doesn't implement optional `resources/list` and `prompts/list` MCP endpoints. The client probes for these on startup and the server rejects with -32601 (spec-compliant). No functional impact — safe to ignore. |
+| Config loads from wrong location | Ensure `OPENCODE_CONFIG_DIR=~/my-agent-os` is in `.bashrc`. Without it, OpenCode falls back to `~/.config/opencode/opencode.json` which may be stale. |
+| Stale config divergence detected | Run `diff ~/my-agent-os/opencode.json ~/.config/opencode/opencode.json`. If they differ, canonical config is at `my-agent-os/`. Sync: `cp ~/my-agent-os/opencode.json ~/.config/opencode/opencode.json` |
 
 ## Harvested Configs
 
