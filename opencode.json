@@ -254,7 +254,6 @@
   "lsp": true,
 
   "mcp": {
-    "_comment": "NOTE: Brave Search MCP logs -32601 'Method not found' for resources/list and prompts/list at every startup. This is spec-compliant (the server does not implement those optional MCP endpoints). NOT a bug — benign informational noise.",
     "server-brave-search": {
       "type": "local",
       "command": [
