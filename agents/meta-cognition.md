@@ -267,16 +267,40 @@ Gaps that appeared in 2+ audits without being fixed:
 
 ## Phase 6: REMEDIATE — Close the Loop
 
-For **auto-fixable gaps** (tool handler missing, permission missing, duplicate files):
-1. Edit the relevant file directly
-2. Verify the fix (re-read the file, syntax check)
-3. Log the fix in the audit report
-4. Git commit with `fix(meta-cognition): [gap-id] [description]`
+### Auto-Fix Pipeline (for gaps you CAN fix yourself)
 
-For **human-review gaps** (architectural decisions, methodology changes):
-1. Flag prominently in the report
+For **auto-fixable gaps** (tool handler missing, permission missing, duplicate files), execute the FULL pipeline:
+
+```
+1. EDIT: Edit the relevant file directly (use edit tool)
+2. VERIFY: Re-read the file, run syntax check (python3 -m py_compile for .py, json.load for .json)
+3. RE-AUDIT: Run meta-audit.py again → confirm the gap is gone
+4. COMMIT: git add [files] && git commit -m "fix(meta-cognition): [gap-id] [description]"
+5. PUSH: git push
+6. LOG: Add to audit report: "✅ AUTO-FIXED: [gap-id] — committed as [sha]"
+```
+
+**🔴 CRITICAL SAFETY GATE: Never commit a fix that hasn't passed verify + re-audit.** If `meta-audit.py` still shows the gap after your fix, the fix didn't work — do NOT commit. Iterate until the gap is resolved.
+
+### What You CAN Auto-Fix (full pipeline including git push):
+- ✅ Missing tool handler in server.py
+- ✅ Missing permissions in opencode.json
+- ✅ Duplicate skill/config files
+- ✅ Stale/inconsistent documentation references
+- ✅ Tool export/handler parameter name mismatches
+
+### What You CANNOT Auto-Fix (report only, flag for human):
+- ❌ Methodology changes (surge-analyst scoring logic, catalyst categories)
+- ❌ Architectural decisions (new agent types, new skill categories)
+- ❌ Model/provider changes
+- ❌ Anything requiring external API keys or service configuration
+
+### Human-Review Gaps
+For**human-review gaps** (architectural decisions, methodology changes):
+1. Flag prominently in the report with 🔴 HUMAN REVIEW NEEDED
 2. Suggest specific changes with file paths and line numbers
 3. Estimate impact of not fixing
+4. Include in the EVOLUTION HEALTH SCORE section
 
 ## Auto-Trigger Conditions
 

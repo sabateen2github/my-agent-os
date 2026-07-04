@@ -311,9 +311,12 @@ The meta-cognition auditor:
 1. Scans opencode logs for actual behavior patterns
 2. Parses agent definitions for intended mandates
 3. Compares intended vs actual — detects mandate violations, broken tools, permission gaps
-4. Auto-fixes fixable gaps (missing permissions, duplicate files, broken handlers)
+4. Auto-fixes fixable gaps (missing permissions, duplicate files, broken handlers) — **verifies, commits, and git pushes automatically**
 5. Produces a structured gap report with severity ratings
-6. Feeds unfixable architectural gaps back to this orchestrator for human review
+6. Flags architectural gaps for human review (methodology changes, new agent types)
+7. Re-runs itself after fixing to confirm gaps are resolved
+
+**The meta-cognition agent has edit+write+bash permissions and will auto-commit verified fixes.** No human intervention needed for tool integrity fixes, permission gaps, or duplicate cleanup.
 
 **How to delegate:**
 ```
