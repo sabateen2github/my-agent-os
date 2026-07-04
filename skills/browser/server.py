@@ -38,19 +38,19 @@ Path(USER_DATA_DIR).mkdir(parents=True, exist_ok=True)
 Path(SCREENSHOT_DIR).mkdir(parents=True, exist_ok=True)
 
 # Log eviction
-LOG_MAX_AGE_MS = 60 * 60 * 1000       # 1 hour
-LOG_CLEANUP_INTERVAL_S = 10 * 60      # 10 min
+LOG_MAX_AGE_MS = 60 * 60 * 1000  # 1 hour
+LOG_CLEANUP_INTERVAL_S = 10 * 60  # 10 min
 
 # Page management
-PAGE_RECYCLE_INTERVAL_S = 30 * 60     # 30 min
-STALE_TAB_AGE_S = 18 * 60 * 60        # 18 hours
-TAB_CLEANUP_INTERVAL_S = 30 * 60      # 30 min
+PAGE_RECYCLE_INTERVAL_S = 30 * 60  # 30 min
+STALE_TAB_AGE_S = 18 * 60 * 60  # 18 hours
+TAB_CLEANUP_INTERVAL_S = 30 * 60  # 30 min
 MAX_TABS = 20
 
 # Memory
 MEMORY_WARN_MB = 500
 MEMORY_KILL_MB = 800
-MEMORY_CHECK_INTERVAL_S = 5 * 60      # 5 min
+MEMORY_CHECK_INTERVAL_S = 5 * 60  # 5 min
 
 # Stealth
 STEALTH_USER_AGENT = (
@@ -84,15 +84,15 @@ window.navigator.permissions.query = (parameters) => (
 
 # ── Global state ─────────────────────────────────────────────────────
 
-playwright_api = None          # sync_playwright instance
-browser_context = None         # Persistent BrowserContext
-console_logs = []              # { type, text, timestamp }
-network_requests_list = []     # { id, method, url, resourceType, headers, postData, timestamp }
-network_responses_list = []    # { id, url, status, statusText, headers, fromCache, timestamp }
-js_errors = []                 # { message, timestamp }
-managed_pages = {}             # page object → { "id", "created_at", "last_used" }
-active_page = None             # Currently active page
-_next_tab_id = 0               # Monotonically increasing tab ID counter
+playwright_api = None  # sync_playwright instance
+browser_context = None  # Persistent BrowserContext
+console_logs = []  # { type, text, timestamp }
+network_requests_list = []  # { id, method, url, resourceType, headers, postData, timestamp }
+network_responses_list = []  # { id, url, status, statusText, headers, fromCache, timestamp }
+js_errors = []  # { message, timestamp }
+managed_pages = {}  # page object → { "id", "created_at", "last_used" }
+active_page = None  # Currently active page
+_next_tab_id = 0  # Monotonically increasing tab ID counter
 connected = False
 
 # Thread safety
@@ -106,6 +106,7 @@ _intercept_handler_ref = None
 _intercept_page_ref = None
 
 # ── Helpers ──────────────────────────────────────────────────────────
+
 
 def get_rss_mb():
     """Return resident memory in MB by reading /proc/self/status."""
@@ -163,6 +164,7 @@ def untrack_page(page):
 
 # ── Log eviction thread ──────────────────────────────────────────────
 
+
 def evict_old_logs():
     """Drop log entries older than LOG_MAX_AGE_MS."""
     cutoff = time.time() - (LOG_MAX_AGE_MS / 1000)
@@ -185,6 +187,7 @@ def log_cleanup_loop():
 
 # ── Tab cleanup thread ───────────────────────────────────────────────
 
+
 def cleanup_stale_tabs():
     """Close pages idle for > STALE_TAB_AGE_S and enforce MAX_TABS cap.
     Must be called from the main Playwright thread (request handler)."""
@@ -205,7 +208,9 @@ def cleanup_stale_tabs():
     for pg in to_close:
         try:
             meta = managed_pages.get(pg)
-            log(f"Closing stale tab #{meta['id'] if meta else '?'} (idle since {time.ctime(meta['last_used']) if meta else '?'})")
+            log(
+                f"Closing stale tab #{meta['id'] if meta else '?'} (idle since {time.ctime(meta['last_used']) if meta else '?'})"
+            )
             pg.close()
             untrack_page(pg)
         except Exception:
@@ -226,7 +231,9 @@ def cleanup_stale_tabs():
                 pass
             untrack_page(oldest)
         elif len(managed_pages) > 1:
-            sorted_pages = sorted(managed_pages.items(), key=lambda x: x[1]["created_at"])
+            sorted_pages = sorted(
+                managed_pages.items(), key=lambda x: x[1]["created_at"]
+            )
             for pg, _ in sorted_pages:
                 if pg is not active_page:
                     try:
@@ -252,6 +259,7 @@ def maybe_cleanup_tabs():
 
 # ── Memory watchdog thread ───────────────────────────────────────────
 
+
 def memory_watchdog_loop():
     """Monitor RSS and trigger recycle if threshold exceeded."""
     global recycle_requested
@@ -264,13 +272,16 @@ def memory_watchdog_loop():
             if rss > MEMORY_WARN_MB:
                 log(f"WARNING: Memory {rss}MB > {MEMORY_WARN_MB}MB threshold")
             if rss > MEMORY_KILL_MB:
-                log(f"CRITICAL: Memory {rss}MB > {MEMORY_KILL_MB}MB — triggering recycle")
+                log(
+                    f"CRITICAL: Memory {rss}MB > {MEMORY_KILL_MB}MB — triggering recycle"
+                )
                 recycle_requested = True
         except Exception as e:
             log(f"Memory watchdog error: {e}")
 
 
 # ── Page / Browser lifecycle ─────────────────────────────────────────
+
 
 def setup_page(page):
     """Apply stealth, listeners, and viewport to a new page."""
@@ -280,45 +291,59 @@ def setup_page(page):
 
     # Network logging
     def on_request(request):
-        network_requests_list.append({
-            "id": id(request),
-            "method": request.method,
-            "url": request.url,
-            "resourceType": request.resource_type,
-            "headers": dict(request.headers),
-            "postData": request.post_data,
-            "timestamp": int(time.time() * 1000),
-        })
+        try:
+            post_data = request.post_data
+        except Exception:
+            post_data = None  # gzipped or binary body
+        network_requests_list.append(
+            {
+                "id": id(request),
+                "method": request.method,
+                "url": request.url,
+                "resourceType": request.resource_type,
+                "headers": dict(request.headers),
+                "postData": post_data,
+                "timestamp": int(time.time() * 1000),
+            }
+        )
         if len(network_requests_list) > 5000:
             del network_requests_list[:1000]
 
     def on_response(response):
-        network_responses_list.append({
-            "id": id(response.request),
-            "url": response.url,
-            "status": response.status,
-            "statusText": response.status_text,
-            "headers": dict(response.headers),
-            "fromCache": response.from_service_worker if hasattr(response, "from_service_worker") else False,
-            "timestamp": int(time.time() * 1000),
-        })
+        network_responses_list.append(
+            {
+                "id": id(response.request),
+                "url": response.url,
+                "status": response.status,
+                "statusText": response.status_text,
+                "headers": dict(response.headers),
+                "fromCache": response.from_service_worker
+                if hasattr(response, "from_service_worker")
+                else False,
+                "timestamp": int(time.time() * 1000),
+            }
+        )
         if len(network_responses_list) > 5000:
             del network_responses_list[:1000]
 
     def on_console(msg):
-        console_logs.append({
-            "type": msg.type,
-            "text": msg.text,
-            "timestamp": int(time.time() * 1000),
-        })
+        console_logs.append(
+            {
+                "type": msg.type,
+                "text": msg.text,
+                "timestamp": int(time.time() * 1000),
+            }
+        )
         if len(console_logs) > 5000:
             del console_logs[:1000]
 
     def on_pageerror(err):
-        js_errors.append({
-            "message": str(err) if not hasattr(err, "message") else err.message,
-            "timestamp": int(time.time() * 1000),
-        })
+        js_errors.append(
+            {
+                "message": str(err) if not hasattr(err, "message") else err.message,
+                "timestamp": int(time.time() * 1000),
+            }
+        )
         if len(js_errors) > 1000:
             del js_errors[:200]
 
@@ -348,7 +373,7 @@ def recycle_page():
 
         if current_url and current_url != "about:blank":
             try:
-                new_page.goto(current_url, wait_until="networkidle", timeout=15000)
+                new_page.goto(current_url, wait_until="load", timeout=15000)
             except Exception:
                 pass
         log(f"Page recycled (was at {current_url}), {len(managed_pages)} tabs active")
@@ -456,6 +481,7 @@ def ensure_browser():
     # ── Fresh browser launch ─────────────────────────────────────────
     if playwright_api is None:
         from playwright.sync_api import sync_playwright
+
         playwright_api = sync_playwright().start()
 
     chrome_args = [
@@ -490,7 +516,9 @@ def ensure_browser():
             return
         setup_page(new_page)
         track_page(new_page)
-        log(f"Popup/page tracked (#{managed_pages[new_page]['id']}), total: {len(managed_pages)}")
+        log(
+            f"Popup/page tracked (#{managed_pages[new_page]['id']}), total: {len(managed_pages)}"
+        )
 
     browser_context.on("page", on_page)
 
@@ -503,6 +531,7 @@ def ensure_browser():
 
 
 # ── Command handler ──────────────────────────────────────────────────
+
 
 def handle_command(cmd):
     """Process a single command. Must be called with page_lock held."""
@@ -563,21 +592,25 @@ def handle_command(cmd):
         tabs = []
         for pg, meta in list(managed_pages.items()):
             try:
-                tabs.append({
-                    "id": meta["id"],
-                    "url": pg.url,
-                    "title": pg.title(),
-                    "active": pg is active_page,
-                    "createdAt": meta["created_at"],
-                    "lastUsed": meta["last_used"],
-                })
+                tabs.append(
+                    {
+                        "id": meta["id"],
+                        "url": pg.url,
+                        "title": pg.title(),
+                        "active": pg is active_page,
+                        "createdAt": meta["created_at"],
+                        "lastUsed": meta["last_used"],
+                    }
+                )
             except Exception:
                 pass
         return {
             "status": "ok",
             "tabs": tabs,
             "tabCount": len(tabs),
-            "activeTabId": managed_pages.get(active_page, {}).get("id") if active_page else None,
+            "activeTabId": managed_pages.get(active_page, {}).get("id")
+            if active_page
+            else None,
         }
 
     if action == "close":
@@ -613,9 +646,12 @@ def handle_command(cmd):
     try:
         # ── navigate ──
         if action == "navigate":
+            # Default: "load" avoids hanging on tracking pixels that never settle.
+            # Use "networkidle" explicitly for SPAs that need full JS hydration.
+            wait_strategy = cmd.get("waitUntil") or "load"
             page.goto(
                 cmd["url"],
-                wait_until=cmd.get("waitUntil", "networkidle") or "networkidle",
+                wait_until=wait_strategy,
                 timeout=cmd.get("timeout", 30000),
             )
             touch_page(page)
@@ -645,7 +681,11 @@ def handle_command(cmd):
             touch_page(page)
             if cmd.get("waitAfter"):
                 page.wait_for_timeout(cmd["waitAfter"])
-            return {"status": "ok", "clickedAt": {"x": x, "y": y}, "clickCount": click_count}
+            return {
+                "status": "ok",
+                "clickedAt": {"x": x, "y": y},
+                "clickCount": click_count,
+            }
 
         # ── clickFrame ──
         elif action == "clickFrame":
@@ -664,7 +704,11 @@ def handle_command(cmd):
             touch_page(page)
             if wait_after:
                 page.wait_for_timeout(wait_after)
-            return {"status": "ok", "clickedFrame": iframe_selector, "at": {"x": x, "y": y}}
+            return {
+                "status": "ok",
+                "clickedFrame": iframe_selector,
+                "at": {"x": x, "y": y},
+            }
 
         # ── type ──
         elif action == "type":
@@ -736,9 +780,7 @@ def handle_command(cmd):
         elif action == "text":
             if cmd.get("selector"):
                 elements = page.locator(cmd["selector"]).all()
-                text = "\n".join(
-                    el.inner_text() for el in elements
-                )
+                text = "\n".join(el.inner_text() for el in elements)
             else:
                 text = page.evaluate("() => document.body?.innerText || ''")
             max_len = int(cmd.get("maxLength", 100000))
@@ -789,7 +831,11 @@ def handle_command(cmd):
                 if "url" not in cookie:
                     if "domain" in cookie:
                         # Use current page URL as base, or construct from domain
-                        base_url = page.url if page else f"https://{cookie['domain'].lstrip('.')}"
+                        base_url = (
+                            page.url
+                            if page
+                            else f"https://{cookie['domain'].lstrip('.')}"
+                        )
                         cookie["url"] = base_url
                     elif page:
                         cookie["url"] = page.url
@@ -802,7 +848,11 @@ def handle_command(cmd):
                 browser_context.add_cookies([cookie])
                 return {"status": "ok", "set": True}
             if cmd.get("delete"):
-                names = cmd["delete"] if isinstance(cmd["delete"], list) else [cmd["delete"]]
+                names = (
+                    cmd["delete"]
+                    if isinstance(cmd["delete"], list)
+                    else [cmd["delete"]]
+                )
                 for name in names:
                     # Get all cookies with this name and clear them
                     all_cookies = browser_context.cookies()
@@ -1008,7 +1058,10 @@ def handle_command(cmd):
                     target = sorted_pages[index][0]
 
             if target is None:
-                return {"status": "error", "message": f"Tab not found (tabId={tab_id}, index={index}). Use browser_listTabs to see available tabs."}
+                return {
+                    "status": "error",
+                    "message": f"Tab not found (tabId={tab_id}, index={index}). Use browser_listTabs to see available tabs.",
+                }
 
             try:
                 target.evaluate("() => 1")
@@ -1020,7 +1073,11 @@ def handle_command(cmd):
             meta = managed_pages[target]
             return {
                 "status": "ok",
-                "switchedTo": {"id": meta["id"], "url": target.url, "title": target.title()},
+                "switchedTo": {
+                    "id": meta["id"],
+                    "url": target.url,
+                    "title": target.title(),
+                },
                 "tabCount": len(managed_pages),
             }
 
@@ -1114,7 +1171,12 @@ def handle_command(cmd):
             dom_info = handle_command({"action": "html"})
             network_info = handle_command({"action": "networkLogs"})
             console_info = handle_command({"action": "consoleLogs"})
-            screenshot_info = handle_command({"action": "screenshot", "output": cmd.get("screenshotOutput", "/tmp/ui-state.png")})
+            screenshot_info = handle_command(
+                {
+                    "action": "screenshot",
+                    "output": cmd.get("screenshotOutput", "/tmp/ui-state.png"),
+                }
+            )
 
             return {
                 "status": "ok",
@@ -1144,6 +1206,7 @@ def handle_command(cmd):
 
 # ── HTTP server ──────────────────────────────────────────────────────
 
+
 class BrowserRequestHandler(BaseHTTPRequestHandler):
     """HTTP request handler for the browser server."""
 
@@ -1168,12 +1231,14 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
                 except Exception as e:
                     self._json_response({"status": "error", "message": str(e)}, 500)
         else:
-            self._json_response({
-                "service": "browser-server",
-                "version": "3.0.0",
-                "backend": "playwright",
-                "port": PORT,
-            })
+            self._json_response(
+                {
+                    "service": "browser-server",
+                    "version": "3.0.0",
+                    "backend": "playwright",
+                    "port": PORT,
+                }
+            )
 
     def do_POST(self):
         content_length = int(self.headers.get("Content-Length", 0))
@@ -1182,7 +1247,9 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         try:
             cmd = json.loads(body)
         except json.JSONDecodeError as e:
-            self._json_response({"status": "error", "message": f"Invalid JSON: {e}"}, 400)
+            self._json_response(
+                {"status": "error", "message": f"Invalid JSON: {e}"}, 400
+            )
             return
 
         with page_lock:
@@ -1191,6 +1258,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
 
 
 # ── Main ─────────────────────────────────────────────────────────────
+
 
 def main():
     global shutting_down
@@ -1205,7 +1273,9 @@ def main():
     t.start()
     threads.append(t)
 
-    t = threading.Thread(target=memory_watchdog_loop, daemon=True, name="memory-watchdog")
+    t = threading.Thread(
+        target=memory_watchdog_loop, daemon=True, name="memory-watchdog"
+    )
     t.start()
     threads.append(t)
 
