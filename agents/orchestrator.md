@@ -306,21 +306,25 @@ Delegate to the meta-cognition auditor when:
 - 3+ tool errors accumulate in a single session
 - A major agent/skill update was just committed and needs verification
 - The user explicitly asks "audit yourself", "check for gaps", "how can you improve"
+- **The user asks to enhance based on history: "enhance yourself", "learn from past sessions", "what should we improve", "what mistakes keep happening"**
 
 The meta-cognition auditor:
-1. Scans opencode logs for actual behavior patterns
-2. Parses agent definitions for intended mandates
-3. Compares intended vs actual — detects mandate violations, broken tools, permission gaps
+1. Scans ALL opencode logs (not just current session) for actual behavior patterns — mandate violations, tool failures, broken patterns, instruction drift
+2. Parses agent definitions for intended mandates, principles, and patterns
+3. Compares intended vs actual — detects: principle violations ("browser-first" broken), instruction drift (agents ignoring their own mandates), recurring failures (same tool error across 3+ sessions), pattern decay (documented patterns not used in practice)
 4. Auto-fixes fixable gaps (missing permissions, duplicate files, broken handlers) — **verifies, commits, and git pushes automatically**
 5. Produces a structured gap report with severity ratings
-6. Flags architectural gaps for human review (methodology changes, new agent types)
-7. Re-runs itself after fixing to confirm gaps are resolved
+6. **Hands off to @self-enhance**: feeds actionable findings (patterns to harden, instructions to fix) directly to the self-enhance skill for methodology improvements
+7. Flags architectural gaps for human review (methodology changes, new agent types)
+8. Re-runs itself after fixing to confirm gaps are resolved
 
 **The meta-cognition agent has edit+write+bash permissions and will auto-commit verified fixes.** No human intervention needed for tool integrity fixes, permission gaps, or duplicate cleanup.
 
 **How to delegate:**
 ```
-@meta-cognition Run a full audit. [Optional: --since YYYY-MM-DD, --quick]
+@meta-cognition Run a full audit across all sessions and enhance what you find.
+@meta-cognition What mistakes keep happening across sessions? Fix them.
+@meta-cognition Learn from all past sessions and improve the agents.
 ```
 
 ## Ecosystem Evolution

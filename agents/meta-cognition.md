@@ -211,6 +211,33 @@ For each agent file, measure:
   ✗ If orchestrator grows but subagents stagnate → MEDIUM GAP
 ```
 
+### Rule 9: Cross-Session Recurring Failure Detection (NEW v1.0)
+```
+For each error/warning/failure pattern detected in logs:
+  - Does it appear in 3+ different sessions? → RECURRING
+  - Does it persist after a fix was committed? → FIX DIDN'T WORK
+  - Is it getting worse (more occurrences per session)? → DEGRADING
+  ✗ If same gap appears in 3+ sessions → CRITICAL (systemic, not transient)
+  ✗ If user corrected the same thing in 2+ prompts → HIGH (they're repeating themselves)
+  ✗ If a pattern documented in orchestrator.md is violated in >20% of sessions → HIGH (instruction drift)
+
+Output: a "Recurring Failure Index" — which gaps are systemic vs one-time.
+```
+
+### Rule 10: Instruction-Principle Drift Detection
+```
+For each agent with principles and rules in its .md file:
+  - Extract all MUST/NEVER/ALWAYS rules
+  - Scan logs for evidence of these rules being followed or violated
+  Examples:
+    orchestrator.md: "Never commit speculative changes" → check if unverified commits exist
+    orchestrator.md: "Browser is PRIMARY tool for internet" → check webfetch ratio
+    deep-moat-auditor.md: "READ THE ACTUAL PAPERS" → check if papers were opened vs just search results
+    surge-analyst.md: "Python/yfinance for quantitative phase" → check if yfinance was used
+  ✗ If rule exists but no log evidence of it being followed → HIGH (dead instruction)
+  ✗ If rule is violated in >30% of sessions → CRITICAL (principle broken)
+```
+
 ## Phase 4: SCORE — Severity Matrix
 
 | Severity | Symbol | Criteria | Action Required |
@@ -296,11 +323,31 @@ For **auto-fixable gaps** (tool handler missing, permission missing, duplicate f
 - ❌ Anything requiring external API keys or service configuration
 
 ### Human-Review Gaps
-For**human-review gaps** (architectural decisions, methodology changes):
+For **human-review gaps** (architectural decisions, methodology changes):
 1. Flag prominently in the report with 🔴 HUMAN REVIEW NEEDED
 2. Suggest specific changes with file paths and line numbers
 3. Estimate impact of not fixing
 4. Include in the EVOLUTION HEALTH SCORE section
+
+### Self-Enhance Handoff (for methodology/instruction gaps from historical analysis)
+
+When the audit finds gaps that require methodology changes (not just tool fixes), feed them to @self-enhance:
+
+```
+1. IDENTIFY: Which agent/skill file needs updating and why?
+2. PRIORITIZE: Top 3 changes by impact — which would prevent the most recurring failures?
+3. PATTERN: What new pattern or rule should be baked into the file?
+4. HANDOFF: "@self-enhance: Based on meta-audit of [N] sessions, the top enhancements needed are: [list with evidence]"
+5. VERIFY: After self-enhance commits, re-run meta-audit to confirm the gap severity decreased
+```
+
+**Example handoff** — from a hypothetical historical audit:
+```
+@self-enhance: Audit of 15 sessions shows 3 recurring issues:
+1. Surge-analyst skipped Python quant screen in 6/15 sessions → add enforcement rule
+2. Deep-moat-auditor used webfetch for patent search in 8/15 sessions → it now has browser access, update its instructions to mandate browser for patents
+3. Discovery agent timed out on JS-heavy sites in 4/15 sessions → harden waitUntil default
+```
 
 ## Auto-Trigger Conditions
 
