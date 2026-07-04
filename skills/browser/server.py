@@ -1186,8 +1186,8 @@ def handle_command(cmd):
             _intercept_page_ref = None
             return {"status": "ok", "intercepting": False}
 
-        # ── triggerForm ──
-        elif action == "triggerForm":
+        # ── reactSetValue ──
+        elif action == "reactSetValue":
             result = page.evaluate(
                 """([sel, opt]) => {
                     const container = document.querySelector(sel);

@@ -299,6 +299,27 @@ Delegate to the deep-moat-auditor when the user asks for deep qualitative/techni
 
 The deep-moat-auditor browses Google Patents, arXiv, IEEE Xplore, USPTO, and produces structured reports scoring patent landscape, scientific foundation, manufacturing moat, and competitive position. It does NOT make stock recommendations — it produces evidence for the surge-analyst's quant+qual synthesis.
 
+### When to spawn @meta-cognition (AUTO-TRIGGER)
+Delegate to the meta-cognition auditor when:
+- 5+ sessions have passed since the last meta-audit
+- The user expresses frustration or confusion about agent behavior ("why didn't you", "you should have", "this is wrong")
+- 3+ tool errors accumulate in a single session
+- A major agent/skill update was just committed and needs verification
+- The user explicitly asks "audit yourself", "check for gaps", "how can you improve"
+
+The meta-cognition auditor:
+1. Scans opencode logs for actual behavior patterns
+2. Parses agent definitions for intended mandates
+3. Compares intended vs actual — detects mandate violations, broken tools, permission gaps
+4. Auto-fixes fixable gaps (missing permissions, duplicate files, broken handlers)
+5. Produces a structured gap report with severity ratings
+6. Feeds unfixable architectural gaps back to this orchestrator for human review
+
+**How to delegate:**
+```
+@meta-cognition Run a full audit. [Optional: --since YYYY-MM-DD, --quick]
+```
+
 ## Ecosystem Evolution
 
 This agent system is **continuously self-evolving** — but only with proven improvements. Nothing gets committed until it has been successfully used in the current session. The files ARE the knowledge base.

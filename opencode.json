@@ -105,7 +105,29 @@
         "task": "allow",
         "read": "allow",
         "glob": "allow",
-        "grep": "allow"
+        "grep": "allow",
+        "browser_navigate": "allow",
+        "browser_click": "allow",
+        "browser_clickAt": "allow",
+        "browser_screenshot": "allow",
+        "browser_evaluate": "allow",
+        "browser_text": "allow",
+        "browser_html": "allow",
+        "browser_scroll": "allow",
+        "browser_waitFor": "allow",
+        "browser_url": "allow",
+        "browser_networkLogs": "allow",
+        "browser_consoleLogs": "allow",
+        "browser_clearLogs": "allow",
+        "browser_cookies": "allow",
+        "browser_viewport": "allow",
+        "browser_listTabs": "allow",
+        "browser_switchTab": "allow",
+        "browser_status": "allow",
+        "external_directory": {
+          "/tmp/*": "allow",
+          "/tmp/opencode/*": "allow"
+        }
       }
     },
     "surge-analyst": {
@@ -119,7 +141,47 @@
         "read": "allow",
         "edit": "allow",
         "glob": "allow",
-        "grep": "allow"
+        "grep": "allow",
+        "browser_navigate": "allow",
+        "browser_click": "allow",
+        "browser_clickAt": "allow",
+        "browser_screenshot": "allow",
+        "browser_evaluate": "allow",
+        "browser_text": "allow",
+        "browser_html": "allow",
+        "browser_scroll": "allow",
+        "browser_waitFor": "allow",
+        "browser_url": "allow",
+        "browser_networkLogs": "allow",
+        "browser_consoleLogs": "allow",
+        "browser_clearLogs": "allow",
+        "browser_cookies": "allow",
+        "browser_viewport": "allow",
+        "browser_listTabs": "allow",
+        "browser_switchTab": "allow",
+        "browser_status": "allow",
+        "external_directory": {
+          "/tmp/*": "allow",
+          "/tmp/opencode/*": "allow"
+        }
+      }
+    },
+    "meta-cognition": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "permission": {
+        "bash": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "webfetch": "allow",
+        "task": "allow",
+        "external_directory": {
+          "/home/ubuntu/my-agent-os/*": "allow",
+          "/home/ubuntu/.local/share/opencode/log/*": "allow",
+          "/home/ubuntu/.local/state/opencode/*": "allow",
+          "/tmp/*": "allow"
+        }
       }
     }
   },
