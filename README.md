@@ -1,6 +1,6 @@
 # Agent OS
 
-A version-controlled, global Agent OS toolkit for [OpenCode](https://opencode.ai). Consolidates AI configurations from OpenCode and Gemini CLI into a 3-tier deep reasoning architecture backed by **DeepSeek V4 Pro** and **Gemini 3.1 Pro Preview**.
+A version-controlled, global Agent OS toolkit for [OpenCode](https://opencode.ai). Consolidates AI configurations from OpenCode and Gemini CLI into a 3-tier deep reasoning architecture backed by **DeepSeek V4 Pro** (orchestrator/agents) and **Gemini 2.5 Flash** (vision).
 
 ## Quick Start
 
