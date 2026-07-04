@@ -120,9 +120,10 @@ def scan_logs(since_date=None):
 
         # ── Scoped scanning by tier ──
         # ALL tiers: global counts
+        # Note: browser tools registered as "browser_browser_*" (namespace prefix from plugin)
         data["webfetch_calls"] += len(re.findall(r'"webfetch"', content))
         data["browser_navigate_calls"] += len(
-            re.findall(r'"browser_navigate"', content)
+            re.findall(r"browser_browser_navigate", content)
         )
         data["brave_mcp_calls"] += len(
             re.findall(r"server-brave-search_brave_web_search", content)

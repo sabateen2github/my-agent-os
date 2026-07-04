@@ -270,7 +270,6 @@
   "permission": {
     "skill": {
       "browser-agent": "allow",
-      "browser-telemetry": "allow",
       "self-enhance": "allow"
     },
     "external_directory": {
