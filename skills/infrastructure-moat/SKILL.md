@@ -83,6 +83,8 @@ Filter to sectors relevant to physical infrastructure:
 
 ## Step 0: Secular Trend Identification (NEW in v2.0, enhanced in v3.0)
 
+**⚠️ Search Resilience (v3.1):** When browser-navigating to Google for trend research, expect captcha blocks. If Google blocks you, immediately switch to Bing (`https://www.bing.com/search?q=[query]`) or DuckDuckGo. Direct URLs (Yahoo Finance sector performance, CompaniesMarketCap.com, Wikipedia) rarely block headless browsers — try these before any fallback to `webfetch`. Never waste more than 2 recovery attempts fighting Google's captcha.
+
 **Run BEFORE quantitative screen. Identifies which macro themes matter RIGHT NOW.**
 
 ### Active Secular Mega-Trends (update continuously):

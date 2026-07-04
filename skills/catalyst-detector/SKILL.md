@@ -422,6 +422,8 @@ The v3.1 sequence:
 
 ## Verification Protocol
 
+**⚠️ Search Resilience (v3.1):** All detection methods below reference "Browser → [site]" or "Brave Search → [query]". If Google captcha-locks the browser, immediately switch to Bing (`https://www.bing.com/search?q=[query]`) or DuckDuckGo (`https://duckduckgo.com/?q=[query]`). If Brave MCP fails, use browser `https://search.brave.com/search?q=[query]`. Direct URLs (Yahoo Finance, OpenInsider, SEC EDGAR) rarely block headless browsers and should be tried before any fallback to `webfetch`. Never waste more than 2 recovery attempts fighting Google's captcha.
+
 1. **Primary source:** Company filings (10-K, 10-Q, 8-K, 13D), government databases
 2. **Secondary source:** Financial media (Reuters, Bloomberg, WSJ)
 3. **Tertiary:** Analyst reports, industry publications

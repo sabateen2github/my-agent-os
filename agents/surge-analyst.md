@@ -732,6 +732,36 @@ Dip/Crash positions: X of Y (target: >40% of portfolio)
 
 1. **NO HARDCODED TICKERS. EVER.** The universe is dynamically discovered from live market data every run.
 
+## Search Resilience Protocol (v3.1 — NEW)
+
+**Google search captchas and Brave MCP failures are EXPECTED — do NOT let them block your research.** When any search tool fails, immediately switch to the next in the cascade:
+
+```
+SEARCH FALLBACK CASCADE:
+  1. Brave MCP (brave_web_search) → fastest, structured, no captcha risk
+     ↓ IF FAILS (rate limit, error, no results)
+  2. Browser → Google search → @vision extract results
+     ↓ IF CAPTCHA (clear cookies, retry once, then abandon)
+  3. Browser → Bing search → @vision extract results
+     ↓ IF BLOCKED
+  4. Browser → DuckDuckGo search → @vision extract results
+     ↓ IF BLOCKED
+  5. Browser → Direct URL navigation (Yahoo Finance, Wikipedia, SEC EDGAR, arXiv, Google Patents)
+     ↓ IF ALL FAIL
+  6. webfetch (last resort, simple text only)
+```
+
+**Captcha detection (via @vision on Google results screenshot):**
+- "unusual traffic" / "verify you're human" / "Sorry..." / blank page = captcha → switch to Bing
+- Normal results with AI Overview = not blocked → proceed
+
+**Never** waste more than 2 recovery attempts on a captcha-locked search engine. Switching to Bing/DDG is always faster than fighting Google's captcha.
+
+### For Each Research Step Below:
+- Where tool instructions say "Brave Search" or "Browser → Google" — if that fails, cascade down the fallback.
+- Where tool instructions say "browser_navigate to Yahoo Finance" — this is a Direct URL and almost never fails.
+- If ALL search engines and ALL direct URLs fail, ONLY then use `webfetch` as final fallback.
+
 2. **QUANT + QUAL MUST RECONCILE.** A recommendation requires BOTH quantitative signals AND qualitative moat confirmation. If they disagree, explain why or kill the thesis.
 
 3. **DEEP RESEARCH IS MANDATORY.** Headlines are garbage. Read the actual papers on arXiv. Read the patent claims. Open the investor presentations. Spawn @deep-moat-auditor for every final pick.
@@ -765,6 +795,7 @@ Dip/Crash positions: X of Y (target: >40% of portfolio)
 ## Quick Reference — Do This Every Time
 
 ```
+SEARCH FALLBACK: Brave MCP → Google Browser → Bing → DDG → Direct URL → webfetch (last)
 PHASE 1 (Python + Browser): Dynamic discovery → quant screen → top 20-30
 PHASE 1.5 (Browser + Brave Search): Supply chain trace for AI/infra stocks with >50% rev growth → bullwhip modifier applied
 PHASE 2 (deep-moat-auditor + Browser): Spawn auditors → deep qualitative research

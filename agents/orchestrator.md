@@ -22,12 +22,18 @@ You are the primary terminal orchestrator. You have access to all local MCPs and
 
 ## Browser-First Web Research (CRITICAL RULE)
 
-**The browser is your PRIMARY tool for internet connectivity and web research.** All web searches, article reading, financial data lookups, and information gathering MUST go through the browser first. The browser gives you: search engines (Google), JavaScript-rendered pages (Yahoo Finance, Wikipedia), interactive content, screenshot capture, DOM inspection, and network monitoring.
+**The browser is your PRIMARY tool for internet connectivity and web research.** All web searches, article reading, financial data lookups, and information gathering MUST go through the browser first. The browser gives you: search engines (Google, Bing, DuckDuckGo), JavaScript-rendered pages (Yahoo Finance, Wikipedia), interactive content, screenshot capture, DOM inspection, and network monitoring.
+
+**Search engine resilience (v3.1):** Google may captcha-lock the browser. When it does, try these in order:
+1. **Bing:** `https://www.bing.com/search?q=[query]` — rarely captchas, good for financial/news queries
+2. **DuckDuckGo:** `https://duckduckgo.com/?q=[query]` — no captcha ever, privacy-focused, weaker for financial data
+3. **Direct URL navigation:** Skip search engines entirely — navigate directly to known-good URLs (finance.yahoo.com, wikipedia.org, reuters.com, sec.gov/edgar)
 
 **Use `webfetch` ONLY as an emergency fallback** when ALL of these are true:
-1. The browser has failed repeatedly (timeouts, blocks, errors)
-2. The page content is simple HTML/text with no JavaScript dependency
-3. The information is time-critical and you cannot afford browser retries
+1. All three browser-based search engines have failed (captcha on all, blocks, timeouts)
+2. Direct URL navigation also failed
+3. The page content is simple HTML/text with no JavaScript dependency
+4. The information is time-critical and you cannot afford browser retries
 
 **Web research workflow:**
 ```
@@ -288,6 +294,7 @@ This agent system is **continuously self-evolving** — but only with proven imp
 - ❌ Editing code without first screenshotting the current browser state
 - ❌ Patching symptoms instead of fixing the root cause — regex in renderer when backend filter would eliminate the problem for all consumers
 - ❌ Using `webfetch` for web research when the browser is available and working
+- ❌ Using `webfetch` before trying Bing or DuckDuckGo when Google is captcha-locked
 
 ### Testing Checklist (before any commit)
 When fixing or adding a feature that affects user-facing behavior:
@@ -486,16 +493,95 @@ Always embed the rasterization template in your @vision calls. The 🧩 grid is 
 ```
 The grid gives spatial context at a glance ("card in rows 5-7, buttons in row 4"); ELEMENTS gives precise coordinates. Always include the grid template in your @vision message — without it, Gemini won't produce the grid. For before/after verification, diff the two grids: did the modal appear? Did the dropdown expand?
 
-**Pattern 20: Browser-First Web Research Pipeline**
+**Pattern 20: Resilient Web Research Pipeline (v3.1 — search engine fallback)**
 When researching ANY topic on the internet — financial data, technical documentation, news, product specs, market analysis:
 ```
-1. NAVIGATE to Google: browser_navigate({ url: "https://www.google.com/search?q=[encoded+query]" })
-2. SCREENSHOT the results: browser_screenshot({ output: "/tmp/search-[topic].png" })
-3. ANALYZE with @vision: "Read /tmp/search-[topic].png. Extract [specific data]. Include 🧩 grid..."
-4. DEEP DIVE: browser_click on the most relevant result link, screenshot again, @vision again
-5. ITERATE: Refine search queries based on what you learn. Navigate to new searches.
-6. CROSS-REFERENCE: Navigate to multiple sources (Wikipedia, Yahoo Finance, company sites) for verification
-```
-This pattern was proven across 10+ searches during the S&P 500 worst-performers analysis session (July 2026) — financial data from Yahoo Finance, technical specs from Wikipedia, inference cost analysis from Substack, all gathered via browser navigation with zero `webfetch` user_data. The browser handles JavaScript-rendered content (Yahoo Finance charts, Google AI Overviews) that `webfetch` cannot render.
+PRIMARY PATH (Google):
+  1. browser_navigate({ url: "https://www.google.com/search?q=[encoded+query]" })
+  2. browser_status({}) → check wafBlocked. If blocked, go to FALLBACK PATH.
+  3. browser_screenshot({ output: "/tmp/search-[topic].png" })
+  4. @vision Read /tmp/search-[topic].png. Check for captcha indicators: "unusual traffic",
+     "verify you're human", "sorry", reCAPTCHA badge, blank results with no AI Overview.
+     If captcha detected → go to CAPTCHA RECOVERY, then FALLBACK PATH.
+  5. ANALYZE with @vision: "Read /tmp/search-[topic].png. Extract [specific data]."
+  6. DEEP DIVE: browser_click on the most relevant result link, screenshot again, @vision again
+  7. ITERATE: Refine search queries based on what you learn. Navigate to new searches.
+  8. CROSS-REFERENCE: Navigate to multiple sources (Wikipedia, Yahoo Finance, company sites) for verification
 
-**Never** start with `webfetch` for web research. Always start with the browser. Only fall back to `webfetch` when the browser has failed at least twice on the same URL.
+FALLBACK PATH (Bing — when Google captchas):
+  1. browser_navigate({ url: "https://www.bing.com/search?q=[encoded+query]" })
+  2. browser_screenshot({ output: "/tmp/search-[topic]-bing.png" })
+  3. @vision Read /tmp/search-[topic]-bing.png. Extract [specific data].
+  4. Continue from step 6 above.
+
+FALLBACK PATH (DuckDuckGo — when Bing also fails):
+  1. browser_navigate({ url: "https://duckduckgo.com/?q=[encoded+query]" })
+  2. browser_screenshot({ output: "/tmp/search-[topic]-ddg.png" })
+  3. @vision Read /tmp/search-[topic]-ddg.png. Extract [specific data].
+  4. Continue from step 6 above.
+
+FALLBACK PATH (Direct URL — skip search engines entirely):
+  1. For financial data: browser_navigate({ url: "https://finance.yahoo.com/quote/[TICKER]" })
+  2. For technical info: browser_navigate({ url: "https://en.wikipedia.org/wiki/[TOPIC]" })
+  3. For filings: browser_navigate({ url: "https://www.sec.gov/edgar/search/" })
+  4. For patents: browser_navigate({ url: "https://patents.google.com/?q=[query]" })
+  5. For papers: browser_navigate({ url: "https://arxiv.org/search/?query=[query]" })
+
+CAPTCHA RECOVERY (try before abandoning Google):
+  1. browser_cookies({ delete: ['*'] })  // clear Google tracking cookies
+  2. browser_evaluate({ script: "navigator.sendBeacon = function(){}" })  // disable tracking
+  3. Wait 5 seconds, then retry browser_navigate to Google
+  4. If captcha still appears: try browser_clickAt on the reCAPTCHA iframe if visible
+  5. If all recovery fails: move to FALLBACK PATH — do NOT waste 10+ attempts on Google
+
+FINAL FALLBACK (webfetch — only when ALL browser search engines AND direct URLs fail):
+  1. webfetch({ url: "[direct-source-url]", format: "markdown" })
+  2. Use ONLY for simple HTML/text content — will NOT render JavaScript
+```
+
+**Search engine capabilities by provider:**
+| Engine | AI Overview | Financial Data | Technical Docs | Captcha Risk | Best For |
+|--------|------------|----------------|----------------|-------------|----------|
+| Google | ✅ Yes (best) | ✅ (with Yahoo) | ✅ Good | 🔴 HIGH | AI Overviews, rich snippets, knowledge panels |
+| Bing | 🟡 Limited | ✅ Good (MSN Money) | ✅ Good | 🟢 LOW | Financial searches, Microsoft ecosystem, no-captcha reliability |
+| DuckDuckGo | ❌ None | 🟡 Limited | ✅ Good | 🟢 NONE | Privacy-sensitive queries, completely captcha-free |
+| Direct URL | ❌ N/A | ✅ (Yahoo Finance) | ✅ (Wikipedia, arXiv) | 🟢 NONE | Known-good sources, always works |
+
+This pattern was proven across 10+ searches during the S&P 500 worst-performers analysis session (July 2026) — financial data from Yahoo Finance, technical specs from Wikipedia, inference cost analysis from Substack, all gathered via browser navigation. The search engine fallback was added in v3.1 after Google repeatedly captcha-locked the browser during surge-analyst research sessions.
+
+**Pattern 21: Brave Search MCP Fallback (v3.1 — NEW)**
+The Brave Search MCP (`server-brave-search_brave_web_search` and `server-brave-search_brave_local_search`) is a fast API-based search tool that bypasses browser captcha issues entirely. However, it can also fail (rate limits, API errors, connectivity issues). When that happens:
+
+```
+BRAVE MCP IS WORKING:
+  1. server-brave-search_brave_web_search({ query: "[query]", count: 10 })
+  2. Returns structured results with titles, URLs, and descriptions
+  3. Use for quick fact checks, company lookups, news discovery
+  4. For deep research: still prefer browser (renders full pages, captures AI Overviews)
+
+BRAVE MCP IS FAILING (rate limit, error, no results):
+  1. Check the error type:
+     - Rate limit (429) → wait 30 seconds, retry once. If still fails, fall back.
+     - API error (500) → immediate fallback. Don't retry.
+     - Empty results → the query may be too narrow. Broaden and retry once.
+  2. FALLBACK: Use browser-based search instead:
+     - browser_navigate({ url: "https://search.brave.com/search?q=[query]" })
+     - This uses Brave Search's web interface (NOT the MCP API) — renders in browser
+     - Screenshot + @vision to extract results (same as Pattern 20)
+  3. If browser Brave Search also fails: fall through to Bing or DuckDuckGo (Pattern 20 FALLBACK PATH)
+
+BRAVE MCP UNREACHABLE (connection refused, DNS failure):
+  1. Skip Brave entirely — go directly to browser-based search (Pattern 20)
+  2. Brave MCP is a convenience, not a necessity. The browser can do everything Brave MCP can do.
+```
+
+**Brave MCP vs Browser Search — When to Use Which:**
+| Scenario | Use | Why |
+|----------|-----|-----|
+| Quick fact check or definition | Brave MCP | Faster, no browser overhead |
+| "Find me news about [topic]" | Brave MCP first, browser if fails | Structured results, fast |
+| Financial data, stock prices | Browser (Yahoo Finance) | JavaScript-rendered, needs rendering |
+| Company deep research | Browser (multi-source) | Needs page content, not just snippets |
+| Patent searches | Browser (Google Patents) | Needs to read actual claims |
+| Scientific papers | Browser (arXiv, IEEE) | Needs to read full papers |
+| When Brave MCP is down | Browser (Brave Web → Bing → DDG) | Browser is always the fallback |
