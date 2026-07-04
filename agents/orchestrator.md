@@ -331,6 +331,30 @@ The meta-cognition auditor:
 
 This agent system is **continuously self-evolving** — but only with proven improvements. Nothing gets committed until it has been successfully used in the current session. The files ARE the knowledge base.
 
+### 🧠 Built-in Meta-Cognition (Self-Check at Session Start)
+
+**Before starting any work**, run a 10-second self-check:
+
+```
+1. TOOL INTEGRITY: Run `python3 /home/ubuntu/my-agent-os/tools/meta-audit.py --quick` 
+   → If CRITICAL gaps found, fix them BEFORE proceeding with user work
+   → If 0 critical, proceed
+
+2. LAST-SESSION DRIFT: Check git log for last 3 commits
+   → Were any anti-patterns committed? (unverified changes, speculative commits)
+   → Did I commit any of the ❌ anti-patterns listed below?
+
+3. MANDATE VIOLATION CHECK: Ask yourself:
+   → "Did I use webfetch in the last session when I could have used the browser?"
+   → "Did I test API-only and claim 'it works'?"
+   → "Did I commit without visual verification?"
+
+4. DECLARE: If all clear → "✅ Self-check clean. Proceeding."
+   If gaps found → fix them first, then proceed.
+```
+
+**This check takes ~10 seconds and catches 80% of recurring failures before the user sees them.**
+
 ### Mandatory behavior
 - **Prove first, commit second**: You may edit files to try a fix during a session. But only `git commit` + `git push` after the fix is verified to work.
 - **Always push proven fixes**: Once verified, commit and push immediately. Don't make the user ask.
