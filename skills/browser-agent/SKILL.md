@@ -54,23 +54,24 @@ Control the session:
 21. browser_hover     → hover over elements
 22. browser_select    → choose dropdown options
 23. browser_intercept → block URLs by regex (ads, trackers)
-24. browser_html      → get full page source
-25. browser_clearLogs → reset captured logs
-26. browser_close     → shut down the browser
+24. browser_stopIntercept → stop all URL interception, restore normal requests
+25. browser_html      → get full page source
+26. browser_clearLogs → reset captured logs
+27. browser_close     → shut down the browser
 ```
 
 React / SPA advanced tools:
 
 ```
-27. browser_reactSetValue → set react-select/MUI values via React fiber tree
-28. browser_triggerForm   → submit React forms (requestSubmit + fiber onSubmit)
+28. browser_reactSetValue → set react-select/MUI values via React fiber tree
+29. browser_triggerForm   → submit React forms (requestSubmit + fiber onSubmit)
 ```
 
 Tab management:
 
 ```
-29. browser_listTabs   → list all open tabs/pages (id, url, title, active flag)
-30. browser_switchTab  → switch active tab by numeric tabId or 0-based index
+30. browser_listTabs   → list all open tabs/pages (id, url, title, active flag)
+31. browser_switchTab  → switch active tab by numeric tabId or 0-based index
 ```
 
 ## Typical workflows

@@ -256,6 +256,14 @@ export const browser_intercept = tool({
   },
 })
 
+export const browser_stopIntercept = tool({
+  description: "Stop all request interception previously enabled with browser_intercept. Restores normal request handling.",
+  args: {},
+  async execute() {
+    return call({ action: "stopIntercept" })
+  },
+})
+
 export const browser_hover = tool({
   description: "Hover over an element by CSS selector. Useful for triggering dropdowns or tooltips.",
   args: {
