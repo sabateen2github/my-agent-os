@@ -253,8 +253,30 @@ For every company you analyze, you MUST research at least 5 of these 7 deep sour
 ### Thesis Reconciliation:
 [Does the qualitative moat CONFIRM or CONTRADICT the quantitative thesis?]
 
-### Known Unknowns:
+### Assumption Flags (v3.2 — MANDATORY):
+**Every dimension scored with <5 sources or estimated data must be explicitly flagged here.**
+[Reference the Known Unknowns table above. List the top 3 assumptions that could change the moat rating.]
+
+### Known Unknowns & Assumption Flags (v3.2 — MANDATORY, expanded from v3.0):
 [What couldn't we verify? What would change the assessment?]
+
+**🔥 v3.2: This section is now structured with severity levels. Every research gap is an assumption that must be explicitly flagged.**
+
+| # | Severity | Research Gap / Assumption | Why Unverified | Impact on Moat Score | Mitigation |
+|---|----------|--------------------------|----------------|---------------------|------------|
+| 1 | 🔴 | [e.g., Core patent expiration date unverified] | [Paywall / database access] | [Patent score could be 2 pts lower] | [Alternative verification path] |
+| 2 | 🟠 | [e.g., Competitor deployment numbers from trade journal, not company disclosure] | [Company doesn't disclose] | [Data Flywheel score uncertain ±2 pts] | [Wait for next quarterly disclosure] |
+| ... | ... | ... | ... | ... | ... |
+
+**Research Gaps Audit:**
+- Total sources collected: [N] / 20 minimum. Gap: [N]
+- Deep sources covered: [N] / 7. Gap: [N]
+- Dimensions scored with <5 sources: [list them]
+- Dimensions scored from single source only: [list them]
+- Data points >90 days old: [list them]
+- Paywalled / inaccessible sources: [list them]
+
+**Conservative Adjustment:** If any dimension is scored with <5 sources, the score is CAPPED at 7/10 (conservative assumption) unless otherwise noted above. Dimensions affected: [list].
 
 ### Sources:
 [List all URLs, paper IDs, patent numbers consulted]

@@ -548,14 +548,18 @@ Equipment Makers (ASML, AMAT, LRCX)
 
 After completing all steps, the quantitative screen (Step 1, 0-40) and the qualitative moat audit (Step 2, 0-50) MUST BE RECONCILED before any BUY recommendation:
 
-### Reconciliation Table (v3.2 — Qual now 0-50):
+### Reconciliation Table (v3.2 — with Assumption Flags):
 ```
-| Ticker | Quant (0-40) | Qual (0-50) | Agreement | Recommendation |
-|--------|-------------|-------------|-----------|----------------|
-| XXXX | 34 | 45 | ✅ STRONG | BUY — Both confirm + data flywheel |
-| YYYY | 28 | 15 | ❌ DIVERGE | CAUTION — Quant good, qual weak |
-| ZZZZ | 18 | 42 | ❌ DIVERGE | INVESTIGATE — Great moat + flywheel, weak numbers |
+| Ticker | Quant (0-40) | Qual (0-50) | Agreement | Assumption Flags | Recommendation |
+|--------|-------------|-------------|-----------|------------------|----------------|
+| XXXX | 34 (V) | 45 (V) | ✅ STRONG | 0 CRITICAL, 1 HIGH | BUY — Both confirm + data flywheel |
+| YYYY | 28 (I) | 15 (E) | ❌ DIVERGE | 2 CRITICAL, 3 HIGH | CAUTION — Quant INFERRED, qual ESTIMATED |
+| ZZZZ | 18 (V) | 42 (E) | ❌ DIVERGE | 1 CRITICAL | INVESTIGATE — Great moat ESTIMATED, weak verified numbers |
 ```
+
+**Confidence codes: (V)ERIFIED = 3+ sources, (I)NFERRED = single source or pattern, (E)STIMATED = extrapolated, (A)SSUMED = no direct data**
+
+**v3.2 RECONCILIATION RULE:** If any score in the reconciliation pair is ESTIMATED or ASSUMED, the recommendation is capped at HALF position regardless of score level. VERIFIED pairs can go FULL. INFERRED is acceptable for STANDARD positions.
 
 ### Reconciliation Rules (v3.2 — Qual thresholds adjusted for 0-50):
 | Quant | Qual | Result |

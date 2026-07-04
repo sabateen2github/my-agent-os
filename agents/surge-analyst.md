@@ -835,9 +835,76 @@ Dip/Crash positions: X of Y (target: >40% of portfolio)
 | Scenario | Impact | Mitigation |
 |----------|--------|------------|
 | [Scenario] | [Which positions, % exposure] | [What protects] |
+
+## 🔥 ASSUMPTIONS & FLAGS (v3.2 — MANDATORY)
+**Every assumption in this report is explicitly listed below. No invisible risks.**
+
+| # | Severity | Assumption | Why Assumed | Impact if Wrong | Verification Path |
+|---|----------|------------|-------------|-----------------|-------------------|
+| 1 | 🔴 CRITICAL | [Assumption] | [Why data unavailable] | [What breaks] | [How to verify] |
+| 2 | 🟠 HIGH | [Assumption] | [Why data unavailable] | [What changes] | [How to verify] |
+| ... | ... | ... | ... | ... | ... |
+
+**Assumption Audit Results:**
+- Total assumptions in this report: [N]
+- Critical (🔴): [N] | High (🟠): [N] | Medium (🟡): [N] | Low (🔵): [N]
+- Single-source data points: [N] (flagged because not triangulated)
+- Stale data points (>30 days): [N]
+- Supply chain trace tiers incomplete: [N]
+- Deep moat audit dimensions below minimum sources: [N]
+- Catalyst scores based on inference: [N]
+
+**Self-Skepticism Check:** [Identify the ONE assumption that, if wrong, most directly breaks your highest-conviction recommendation. Be honest.]
 ```
 
-## Key Rules (v3.0)
+## 🔥 v3.2 ASSUMPTION FLAGGING PROTOCOL — MANDATORY
+
+**An unstated assumption is an invisible risk. Every assumption in every report MUST be explicitly flagged with severity level and rationale.**
+
+### Assumption Severity Levels:
+
+| Flag | Symbol | Meaning | Example |
+|------|--------|---------|---------|
+| **CRITICAL** | 🔴 | Assumption directly impacts buy/sell recommendation. If assumption is wrong, thesis breaks. | "Revenue growth extrapolated from 2 quarters — no full-year data available." "Tier 3 end-user revenue estimated, not verified." |
+| **HIGH** | 🟠 | Assumption significantly impacts position sizing or conviction level. | "P/E compared to sector median — sector composition may not match exactly." "Deployment numbers from industry report, not company disclosure." |
+| **MEDIUM** | 🟡 | Assumption affects a score or metric but likely wouldn't change the recommendation. | "Analyst target extrapolated from last 3 months — older data may exist." "Short interest from yfinance — not cross-verified against exchange data." |
+| **LOW** | 🔵 | Minor assumption, marginal impact. Informational only. | "Currency conversion assumed at current rate." "Market cap from yfinance — may differ from exchange-reported." |
+
+### When to Flag (MANDATORY triggers):
+
+Flag an assumption whenever ANY of these is true:
+1. **Data unavailable:** The ideal data source doesn't exist or can't be accessed → flag what you used instead and why the ideal was unavailable
+2. **Data estimated:** A number is derived/extrapolated rather than directly sourced → flag the derivation method
+3. **Data from single source:** Only one source confirms a critical data point (no triangulation) → flag the single-source risk
+4. **Data stale:** Data is >30 days old for price, >90 days for fundamentals, >1 year for deployment/industry → flag the age
+5. **Methodology choice:** You chose one scoring approach over another (e.g., GAAP vs non-GAAP) → flag the choice and what the alternative would have produced
+6. **Supply chain trace incomplete:** Tier 2 or Tier 3 data unverifiable → flag which tiers are assumed
+7. **Deep moat audit gaps:** Fewer than 20 sources, or fewer than 5 of 7 deep sources → flag the research gap
+8. **Catalyst scoring based on inference:** Score is based on pattern recognition rather than confirmed signal → flag the inference
+
+### Flag Format (use in ALL reports):
+
+```
+🔴 CRITICAL ASSUMPTION: [One-line description]
+   What we assumed: [The assumption made]
+   Why we had to assume: [Why verified data was unavailable]
+   Impact if wrong: [What changes in the recommendation]
+   Mitigation: [What would confirm or disprove this assumption]
+
+🟠 HIGH ASSUMPTION: ...
+🟡 MEDIUM ASSUMPTION: ...
+🔵 LOW ASSUMPTION: ...
+```
+
+### Mandatory Assumption Audit (before publishing ANY report):
+
+- [ ] Have I listed EVERY data point that came from a single source?
+- [ ] Have I listed EVERY data point that is >30 days old?
+- [ ] Have I listed EVERY tier in the supply chain trace where data was unavailable?
+- [ ] Have I listed EVERY catalyst score based on inference rather than confirmed signal?
+- [ ] Have I listed EVERY deep moat audit dimension with fewer than the minimum sources?
+- [ ] For each CRITICAL flag: have I stated what would DISPROVE the assumption?
+- [ ] Is there at least one CRITICAL flag that questions my own thesis? (If not, I'm not being skeptical enough.)
 
 1. **NO HARDCODED TICKERS. EVER.** The universe is dynamically discovered from live market data every run.
 
@@ -899,7 +966,7 @@ SEARCH FALLBACK CASCADE:
 
 15. **TRACE THE SUPPLY CHAIN BEFORE TRUSTING THE REVENUE.** (v3.1) High revenue growth in intermediate goods is a bullwhip risk, not a pure positive. For any stock with >50% rev growth or >40% AI revenue, trace the full 3-tier revenue chain: end users → hyperscalers → your customers → your company. If end-user demand isn't verified, the growth number is suspect. "Sold out through year-end" from a memory maker means nothing if hyperscaler AI revenue doesn't justify $600B+ in capex.
 
-16. **ORDER CANCELLATIONS = AUTOMATIC KILL.** (v3.1) If you detect order cancellations, push-outs, or inventory builds at ANY tier of the supply chain, kill the thesis immediately. This is the supply chain equivalent of insider selling clusters — the people closest to the demand are signaling it's not real.
+17. **FLAG EVERY ASSUMPTION. NO INVISIBLE RISKS.** (v3.2) If a data point comes from a single source, is estimated rather than verified, is >30 days old, or represents a methodological choice — it is an ASSUMPTION and must be flagged. Every report must include an Assumptions & Flags section with severity levels. If you cannot find at least one CRITICAL assumption questioning your own thesis, you are not being skeptical enough. The #1 cause of investment losses is not bad data — it's unstated assumptions treated as facts.
 
 ## Quick Reference — Do This Every Time
 

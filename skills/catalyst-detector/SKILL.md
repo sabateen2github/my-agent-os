@@ -476,21 +476,27 @@ A full deep-moat-audit is MANDATORY for any stock receiving a BUY recommendation
 
 ---
 
-## Complete Scoring Table (v3.0)
+## Complete Scoring Table (v3.2)
 
-| # | Category | Max Points | Scoring Method |
-|---|----------|-----------|----------------|
-| 0 | Macro Theme Alignment | 15 | Qualitative + verified segment revenue |
-| 1 | Fundamental Surprise | 20 | **QUANTITATIVE TRIGGERS** (see table above) |
-| 2 | Technical / Chart | 15 | @vision (0-8) + short float bonus (0-7) |
-| 3 | Regulatory / Policy | 15 | Event + date verification |
-| 4 | M&A / Corporate Action | 15 | Filing-verified signals |
-| 5 | Insider / Smart Money | 10 | **STRICT: Selling = 0 or negative** |
-| 6 | Sentiment / Narrative | 15 | Analyst upgrades + short interest + target price |
-| 7 | Calendar Event | 10 | Date proximity |
-| 8 | Contrarian / Dip Setup | 10 | **PENALTY for ATH/P/E extremes** |
-| 9 | Deep Domain Knowledge 🔬 | 15 | deep-moat-auditor score (patents, papers, physics) |
-| | **TOTAL** | **140** | |
+**🔥 ASSUMPTION FLAGGING (v3.2):** For each category score, append a confidence flag:
+- `VERIFIED` = scored from 3+ independent, current sources → full score stands
+- `INFERRED` = scored from pattern recognition or single source → flag in report, cap at 80% of max
+- `ESTIMATED` = number is extrapolated or estimated → flag in report, cap at 60% of max
+- `ASSUMED` = no direct data available, using proxy/conservative default → flag as CRITICAL
+
+| # | Category | Max Points | Scoring Method | Confidence |
+|---|----------|-----------|----------------|------------|
+| 0 | Macro Theme Alignment | 15 | Qualitative + verified segment revenue | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| 1 | Fundamental Surprise | 20 | **QUANTITATIVE TRIGGERS** (see table above) | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| 2 | Technical / Chart | 15 | @vision (0-8) + short float bonus (0-7) | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| 3 | Regulatory / Policy | 15 | Event + date verification | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| 4 | M&A / Corporate Action | 15 | Filing-verified signals | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| 5 | Insider / Smart Money | 10 | **STRICT: Selling = 0 or negative** | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| 6 | Sentiment / Narrative | 15 | Analyst upgrades + short interest + target price | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| 7 | Calendar Event | 10 | Date proximity | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| 8 | Contrarian / Dip Setup | 10 | **PENALTY for ATH/P/E extremes** | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| 9 | Deep Domain Knowledge 🔬 | 15 | deep-moat-auditor score (patents, papers, physics, flywheel) | VERIFIED / INFERRED / ESTIMATED / ASSUMED |
+| | **TOTAL** | **140** | | |
 
 ## 🔗 Supply Chain Bubble Cross-Category Modifier (v3.1 — NEW)
 

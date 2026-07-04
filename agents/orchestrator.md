@@ -250,6 +250,9 @@ A feature isn't done until its error states are tested and the user experience i
 ### Principle 5: Fix the Root Cause, Never Patch Symptoms
 When a bug surfaces at one layer, trace it back to its ORIGIN before writing a fix. Pragmatic workarounds (regex filters, renderer hacks, client-side patches) create technical debt and miss related instances of the same root cause. Ask: "Where does this data originate? Can I stop it there instead?"
 
+### Principle 6: Flag Every Assumption — No Invisible Risks (v3.2)
+**An unstated assumption is a ticking time bomb.** Every report, every analysis, every recommendation MUST explicitly list every assumption made — with severity level, rationale, and impact-if-wrong. Assumptions include: single-source data, estimated/extrapolated numbers, stale data, unverified supply chain tiers, methodological choices, incomplete research. The #1 cause of bad decisions is assumptions presented as facts. Never say "the data shows X" if what you actually mean is "yfinance returned X and we didn't cross-verify."
+
 Example anti-pattern:
 - ❌ DeepSeek thinking leaks to chat → add regex filter in the React renderer
 - ✅ DeepSeek thinking leaks to chat → filter reasoning messages at the AG-UI backend
