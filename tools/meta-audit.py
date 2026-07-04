@@ -55,7 +55,17 @@ def gap(severity, title, intended, actual, root_cause, impact, fix, verification
 
 
 def scan_logs(since_date=None):
-    """Parse opencode log files for behavioral patterns."""
+    """Parse opencode log files with triage by recency and session weight.
+
+    Sessions are classified into three tiers:
+      - 🟢 ACTIVE:   < 48 hours old, > 100KB (deep work sessions)
+      - 🟡 RECENT:   2-7 days old, or small active sessions
+      - 🔵 ARCHIVED: > 7 days old
+
+    ACTIVE sessions get full deep scan (all rules).
+    RECENT sessions get medium scan (errors, mandates, tool usage).
+    ARCHIVED sessions get quick scan (recurring errors only).
+    """
     log_files = sorted(LOG_DIR.glob("*.log"))
     if since_date:
         log_files = [f for f in log_files if f.stem[:10] >= since_date]
@@ -63,12 +73,15 @@ def scan_logs(since_date=None):
     if not log_files:
         return {"error": f"No log files found in {LOG_DIR}"}
 
+    now = datetime.now()
     data = {
         "files_scanned": len(log_files),
+        "files_by_tier": {"ACTIVE": 0, "RECENT": 0, "ARCHIVED": 0},
         "errors": Counter(),
         "warnings": Counter(),
         "tool_registrations": set(),
         "sessions": [],
+        "session_tiers": [],  # detailed tier info per session
         "webfetch_calls": 0,
         "browser_navigate_calls": 0,
         "brave_mcp_calls": 0,
@@ -81,7 +94,32 @@ def scan_logs(since_date=None):
         except Exception:
             continue
 
-        # Count webfetch usage
+        # ── Session tier classification ──
+        try:
+            session_date = datetime.strptime(log_file.stem[:19], "%Y-%m-%dT%H%M%S")
+            age_hours = (now - session_date).total_seconds() / 3600
+        except ValueError:
+            age_hours = 999
+        size_kb = len(content) / 1024
+
+        if age_hours < 48 and size_kb > 100:
+            tier = "ACTIVE"
+        elif age_hours < 168 and (size_kb > 50 or age_hours < 72):
+            tier = "RECENT"
+        else:
+            tier = "ARCHIVED"
+
+        data["files_by_tier"][tier] += 1
+        tier_info = {
+            "file": log_file.name,
+            "tier": tier,
+            "age_hours": round(age_hours, 1),
+            "size_kb": round(size_kb, 1),
+        }
+        data["session_tiers"].append(tier_info)
+
+        # ── Scoped scanning by tier ──
+        # ALL tiers: global counts
         data["webfetch_calls"] += len(re.findall(r'"webfetch"', content))
         data["browser_navigate_calls"] += len(
             re.findall(r'"browser_navigate"', content)
@@ -90,7 +128,7 @@ def scan_logs(since_date=None):
             re.findall(r"server-brave-search_brave_web_search", content)
         )
 
-        # Extract errors
+        # ALL tiers: errors and warnings (recurring bugs can be anywhere)
         for match in re.finditer(r"ERROR.*?service=(\S+)\s+(.+?)(?=\n|$)", content):
             err_type = (
                 match.group(1)
@@ -98,24 +136,25 @@ def scan_logs(since_date=None):
                 else "unknown"
             )
             data["errors"][err_type] += 1
-
-        # Extract warnings
         for match in re.finditer(r"WARN.*?(.+)", content):
             data["warnings"][match.group(1)[:80]] += 1
 
-        # Extract tool registrations
-        for match in re.finditer(r"name=(\S+).*?status=completed", content):
-            data["tool_registrations"].add(match.group(1))
+        # ACTIVE + RECENT: tool registrations
+        if tier in ("ACTIVE", "RECENT"):
+            for match in re.finditer(r"name=(\S+).*?status=completed", content):
+                data["tool_registrations"].add(match.group(1))
 
-        # Extract session info
-        for match in re.finditer(r"session id=(\S+).*?agent=(\S+)", content):
-            data["sessions"].append(
-                {
-                    "id": match.group(1),
-                    "agent": match.group(2),
-                    "file": log_file.name,
-                }
-            )
+        # ACTIVE + RECENT: session metadata
+        if tier in ("ACTIVE", "RECENT"):
+            for match in re.finditer(r"session id=(\S+).*?agent=(\S+)", content):
+                data["sessions"].append(
+                    {
+                        "id": match.group(1),
+                        "agent": match.group(2),
+                        "file": log_file.name,
+                        "tier": tier,
+                    }
+                )
 
     return data
 
@@ -539,6 +578,15 @@ def format_report(results, output_file=None):
         f"- Log files analyzed: {log_data.get('files_scanned', 0)} ({log_data.get('total_size_mb', 0):.1f} MB)"
     )
     lines.append(
+        f"  - 🟢 ACTIVE (<48h, >100KB): {log_data.get('files_by_tier', {}).get('ACTIVE', 0)} — full deep scan"
+    )
+    lines.append(
+        f"  - 🟡 RECENT (2-7d, or small active): {log_data.get('files_by_tier', {}).get('RECENT', 0)} — medium scan"
+    )
+    lines.append(
+        f"  - 🔵 ARCHIVED (>7d): {log_data.get('files_by_tier', {}).get('ARCHIVED', 0)} — quick scan (recurring errors only)"
+    )
+    lines.append(
         f"- Agents audited: {len(agents)} | Tools: {tool_data.get('tools_exported', 0)} exported, {tool_data.get('handlers_in_server', 0)} handlers"
     )
     lines.append(
@@ -554,6 +602,30 @@ def format_report(results, output_file=None):
         f"{sev_counts.get('LOW', 0)} 🔵 Low)"
     )
     lines.append("")
+
+    # Session tier breakdown
+    session_tiers = log_data.get("session_tiers", [])
+    if session_tiers:
+        lines.append("### Session Tiers")
+        lines.append("| Tier | Session File | Age | Size |")
+        lines.append("|------|-------------|-----|------|")
+        # Show ACTIVE first, then RECENT, then ARCHIVED
+        tier_order = {"ACTIVE": 0, "RECENT": 1, "ARCHIVED": 2}
+        for st in sorted(
+            session_tiers, key=lambda x: (tier_order.get(x["tier"], 9), x["file"])
+        ):
+            emoji = {"ACTIVE": "🟢", "RECENT": "🟡", "ARCHIVED": "🔵"}.get(
+                st["tier"], "⚪"
+            )
+            age_str = (
+                f"{st['age_hours']:.0f}h"
+                if st["age_hours"] < 48
+                else f"{st['age_hours'] / 24:.1f}d"
+            )
+            lines.append(
+                f"| {emoji} {st['tier']} | {st['file']} | {age_str} | {st['size_kb']:.0f} KB |"
+            )
+        lines.append("")
 
     # Gaps by severity
     for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]:

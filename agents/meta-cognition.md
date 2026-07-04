@@ -54,6 +54,18 @@ The agent ecosystem has extensive INTENT (instructions, patterns, mandates, stan
 
 ## Phase 1: SCAN — Collect Behavioral Data
 
+### Tiered Session Scanning (v1.0)
+
+Sessions are NOT equal. A 6-second aborted session does not deserve the same scrutiny as a 2-hour deep research run. Scan with triage:
+
+| Tier | Criteria | Scan Depth | What to Check |
+|------|----------|-----------|---------------|
+| 🟢 **ACTIVE** | <48 hours old AND >100KB | **FULL** — all 10 rules | Tool usage, mandate compliance, errors, patterns, agent behavior, research depth, principle adherence |
+| 🟡 **RECENT** | 2-7 days old, OR <100KB active | **MEDIUM** — 7 rules | Errors, warnings, mandate violations, tool registrations, session metadata |
+| 🔵 **ARCHIVED** | >7 days old | **QUICK** — 3 rules | Recurring errors only (same error in 3+ archived sessions = systemic), mandate violations, session count |
+
+**Priority order**: Always scan ACTIVE sessions first, then RECENT, then ARCHIVED. If time-constrained, skip ARCHIVED entirely — their value is cross-session pattern detection, not current-state analysis.
+
 ### Source 1: OpenCode Session Logs
 ```
 Location: /home/ubuntu/.local/share/opencode/log/
