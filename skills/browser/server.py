@@ -105,6 +105,9 @@ last_page_recycle = 0.0
 _intercept_handler_ref = None
 _intercept_page_ref = None
 
+# Captcha state (updated by _auto_dismiss_captcha, surfaced in browser_status)
+current_captcha = None  # None or dict with captcha info
+
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
@@ -173,57 +176,154 @@ CAPTCHA_INDICATORS = [
     "captcha",
     "one more step",
     "please verify",
+    "not a robot",
+    "sorry",
+    "security check",
+]
+
+# Image challenge keywords (reCAPTCHA v2 escalation, hCaptcha, etc.)
+IMAGE_CHALLENGE_INDICATORS = [
+    "select all images",
+    "select all squares",
+    "click verify",
+    "select all",
+    "traffic lights",
+    "crosswalks",
+    "bicycles",
+    "buses",
+    "cars",
+    "motorcycles",
+    "fire hydrants",
+    "stairs",
+    "chimneys",
+    "bridges",
+    "boats",
+    "tractors",
+    "store front",
 ]
 
 
 def _auto_dismiss_captcha(page):
-    """Try to auto-dismiss common captcha challenges (Bing checkbox, Cloudflare, etc).
-    Runs after every navigation — fast no-op if no captcha is present."""
+    """Try to auto-dismiss captcha challenges.
+
+    Three tiers:
+    1. Simple checkbox ("I'm not a robot") → click it. Works ~60% of the time.
+    2. Image challenge escalated from checkbox → can't auto-solve. Screenshot it
+       and return info so the caller can use @vision or fallback search engines.
+    3. Full captcha wall → same as #2.
+
+    Runs after every navigation — fast no-op if no captcha is present.
+    Sets global current_captcha for surfacing in browser_status.
+    """
+    global current_captcha
     try:
         body_text = page.evaluate("() => document.body?.innerText?.toLowerCase() || ''")
         has_captcha = any(indicator in body_text for indicator in CAPTCHA_INDICATORS)
         if not has_captcha:
-            return
+            current_captcha = None
+            return {"captcha": False}
 
-        log("Captcha detected — attempting auto-bypass")
+        is_image_challenge = any(
+            indicator in body_text for indicator in IMAGE_CHALLENGE_INDICATORS
+        )
+
+        if is_image_challenge:
+            log("Captcha: IMAGE CHALLENGE detected — cannot auto-solve")
+            # Screenshot the challenge for the vision agent
+            try:
+                page.screenshot(path=f"{SCREENSHOT_DIR}/captcha-challenge.png")
+                log(f"  → Screenshot saved: {SCREENSHOT_DIR}/captcha-challenge.png")
+            except Exception:
+                pass
+            current_captcha = {
+                "type": "image_challenge",
+                "message": (
+                    "Image captcha detected. Cannot auto-solve. "
+                    "Options: (1) spawn @vision to identify tiles and use clickAt, "
+                    "(2) fall back to DuckDuckGo/Brave Search which never captcha, "
+                    "(3) navigate directly to known-good URLs."
+                ),
+                "screenshot": f"{SCREENSHOT_DIR}/captcha-challenge.png",
+            }
+            return {"captcha": True, **current_captcha}
+
+        log("Captcha: checkbox type — attempting auto-click")
 
         # Strategy 1: Click the reCAPTCHA iframe checkbox
         recaptcha_frame = page.locator(
             'iframe[title*="reCAPTCHA"], iframe[src*="recaptcha"], iframe[src*="captcha"]'
         ).first
+        clicked = False
         if recaptcha_frame.count() > 0:
             try:
                 box = recaptcha_frame.bounding_box()
                 if box:
-                    # Click center of the iframe (typical 28x28px checkbox area)
                     page.mouse.click(box["x"] + 28, box["y"] + 28)
                     page.wait_for_timeout(3000)
                     log("  → Clicked reCAPTCHA iframe checkbox")
+                    clicked = True
             except Exception:
                 pass
 
-        # Strategy 2: Click any checkbox near "verify you are human" text
-        try:
-            checkboxes = page.locator('input[type="checkbox"], [role="checkbox"]')
-            for i in range(checkboxes.count()):
-                cb = checkboxes.nth(i)
-                if cb.is_visible():
-                    cb.click(timeout=2000)
-                    page.wait_for_timeout(2000)
-                    log("  → Clicked captcha checkbox")
-                    break
-        except Exception:
-            pass
+        # Strategy 2: Click any checkbox on the page
+        if not clicked:
+            try:
+                checkboxes = page.locator('input[type="checkbox"], [role="checkbox"]')
+                for i in range(checkboxes.count()):
+                    cb = checkboxes.nth(i)
+                    if cb.is_visible():
+                        cb.click(timeout=2000)
+                        page.wait_for_timeout(3000)
+                        log("  → Clicked captcha checkbox")
+                        clicked = True
+                        break
+            except Exception:
+                pass
 
         # Strategy 3: Press Enter (some captchas submit on Enter)
-        try:
-            page.keyboard.press("Enter")
-            page.wait_for_timeout(1500)
-        except Exception:
-            pass
+        if not clicked:
+            try:
+                page.keyboard.press("Enter")
+                page.wait_for_timeout(1500)
+                log("  → Pressed Enter on captcha")
+            except Exception:
+                pass
+
+        # Check if captcha was dismissed
+        body_text = page.evaluate("() => document.body?.innerText?.toLowerCase() || ''")
+        still_captcha = any(indicator in body_text for indicator in CAPTCHA_INDICATORS)
+
+        if still_captcha:
+            # If checkbox click didn't work, it probably escalated to image challenge
+            is_now_image = any(
+                indicator in body_text for indicator in IMAGE_CHALLENGE_INDICATORS
+            )
+            if is_now_image:
+                log("Captcha: ESCALATED to image challenge after checkbox click")
+                try:
+                    page.screenshot(path=f"{SCREENSHOT_DIR}/captcha-challenge.png")
+                except Exception:
+                    pass
+                current_captcha = {
+                    "type": "image_challenge",
+                    "message": "Captcha escalated to image challenge. Use @vision or fallback engine.",
+                    "screenshot": f"{SCREENSHOT_DIR}/captcha-challenge.png",
+                }
+                return {"captcha": True, **current_captcha}
+            log("Captcha: checkbox click did not resolve — captcha still present")
+            current_captcha = {
+                "type": "unknown",
+                "message": "Captcha still present after auto-click",
+            }
+            return {"captcha": True, **current_captcha}
+
+        log("  → Captcha resolved successfully")
+        current_captcha = None
+        return {"captcha": False, "resolved": True}
 
     except Exception as e:
-        log(f"Captcha bypass attempt failed (non-fatal): {e}")
+        log(f"Captcha bypass error (non-fatal): {e}")
+        return {"captcha": False}
 
 
 # ── Log eviction thread ──────────────────────────────────────────────
@@ -650,6 +750,8 @@ def handle_command(cmd):
             "jsErrorCount": len(js_errors),
             "wafBlocked": waf_blocked,
             "wafMessage": waf_message,
+            "captchaBlocked": current_captcha is not None,
+            "captchaInfo": current_captcha,
         }
 
     if action == "listTabs":
@@ -721,9 +823,12 @@ def handle_command(cmd):
                 timeout=timeout,
             )
             # Auto-dismiss common captcha obstacles after navigation
-            _auto_dismiss_captcha(page)
+            captcha_result = _auto_dismiss_captcha(page)
             touch_page(page)
-            return {"status": "ok", "title": page.title(), "url": page.url}
+            resp = {"status": "ok", "title": page.title(), "url": page.url}
+            if captcha_result.get("captcha"):
+                resp["captcha"] = captcha_result
+            return resp
 
         # ── click ──
         elif action == "click":
