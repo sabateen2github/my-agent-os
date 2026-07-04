@@ -39,20 +39,25 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 
 | Signal | How to Detect | Weight |
 |--------|--------------|--------|
-| **AI Infrastructure Beneficiary** | Company sells into data center, networking, or AI silicon supply chains. Revenue from AI/DC growing >30% YoY. | VERY HIGH |
+| **Physical AI / Robotics Deployment** 🔥 (v3.2 NEW — TIER 1) | Company deploys physical AI endpoints: robots, autonomous vehicles, industrial sensors. Generates real-world action-outcome telemetry. Deployment base growing >50% YoY. | **HIGHEST** — This is THE dominant theme of the AGI era per the deployment flywheel thesis. |
+| **Data Flywheel Ownership** 🔥 (v3.2 NEW — TIED TO PHYSICAL AI) | Company owns a closed-loop telemetry flywheel: deployed units → data → model improvement → better units → more deployment. Has Critique-Reweight-Replay pipeline or equivalent. | **HIGHEST** — Data flywheels compound geometrically. This is the deepest moat in the AGI era. |
+| **AI Infrastructure Beneficiary** | Company sells into data center, networking, or AI silicon supply chains. Revenue from AI/DC growing >30% YoY. | VERY HIGH — BUT: v3.2 context changes. Pure compute sellers face commoditization risk as inference costs → zero. Preference for edge compute + inference at scale. |
 | **⚠️ AI Infrastructure — SUPPLY CHAIN INTEGRITY CHECK (v3.1)** | **CRITICAL: AI infra scoring is capped at 10/15 UNLESS the full 3-tier supply chain trace is completed and verified. "Sold out through year-end" from a Tier-3 supplier means nothing if Tier-1 end-user revenue doesn't justify the capex. See Supply Chain Bubble Modifier below.** | MANDATORY VERIFICATION |
+| **Edge Compute & Inference Commoditization** (v3.2 NEW) | Company designs or deploys edge inference hardware. On-device ML, low-power accelerators, inference-at-scale platforms. Revenue tied to inference endpoints, not training clusters. | HIGH — The inference-to-zero race creates Jevons paradox: cheaper inference → more inference. Winners are those deploying the most endpoints. |
+| **US-China AI Decoupling** (v3.2 NEW) | Company operates in one of two emerging AI ecosystems. Has clear supply chain independence from the other side (Taiwan, rare earths, manufacturing capacity). Or bridges both. | HIGH — Geopolitical decoupling creates separate winners and losers. Companies dependent on cross-ecosystem supply chains face binary risk. |
 | **Electrification / Grid Buildout** | Electrical equipment, transformers, switchgear. Backlog growing >20% YoY. | HIGH |
-| **Defense / Rearmament** | NATO spending at Cold War levels. Defense contractors with multi-year backlogs. | HIGH |
-| **Energy Security** | LNG, pipelines, gas processing. European energy decoupling is structural. | MEDIUM |
-| **Reshoring / Industrial Renaissance** | US manufacturing, construction, automation. Benefiting from CHIPS Act, IRA. | HIGH |
-| **Nuclear Renaissance** | SMR deployment, uranium, nuclear services. AI data centers driving baseload demand. | HIGH |
+| **Defense / Rearmament** | NATO spending at Cold War levels. Defense contractors with multi-year backlogs. AI-driven autonomous weapons = new arms race. | HIGH |
+| **Energy Security** | LNG, pipelines, gas processing. European energy decoupling is structural. Power for physical AI deployment. | MEDIUM |
+| **Reshoring / Industrial Renaissance** | US manufacturing, construction, automation. Benefiting from CHIPS Act, IRA. Manufacturing capacity for physical AI deployment. | HIGH |
+| **Nuclear Renaissance** | SMR deployment, uranium, nuclear services. AI data centers + physical deployment driving baseload demand. | HIGH |
 | **Contrarian: Sector Out of Favor** | Sector trading at 10-year low P/E but fundamentals improving. Rotation candidate. | HIGH |
 
 **Scoring:** 0-15 points
-- 15: Core beneficiary with >30% revenue exposure, VERIFIED by segment reporting
-- 10: Secondary beneficiary, indirect but confirmed exposure
-- 5: Weak or unverified thematic alignment
-- 0: No macro theme — must win on idiosyncratic catalysts alone
+- 15: Core beneficiary with >30% revenue exposure, VERIFIED by segment reporting. OR: Owns a verified closed-loop physical data flywheel (Tier 3 Autonomous Telemetry Critique Loop — deployment generates telemetry that autonomously improves models).
+- 12: Strong data flywheel with growing deployment. OR: Core AI infrastructure beneficiary with verified revenue.
+- 10: Secondary AI infrastructure beneficiary, indirect but confirmed exposure. OR: Emerging data flywheel at smaller deployment scale.
+- 5: Weak or unverified thematic alignment. OR: Pure compute/software seller into AI with no proprietary telemetry (Flywheel Supplier at risk of commoditization).
+- 0: No macro theme — must win on idiosyncratic catalysts alone.
 
 **Detection method:**
 - Identify dominant macro themes BEFORE screening stocks (Phase 1, Step 0)

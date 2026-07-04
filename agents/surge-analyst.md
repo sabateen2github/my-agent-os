@@ -93,14 +93,18 @@ Before screening a single stock, answer:
 3. How much are hyperscalers spending on AI infrastructure?
 4. What's the global defense/energy/electrification spending outlook?
 5. Where is the smart money flowing? (13F filings, institutional rotation)
+6. **🔥 v3.2 DEPLOYMENT FLYWHEEL CHECK (NEW):** Who is deploying physical AI at scale? How many robots, autonomous vehicles, and industrial sensors are generating real-world telemetry? Which companies own the richest action-outcome data lakes? Is the AGI race shifting from "who has the best model" to "who has the most deployment endpoints"?
+7. **🔥 v3.2 US-CHINA DECOUPLING CHECK (NEW):** Is the AI supply chain splitting into two separate ecosystems? Who wins and loses on each side? Are there companies bridging both ecosystems?
 
 **Tools:**
 - Browser → Yahoo Finance sector performance page → screenshot → @vision extract sector rankings
 - Brave Search: "dominant investment themes July 2026", "sector rotation 2026", "hyperscaler capex 2026"
+- **v3.2 NEW:** Brave Search: "physical AI deployment 2026", "humanoid robot deployments 2026", "Tesla Optimus production scale", "China industrial robot deployment 2026", "US China AI decoupling supply chain"
 - Browser → Google Search → "best performing sectors 2026" / "worst performing sectors 2026"
 - Brave Search: "insider buying sectors 2026", "hedge fund positioning Q3 2026"
+- **v3.2 NEW:** Brave Search: "autonomous telemetry critique loop", "fleet learning scale deployment", "data flywheel moat companies"
 
-**Output:** A ranked list of macro themes with conviction levels. This informs which sectors to weight more heavily in discovery.
+**Output:** A ranked list of macro themes with conviction levels. This informs which sectors to weight more heavily in discovery. **v3.2: The Physical AI Deployment theme should now be ranked alongside (or above) AI Infrastructure as a dominant theme.**
 
 ### STEP 1: Dynamically Assemble the Ticker Universe
 
@@ -335,14 +339,71 @@ for r in results[:30]:  # top 30
 
 ---
 
-### 🔗 STEP 2.5: SUPPLY CHAIN REVENUE TRACE (v3.1 — MANDATORY) ← NEW
+### 🔗 STEP 2.5: SUPPLY CHAIN REVENUE TRACE (v3.2 — extended for physical deployment + research-heavy)
 
-**⚠️ THIS STEP DID NOT EXIST IN v3.0. It was the methodology's deadliest gap.**
+**⚠️ v3.2 UPDATE: The supply chain trace now extends beyond hyperscaler AI revenue to PHYSICAL DEPLOYMENT ENDPOINTS. Per the deployment flywheel thesis, the ultimate "end user" is no longer a human typing into ChatGPT — it's robots, autonomous vehicles, and industrial sensors generating telemetry. The trace now asks: "How many physical units are deployed generating data?"**
 
-Before you proceed to deep qualitative research, you MUST trace the full revenue chain for any stock that meets these criteria:
-- Revenue growth >50% YoY
-- AI/Data Center >40% of revenue
-- Company sells intermediate goods (components, equipment, infrastructure) rather than end-user products
+#### The Extended Supply Chain:
+
+```
+TIER 4 (Physical Deployment Endpoints): [Robots, autonomous vehicles, industrial sensors]
+    │  How many units deployed? What telemetry volume? Is data flowing back to models?
+    │  Tesla Optimus count, Figure robot deployments, Amazon warehouse bot fleet, Chinese industrial robots
+    │  DATA SOURCE: Company deployment announcements, industry reports, robotics trade journals
+    ▼
+TIER 3 (End Users): [Enterprises deploying physical AI, consumers using AI products]
+    │  What is their ACTUAL AI revenue? Are they deploying physical endpoints or just using software?
+    │  MSFT Copilot revenue, GOOG Cloud AI, enterprise AI deployment surveys, robotics-as-a-service revenue
+    ▼
+TIER 2 (Your Customer's Customer): [Hyperscalers, cloud providers, robot fleet operators]
+    │  What is THEIR AI revenue growth? Are they deploying physical endpoints or just cloud AI?
+    │  DATA SOURCE: Hyperscaler earnings calls, CapEx guidance, robotics division disclosures
+    ▼
+TIER 1 (Your Direct Customer): [GPU makers, system integrators, equipment buyers, robot manufacturers]
+    │  Are they over-ordering? Are they deploying or just stockpiling?
+    │  DATA SOURCE: Customer earnings calls, semiconductor billings, robot production rates
+    ▼
+YOUR COMPANY: [The stock you're analyzing]
+       Revenue growth: X% | Backlog growth: Y% | Deployment base: Z units
+```
+
+**🔥 v3.2 RESEARCH-HEAVY MANDATE (NEW):**
+
+The supply chain trace is now an EXHAUSTIVE research exercise. You must collect data from EVERY available source — not just a single Brave Search query. Minimum research depth:
+
+1. **arXiv papers:** Search for technical papers on the company's technology, deployment scale, telemetry architectures. `"fleet learning"`, `"autonomous telemetry"`, `"[technology] deployment scale 2026"`
+2. **Google Patents:** Search for patents on data flywheel architectures, telemetry collection systems, robot learning methods
+3. **Company 10-K/10-Q filings:** Read the actual filings (not summaries). Extract: customer concentration, segment revenue, deployment unit counts, contractual obligations, risk factors about supply chain
+4. **Earnings call transcripts:** Read the FULL transcript of the last 2-3 calls. Extract: management commentary on demand, deployment rates, backlog quality, any mention of "normalization" or "cancellation"
+5. **Competitor filings:** Read competitors' 10-Ks and earnings calls. Extract: are they seeing the same demand? Are they taking share? Are they warning about anything?
+6. **Industry trade journals:** Robotics Business Review, IEEE Spectrum, SemiEngineering, The Robot Report. Extract: deployment numbers, production rates, supply chain status
+7. **Government/regulatory sources:** SEC EDGAR, DoD contracts, DOE reports, CHIPS Act awards, export control announcements
+8. **Independent analyst reports:** Seek out detailed technology analysis (not just price targets). Look for deployment estimates, TAM analysis, competitive landscape maps
+
+**Minimum source count per supply chain trace: 8+ distinct sources.** If you cannot reach 8 sources, the trace is INCOMPLETE and the bullwhip modifier defaults to the most conservative adjustment.
+
+#### Physical Deployment Endpoint Detection (v3.2 NEW):
+
+For companies selling into AI infrastructure, trace through to find: "Is any of this infrastructure ultimately feeding a physical data flywheel, or is it all going to cloud AI?"
+
+| Question | Detection Method | Red Flag Threshold |
+|----------|-----------------|--------------------|
+| How many physical AI endpoints are deployed at Tier 4? | Company deployment announcements, robotics trade journals, industry reports | <1,000 units deployed = no meaningful flywheel |
+| Is telemetry flowing back into model improvement? | Technical papers, company engineering blogs, patent filings on CRR/fleet learning | No closed-loop infrastructure = dead data lake |
+| What is the deployment growth rate? | YoY unit count growth from quarterly disclosures, industry reports | <50% YoY unit growth = flywheel not accelerating |
+| Are Tier 2 customers deploying robots or just buying cloud AI? | Segment revenue breakdowns, investor presentations | >80% of Tier 2 revenue from non-physical AI = limited flywheel exposure |
+| Is China deploying faster in this domain? | Chinese robotics production data, government 5-year plans, export data | China deployment rate >2x US = structural disadvantage |
+
+**🔥 v3.2 DEPLOYMENT FLYWHEEL MODIFIER (NEW):**
+
+In addition to the bullwhip modifier from v3.1, apply the following adjustments based on physical deployment trace:
+
+| Finding | Category 0 Adjustment | Why |
+|---------|----------------------|-----|
+| Verified closed-loop data flywheel with >10K deployed units | **+3 pts** (can exceed 15 max) | Compounding moat warrants premium |
+| Growing deployment but no closed loop yet (data flowing but not autonomous) | No adjustment | On trajectory, but not yet self-sustaining |
+| Telemetry collected but not feeding model improvement (dead data lake) | **-3 pts** | Data without feedback = cost center, not moat |
+| Zero physical deployment — pure cloud/software AI play | **-5 pts** | No flywheel. Value at risk as inference commoditizes |
 
 #### The Supply Chain Trace Protocol:
 
@@ -497,10 +558,21 @@ The v3.0 catalyst framework adds a 10th category (Deep Domain Knowledge, 15 poin
 
 #### 0. Macro Theme Alignment (15 pts)
 Use the macro analysis from Step 0. Score based on:
-- 15: Core beneficiary of dominant theme with >30% revenue exposure, verified by company filings
-- 10: Secondary beneficiary, confirmed by segment revenue breakdown
-- 5: Tangential exposure or unverified claim
-- 0: No theme alignment — must win on idiosyncratic catalysts alone
+- 15: Core beneficiary of dominant theme with >30% revenue exposure, verified by company filings. **OR: Owns a verified closed-loop data flywheel from physical deployment** (Tier 3 Autonomous Telemetry Critique Loop — robots, autonomous vehicles, industrial sensors generating telemetry that autonomously improves models).
+- 12: Strong data flywheel with growing deployment (Tier 2 — telemetry feeds model improvement but curation not yet fully autonomous). OR: Core AI infrastructure beneficiary with verified >30% revenue.
+- 10: Secondary AI infrastructure beneficiary, confirmed by segment revenue breakdown. OR: Emerging data flywheel at smaller deployment scale.
+- 5: Tangential exposure or unverified claim. OR: Pure compute/software seller into AI ecosystem with zero proprietary telemetry (**Flywheel Supplier — moat is SHRINKING as inference commoditizes**).
+- 0: No theme alignment — must win on idiosyncratic catalysts alone.
+
+**🔥 v3.2 FLYWHEEL BUILDER vs FLYWHEEL SUPPLIER (NEW):**
+This is THE critical distinction of the AGI deployment era. When scoring Macro Theme, separate every company into one of two buckets:
+
+| Bucket | Description | Moat Trajectory | Typical Score |
+|--------|-------------|-----------------|---------------|
+| Flywheel Builder | Deploys physical AI endpoints. Telemetry → model improvement → better endpoints → more deployment. Moat COMPOUNDS with every unit. | 🟢 EXPANDING | 12-15 |
+| Flywheel Supplier | Sells compute, chips, or tools TO the builders. Value is the customer relationship, not the telemetry. Moat SHRINKS as inference costs → zero. | 🔴 SHRINKING | 5-10 |
+
+**A Flywheel Supplier with 30% AI revenue but zero proprietary telemetry scores LOWER than a Flywheel Builder with 15% deployment revenue but a verified data flywheel.** The compounding nature of flywheel moats means a smaller deployment today can dominate in 3-5 years while a large compute supplier sees margins compress.
 
 #### 1. Fundamental Surprise (20 pts)
 **Quantitative triggers (automatic scoring):**
@@ -563,13 +635,15 @@ Use the macro analysis from Step 0. Score based on:
 - Sector in bottom 3 of 11, company beat last 2 quarters: 8 pts
 - Stock at ATH with P/E >2x sector: -5 pts (overbought penalty)
 
-#### 9. Deep Domain Knowledge (15 pts) 🔬 NEW in v3.0
-This category is scored ENTIRELY from the deep-moat-auditor report:
-- Moat score 30-40/40: 15 pts (durable 10+ year moat, patent+scientific+manufacturing depth)
-- Moat score 20-29/40: 10 pts (moderate moat, some IP, mostly process/scale)
-- Moat score 10-19/40: 5 pts (weak moat, short duration, limited IP)
-- Moat score <10/40: 0 pts (no moat — commodity)
+#### 9. Deep Domain Knowledge (15 pts) 🔬 NEW in v3.0, updated v3.2
+
+This category is scored ENTIRELY from the deep-moat-auditor report. **v3.2: Moat score is now 0-50 (was 0-40) with the addition of the Data Flywheel dimension (2E, 0-10):**
+- Moat score 38-50/50: 15 pts (durable 10+ year moat with patent+scientific+mfg+competitive+DATA FLYWHEEL depth)
+- Moat score 25-37/50: 10 pts (moderate moat, process/scale barriers, limited or no data flywheel)
+- Moat score 12-24/50: 5 pts (weak moat, short duration, limited IP, no flywheel)
+- Moat score <12/50: 0 pts (no moat — commodity. OR: pure compute/software seller with zero proprietary telemetry)
 - If NO deep-moat-audit was done: 0 pts (you must do the research)
+- **🔥 v3.2 DATA FLYWHEEL BONUS:** If the company scores 8+/10 on Data Flywheel specifically (Step 2E), add +2 bonus points (max 15). The compounding nature of flywheel moats warrants recognition beyond the linear scale. A company with a 10/10 data flywheel and moderate other dimensions may still dominate in 5 years.
 
 ### v3.0 Conviction Thresholds (updated for 140 max):
 - **120+:** 🟢 VERY HIGH CONVICTION — Quant strong, qual deep, catalysts dense, dip priced
@@ -601,16 +675,16 @@ For EVERY candidate being considered for the portfolio, fill out this reconcilia
 | ZZZZ   | 15/40       | 38/40           | ❌ DIVERGE | INVESTIGATE — great moat but numbers weak |
 ```
 
-**Reconciliation Rules:**
+**Reconciliation Rules (v3.2 — Qual is now 0-50):**
 
 | Quant | Qual | Result |
 |-------|------|--------|
-| High (>25/40) | High (>25/40) | ✅ **STRONG BUY** — Both confirm. Full position size eligible. |
-| High (>25/40) | Medium (15-24/40) | 🟡 **CAUTIOUS BUY** — Quant strong but moat less durable. Half position max. |
-| High (>25/40) | Low (<15/40) | ⚠️ **SKIP or TRACKER** — Good numbers, fragile business. Size at 25% of normal. |
-| Medium (15-24/40) | High (>25/40) | 🟡 **OPPORTUNITY** — Great moat, numbers haven't caught up yet. Is there a catalyst that will close the gap? If yes, half position. If no, tracker. |
-| Medium (15-24/40) | Medium (15-24/40) | 🟠 **WEAK** — Neither side compelling. Tracker only. |
-| Medium (15-24/40) | Low (<15/40) | 🔴 **PASS** |
+| High (>25/40) | High (>30/50) | ✅ **STRONG BUY** — Both confirm + data flywheel depth. Full position size eligible. |
+| High (>25/40) | Medium (18-29/50) | 🟡 **CAUTIOUS BUY** — Quant strong but moat less durable or no data flywheel. Half position max. |
+| High (>25/40) | Low (<18/50) | ⚠️ **SKIP or TRACKER** — Good numbers, fragile business. No flywheel = commoditization risk. Size at 25% of normal. |
+| Medium (15-24/40) | High (>30/50) | 🟡 **OPPORTUNITY** — Great moat + flywheel, numbers haven't caught up yet. Is there a deployment catalyst that will close the gap? If yes, standard position. If no, tracker. |
+| Medium (15-24/40) | Medium (18-29/50) | 🟠 **WEAK** — Neither side compelling. Tracker only. |
+| Medium (15-24/40) | Low (<18/50) | 🔴 **PASS** |
 | Low (<15/40) | Any | 🔴 **PASS** — Numbers must be at least medium for consideration. |
 
 **CRITICAL: If quantitative and qualitative diverge significantly (one says BUY, one says PASS), you MUST write an explicit reconciliation explaining WHY you're overriding one or accepting the divergence. If you can't articulate a clear reason, KILL the thesis.**
@@ -621,18 +695,20 @@ For EVERY candidate being considered for the portfolio, fill out this reconcilia
 
 ### STEP 7: Build the Portfolio
 
-#### Position Sizing Matrix (v3.1):
+#### Position Sizing Matrix (v3.2):
 
 | Quant Score | Qual Score | Catalyst Score | Max Position | Label |
 |-------------|------------|----------------|-------------|-------|
-| >30/40 | >30/40 | 120+ | 22% | FULL — highest conviction |
-| >30/40 | >25/40 | 100-119 | 18% | FULL |
-| >25/40 | >25/40 | 80-99 | 15% | STANDARD |
-| >25/40 | >20/40 | 80-99 | 12% | MODERATE |
-| >20/40 | >15/40 | 60-79 | 8% | HALF — lower conviction |
+| >30/40 | >38/50 | 120+ | 25% | FULL+ — highest conviction + data flywheel premium |
+| >30/40 | >30/50 | 100-119 | 20% | FULL |
+| >25/40 | >30/50 | 80-99 | 15% | STANDARD |
+| >25/40 | >18/50 | 80-99 | 12% | MODERATE |
+| >20/40 | >12/50 | 60-79 | 8% | HALF — lower conviction |
 | <20/40 | Any | <60 | 0% | PASS |
 
-**⚠️ v3.1 Bullwhip Override (NEW):** If Bullwhip Risk is HIGH (-10 to -6), position is capped at **HALF (8% max)** regardless of other scores. If CRITICAL (-20 to -11), position is **KILLED** regardless of other scores. Bullwhip risk in the supply chain is an existential thesis flaw that no quantitative cheapness or qualitative moat depth can overcome.
+**🔥 v3.2 Data Flywheel Premium (NEW):** If a company scores 8+/10 on Data Flywheel specifically (from deep-moat-auditor), add 3% to its position allocation (up to the 25% max). The compounding nature of flywheel moats warrants oversizing relative to traditional quality scores. A company with moderate quant+qual but a 10/10 data flywheel may deserve a larger position than a company with strong quant+qual but zero flywheel.
+
+**⚠️ v3.1 Bullwhip Override (still active):** If Bullwhip Risk is HIGH (-10 to -6), position is capped at **HALF (8% max)** regardless of other scores, including flywheel premium. If CRITICAL (-20 to -11), position is **KILLED** regardless of other scores. Bullwhip risk in the supply chain is an existential thesis flaw that no amount of flywheel depth can overcome.
 
 #### Sector Concentration Limits (v3.0 — NEW):
 - **Maximum 40% of portfolio in any single sector** (v2.0 allowed 52.5% in semis — too concentrated)

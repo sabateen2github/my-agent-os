@@ -78,6 +78,10 @@ Filter to sectors relevant to physical infrastructure:
 | Industrial Gases & Chemicals | — |
 | Nuclear / Advanced Energy | — |
 | Water & Environmental Infrastructure | — |
+| **Robotics & Physical AI** (v3.2 NEW) | — |
+| **Edge Compute / Inference Hardware** (v3.2 NEW) | — |
+| **Industrial IoT / Telemetry Platforms** (v3.2 NEW) | — |
+| **Autonomous Systems & Fleet Operators** (v3.2 NEW) | — |
 
 ---
 
@@ -91,18 +95,22 @@ Filter to sectors relevant to physical infrastructure:
 
 | Trend | Sectors | Why It Matters |
 |-------|---------|----------------|
-| **AI Infrastructure Buildout** | Semis, data centers, networking, power | Hyperscalers $300B+/yr CapEx. Every data center needs chips, networking, and power. |
-| **Electrification / Grid Modernization** | Electrical equipment, transformers, switchgear | Global grid investment doubling by 2030. 100+ week lead times on transformers. |
-| **Defense / Geopolitical Rearmament** | Aerospace, defense, shipbuilding | NATO spending at Cold War levels. Multi-year production ramps. |
-| **Energy Security / LNG** | LNG, pipelines, gas processing | European gas decoupling is structural. LNG demand +65% by 2050. |
-| **Reshoring / Industrial Renaissance** | Manufacturing, construction, automation | CHIPS Act, IRA, defense spending. Multi-decade capex cycle. |
-| **Nuclear Renaissance** | SMR, uranium, nuclear services | AI data centers require 24/7 baseload. SMR orders beginning. |
+| **Physical AI / Robotics Deployment** 🔥 (v3.2 NEW — DOMINANT) | Robotics, industrial automation, edge sensors, manufacturing equipment | AGI is no longer a research race — it's a DEPLOYMENT race. Whoever deploys the most physical AI endpoints (robots, edge devices, sensors) builds the data flywheel that feeds Tier 2/3 metacognitive emergence. Inference costs → zero; the bottleneck shifts from compute to TELEMETRY. Companies deploying robots at scale (Tesla Optimus, Figure, Agility, Amazon warehouse bots, Chinese industrial robots) are building the moats of the next decade. |
+| **Data Flywheel Ownership** 🔥 (v3.2 NEW — TIED TO PHYSICAL AI) | Robotics fleets, autonomous vehicles, industrial IoT, smart manufacturing | The decisive moat of the AGI era: models that curate their own training data by critiquing, filtering, and reweighting telemetry streams from physical deployment (Autonomous Telemetry Critique Loops — Tier 3). Failures become the highest-leverage teachers. Whoever owns the richest real-world action-outcome data lake wins. This is a deeper moat than patents or manufacturing process — it compounds with every deployed unit. |
+| **Edge Compute & Inference Commoditization** (v3.2 NEW) | Edge AI chips, inference accelerators, low-power compute, on-device ML | Inference costs are racing toward zero (1-bit ternary, quantized FP16, optimized backpropagation variants). The hardware layer is being commoditized. Value shifts from "who makes the best training GPU" to "who deploys the most inference endpoints at the edge." Jevons paradox: cheaper inference → exponentially more inference → different winners than training. |
+| **US-China AI Decoupling** (v3.2 NEW — GEOPOLITICAL) | Two separate AI supply chains, two deployment ecosystems | The AI race is splitting into two independent ecosystems: US-led (frontier models + Western robotics) vs China-led (manufacturing scale + state-directed deployment). China's structural advantage in physical manufacturing creates a deployment speed edge. US companies must find manufacturing partners or lose the physical AI race. This creates winners AND losers on BOTH sides. |
+| **AI Infrastructure Buildout** | Semis, data centers, networking, power | Hyperscalers $300B+/yr CapEx. Every data center needs chips, networking, and power. BUT: as inference commoditizes, the nature of infrastructure demand shifts from training clusters to edge deployment. |
+| **Electrification / Grid Modernization** | Electrical equipment, transformers, switchgear | Global grid investment doubling by 2030. 100+ week lead times on transformers. Physical AI deployment = massive new baseload demand. |
+| **Defense / Geopolitical Rearmament** | Aerospace, defense, shipbuilding | NATO spending at Cold War levels. AI-driven autonomous systems are the new arms race. |
+| **Energy Security / LNG** | LNG, pipelines, gas processing | European gas decoupling is structural. LNG demand +65% by 2050. Energy to power the physical AI revolution. |
+| **Nuclear Renaissance** | SMR, uranium, nuclear services | AI data centers + physical deployment require 24/7 baseload. SMR orders beginning. |
 
 ### How to Use This Step:
 1. For each stock, determine: **Is this company a direct beneficiary of a verified secular mega-trend?**
 2. If YES: Growth metrics weighted higher. Low FCF is contextual (reinvestment). P/E tolerance slightly expanded.
 3. If NO: Must win on standalone quality and valuation. Stricter value metrics apply.
 4. **CITE SPECIFIC EVIDENCE:** Hyperscaler CapEx guidance, industry backlog data, government policy, segment revenue breakdown.
+5. **v3.2 DEPLOYMENT FLYWHEEL CHECK (NEW):** For any company claiming AI exposure, ask: "Is this company feeding a data flywheel from PHYSICAL DEPLOYMENT, or just selling compute?" Companies selling compute into an increasingly commoditized layer are at risk of margin compression. Companies generating telemetry from physical deployment are building compounding moats. This distinction is THE key investment framework shift described in the document.
 
 ---
 
@@ -272,7 +280,7 @@ For EACH candidate being considered for the final portfolio, you MUST research a
 - What is the yield learning curve? How long to reach competitive yields?
 - What raw materials or rare elements are required? Who controls them?
 
-### Qualitative Scoring Rubric (0-40):
+### Qualitative Scoring Rubric (0-50 — v3.2: was 0-40, added Data Flywheel dimension):
 
 #### 2A: Patent Landscape (0-10)
 | Score | Definition |
@@ -314,14 +322,36 @@ For EACH candidate being considered for the final portfolio, you MUST research a
 | 2 | Lagging behind. Competitors have superior technology. |
 | 0 | Obsolete technology being displaced. |
 
-**Total Qualitative Moat Score: 0-40**
+### 2E: Data Flywheel Moat (0-10) 🔥 NEW in v3.2
+
+**This dimension did not exist in v3.1. It is the core contribution of the deployment flywheel thesis: the AGI era's deepest moat is not patents, manufacturing, or even current technology leadership — it's the ownership of a real-world data flywheel that compounds with every deployed unit.**
+
+The document establishes that Tier 3 AGI emergence requires Autonomous Telemetry Critique Loops: models that curate, filter, critique, and reweight their own training data from real-world deployment. The company that owns the richest action-outcome telemetry lake wins the AGI race. This moat compounds geometrically with scale — every additional deployed unit makes the model smarter, which makes the units more capable, which drives more deployment.
+
+| Score | Definition |
+|-------|-----------|
+| 10 | **Closed-loop autonomous data flywheel.** The company deploys physical AI endpoints (robots, autonomous vehicles, industrial sensors) that generate real-world action-outcome telemetry. This telemetry feeds model improvement, which improves deployment performance, which accelerates deployment. The flywheel is self-sustaining (Tier 3: models curate their own training data). Examples: Tesla FSD telemetry fleet (millions of vehicles), Amazon warehouse robot fleet, Chinese industrial robot deployments at scale. Competitors cannot replicate this without matching the physical deployment base — a 5-10 year, $100B+ barrier. |
+| 8 | **Strong data flywheel with growing deployment.** Company has significant physical deployment generating telemetry, but the critique/curation loop is not yet fully autonomous (still human-in-the-loop for data engineering). Deployment base is expanding rapidly. 3-5 year lead on competitors. |
+| 6 | **Emerging data flywheel.** Physical deployment is underway but at smaller scale. Telemetry is being collected but not yet driving autonomous model improvement. 1-3 year lead. |
+| 4 | **Telemetry collection without closed loop.** Company has sensors/deployments generating data, but no mechanism to feed it back into model improvement. Data lake exists but is stagnant. |
+| 2 | **No physical deployment.** Company sells into AI infrastructure but generates zero proprietary telemetry. Dependent on customers' data flywheels. |
+| 0 | **Pure compute/software play.** Company sells tools, chips, or services into the AI ecosystem but owns no data flywheel. Value is at risk of commoditization as inference costs → zero. |
+
+**Data Flywheel Detection Protocol (NEW):**
+1. **Deployment base:** How many physical units are deployed? (Robots, vehicles, sensors, edge devices). Count matters — the flywheel compounds with nodes.
+2. **Telemetry richness:** What data does each unit generate? (Video, force-torque, task outcomes, human overrides, natural language feedback). Richer telemetry = more leverage for Tier 2/3 abstraction.
+3. **Closed-loop status:** Is the data flowing BACK into model improvement? Is there a Critique-Reweight-Replay (CRR) pipeline? Or is data just being stored?
+4. **Compounding rate:** Is each additional deployed unit making ALL units smarter? (Network effects in the physical world — the Fleet Learning effect).
+5. **Competitive gap:** How many years and billions would it take a competitor to match this deployment base?
+
+**Total Qualitative Moat Score (v3.2): 0-50 (was 0-40 in v3.0/3.1)**
 
 | Score | Moat Durability |
 |-------|----------------|
-| 30-40 | 🟢 DURABLE — 10+ year moat, physics-level barriers |
-| 20-29 | 🟡 MODERATE — 3-7 year moat, process/scale barriers |
-| 10-19 | 🟠 WEAK — 1-3 year moat, mostly capital barriers |
-| <10 | 🔴 NO MOAT — Commodity business, no durable advantage |
+| 38-50 | 🟢 DURABLE — 10+ year moat, physics-level barriers + data flywheel |
+| 25-37 | 🟡 MODERATE — 3-7 year moat, process/scale barriers |
+| 12-24 | 🟠 WEAK — 1-3 year moat, mostly capital barriers |
+| <12 | 🔴 NO MOAT — Commodity business, no durable advantage |
 
 ### Qualitative Audit Output Format:
 ```
@@ -482,25 +512,30 @@ Equipment Makers (ASML, AMAT, LRCX)
 
 ## Final Report Integration
 
-After completing all steps, the quantitative screen (Step 1, 0-40) and the qualitative moat audit (Step 2, 0-40) MUST BE RECONCILED before any BUY recommendation:
+After completing all steps, the quantitative screen (Step 1, 0-40) and the qualitative moat audit (Step 2, 0-50) MUST BE RECONCILED before any BUY recommendation:
 
-### Reconciliation Table:
+### Reconciliation Table (v3.2 — Qual now 0-50):
 ```
-| Ticker | Quant (0-40) | Qual (0-40) | Agreement | Recommendation |
+| Ticker | Quant (0-40) | Qual (0-50) | Agreement | Recommendation |
 |--------|-------------|-------------|-----------|----------------|
-| XXXX | 34 | 35 | ✅ STRONG | BUY — Both confirm |
-| YYYY | 28 | 12 | ❌ DIVERGE | CAUTION — Quant good, qual weak |
-| ZZZZ | 18 | 36 | ❌ DIVERGE | INVESTIGATE — Great moat, weak numbers |
+| XXXX | 34 | 45 | ✅ STRONG | BUY — Both confirm + data flywheel |
+| YYYY | 28 | 15 | ❌ DIVERGE | CAUTION — Quant good, qual weak |
+| ZZZZ | 18 | 42 | ❌ DIVERGE | INVESTIGATE — Great moat + flywheel, weak numbers |
 ```
 
-### Reconciliation Rules:
+### Reconciliation Rules (v3.2 — Qual thresholds adjusted for 0-50):
 | Quant | Qual | Result |
 |-------|------|--------|
-| >25 | >25 | ✅ STRONG BUY — Full position eligible (unless Bullwhip Risk is HIGH/CRITICAL) |
-| >25 | 15-24 | 🟡 CAUTIOUS — Half position max |
-| >25 | <15 | ⚠️ SKIP — Good numbers, fragile business |
-| 15-24 | >25 | 🟡 OPPORTUNITY — Great moat, needs catalyst |
-| 15-24 | 15-24 | 🟠 WEAK — Tracker only |
+| >25 | >30 | ✅ STRONG BUY — Full position eligible (unless Bullwhip Risk is HIGH/CRITICAL) |
+| >25 | 18-29 | 🟡 CAUTIOUS — Half position max |
+| >25 | <18 | ⚠️ SKIP — Good numbers, fragile business |
+| 15-24 | >30 | 🟡 OPPORTUNITY — Great moat + flywheel, needs catalyst. Size moderately. |
+| 15-24 | 18-29 | 🟠 WEAK — Tracker only |
+| <15 | Any | 🔴 PASS |
+| >25 | 18-29 | 🟡 CAUTIOUS — Half position max |
+| >25 | <18 | ⚠️ SKIP — Good numbers, fragile business. No data flywheel = commoditization risk. |
+| 15-24 | >30 | 🟡 OPPORTUNITY — Great moat + flywheel, needs catalyst. Size moderately. |
+| 15-24 | 18-29 | 🟠 WEAK — Tracker only |
 | <15 | Any | 🔴 PASS |
 
 **v3.1 Bullwhip Override (NEW):** If Bullwhip Risk from Step 4D is HIGH (-10 to -6) or CRITICAL (-20 to -11), the position is capped at HALF or KILLED regardless of Quant+Qual agreement. Bullwhip risk is an existential supply chain integrity issue that no amount of moat depth or quantitative cheapness can overcome.
@@ -520,6 +555,7 @@ After completing all steps, the quantitative screen (Step 1, 0-40) and the quali
 9. **Red flags are enforced.** Insider selling, P/E extremes, revenue deceleration — penalties are applied, not noted.
 10. **The backtest doesn't lie, but it's N=1.** v1.0 killed semiconductors. v2.0 overcorrected. v3.0 requires both numbers AND research to agree. When the methodology produces bad results, change the methodology — but give it enough time to prove itself first.
 11. **Revenue growth is a LIABILITY until verified.** (v3.1) High revenue growth in a supply chain with multiple tiers between the company and the end user is a bullwhip risk, not just an opportunity. Trace the full revenue chain through all 3 tiers before trusting the growth number. "Sold out through year-end" means nothing if the end user isn't generating real revenue.
+12. **Data flywheels beat compute moats.** (v3.2) In the AGI deployment era, a company that owns a physical data flywheel (robots, autonomous vehicles, industrial sensors feeding telemetry into model improvement) has a compounding moat that deepens with every deployed unit. A company that merely sells compute into the AI ecosystem has a moat that SHRINKS as inference costs race toward zero. Always assess: is this company BUILDING a data flywheel or just SELLING picks to the flywheel builders?
 
 ---
 
