@@ -647,43 +647,40 @@ BRAVE MCP UNREACHABLE (connection refused, DNS failure):
 | Scientific papers | Browser (arXiv, IEEE) | Needs to read full papers |
 | When Brave MCP is down | Browser (Brave Web → Bing → DDG) | Browser is always the fallback |
 
-**Pattern 22: Subagent Tab Isolation (v3.2 — NEW)**
+**Pattern 22: Subagent Tab Isolation (v3.2 — per-request tabId)**
 
-All browser tool calls go through a single Chromium instance at `localhost:9222`. The browser maintains a global `active_page` — whichever agent last did an action "owns" the active tab. Without isolation, subagents clobber each other's browsing state.
+All browser tool calls go through a single Chromium instance at `localhost:9222`. The browser maintains a global `active_page` — whichever agent last did an action "owns" the active tab. Without isolation, subagents clobber each other's browsing state. **The `tabId` parameter on every browser action makes this fully parallel-safe.**
 
-**The Solution — dedicated tabs per agent:**
+**The per-request pattern (simplest & parallel-safe):**
 ```
-// BEFORE spawning any subagent that uses the browser:
-browser_listTabs({})  // → note the activeTabId (this is your tab)
+// Subagent creates its own tab
+myTab = browser_newTab({})  // → { tabId: 7 }
 
-// 1. Create an isolated tab for the subagent:
-browser_newTab({})  // → returns { tabId: 5 }
+// ALL actions pass tabId — no global state dependency, no switchTab needed
+browser_navigate({ url: "https://...", tabId: 7 })
+browser_click({ selector: ".result", tabId: 7 })
+browser_screenshot({ output: "/tmp/shot.png", tabId: 7 })
 
-// 2. Spawn the subagent, passing the tab ID:
-@discovery Map the UI of [URL]. Your dedicated browser tab ID is 5.
-  Before every browser action, ensure you're on tab 5 with:
-  browser_switchTab({ tabId: 5 })
-
-// 3. When the subagent returns, switch back to your original tab:
-browser_switchTab({ tabId: <original_tab_id> })
-
-// 4. Clean up the subagent's tab:
-browser_closeTab({ tabId: 5 })
+// Cleanup
+browser_closeTab({ tabId: 7 })
 ```
 
-**Rules for orchestrator:**
-- Before spawning ANY subagent that uses the browser, save your current activeTabId
-- After the subagent returns, ALWAYS switch back to your original tab
-- Close subagent tabs after use (they are disposable)
-- Subagents should NEVER call `browser_navigate` on the orchestrator's tabs
+**Why this is parallel-safe:** Two subagents can interleave requests arbitrarily:
+```
+Agent A: newTab() → tabId=5    Agent B: newTab() → tabId=6
+Agent A: navigate(url:"...", tabId:5)  
+Agent B: navigate(url:"...", tabId:6)   ← B hits tab 6, NOT tab 5
+Agent A: screenshot(tabId:5)            ← A hits tab 5, NOT tab 6
+```
+No race condition. Each request targets a specific tab by ID. The global `active_page` is bypassed.
 
-**Rules for subagents (discovery, deep-moat-auditor, surge-analyst):**
-- Create a dedicated tab with `browser_newTab({})` at the START of your work
-- Save the returned tabId — ALL your browser actions use this tab
-- Use `browser_switchTab({ tabId: [your_tab] })` before every sequence of browser actions
-- Close your tab with `browser_closeTab({ tabId: [your_tab] })` when done
-- NEVER navigate on a tab you didn't create — you might be destroying another agent's state
-
-This pattern eliminates the "who was on which page?" confusion that causes agent interference. Each agent owns its tab. Tabs share cookies/session (same context), but pages don't clobber each other.
+**The old switchTab pattern (deprecated for subagents):**
+```
+// AVOID THIS — requires global state synchronization
+browser_switchTab({ tabId: 7 })
+browser_navigate({ url: "..." })  // relies on active_page being tab 7
+browser_switchTab({ tabId: 7 })   // need to re-verify before every action
+```
+The `tabId` parameter makes `switchTab` unnecessary for subagents. Use `switchTab` only for the orchestrator to set its "home" tab for interactive browsing.
 
 ## Ecosystem Evolution

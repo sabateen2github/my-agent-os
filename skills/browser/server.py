@@ -697,6 +697,41 @@ def ensure_browser():
 # ── Command handler ──────────────────────────────────────────────────
 
 
+def resolve_page(cmd):
+    """Resolve the target page for a command.
+
+    If cmd has a `tabId`, find that specific page in managed_pages.
+    If the page is dead or not found, return (None, error_dict).
+    If no tabId, fall back to active_page (backward compatible).
+
+    Callers: use `page = resolve_page(cmd)` and check for None.
+    """
+    tab_id = cmd.get("tabId")
+    if tab_id is not None:
+        for pg, meta in managed_pages.items():
+            if meta["id"] == tab_id:
+                try:
+                    pg.evaluate("() => 1")  # liveness check
+                    touch_page(pg)
+                    return (pg, None)
+                except Exception:
+                    return (
+                        None,
+                        {
+                            "status": "error",
+                            "message": f"Tab {tab_id} is no longer alive",
+                        },
+                    )
+        return (
+            None,
+            {
+                "status": "error",
+                "message": f"Tab {tab_id} not found. Use browser_listTabs to see available tabs.",
+            },
+        )
+    return (active_page, None)
+
+
 def handle_command(cmd):
     """Process a single command. Must be called with page_lock held."""
     global active_page, browser_context, connected, last_page_recycle
@@ -708,7 +743,9 @@ def handle_command(cmd):
     if action == "status":
         waf_blocked = False
         waf_message = None
-        page = active_page
+        page, _tab_error = resolve_page(cmd)
+        if page is None:
+            page = active_page  # fallback for status when no tabs exist
         if page:
             try:
                 result = page.evaluate("""() => {
@@ -805,7 +842,9 @@ def handle_command(cmd):
 
     # ── All other actions need a browser ──
     ensure_browser()
-    page = active_page
+    page, tab_error = resolve_page(cmd)
+    if tab_error:
+        return tab_error
     if not page:
         return {"status": "error", "message": "No active page"}
 
