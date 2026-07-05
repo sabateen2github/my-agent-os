@@ -60,7 +60,7 @@ Produce your report weighted toward the identified intent. Include ALL sections 
 
 ## 🧩 2D Rasterization (when caller requests it)
 
-When the caller's message includes a rasterization template or asks for a character-code grid, produce it as the FIRST output section before 🎯 PIVOT. The orchestrator and discovery agents cannot see images — this grid is their spatial reference for planning clickAt targets.
+When the caller's message includes a rasterization template or asks for a character-code grid, produce it as the FIRST output section before 🎯 PIVOT. The grid is the universal spatial reference for planning clickAt targets — even agents with native vision use it for diff-based before/after comparisons and pixel-precise targeting.
 
 **Format:** One row per ~60-80px of viewport height. Each row = a string of single-letter codes. NEVER put text strings in grid cells. Include a legend line before the grid. Append Y-offset range to each row.
 
@@ -107,7 +107,7 @@ When you encounter a new visual pattern, rendering quirk, or analysis technique,
 ### Accumulated Vision Patterns
 
 **Pattern V1: The 🧩 Grid Is the Universal Spatial Language**
-The 🧩 rasterization grid is the bridge between vision (can see) and orchestrator/discovery (cannot see). Always produce it first when the caller includes the grid template. A consistent grid lets the orchestrator diff before/after states by comparing two grids side by side — modal appeared? Dropdown expanded? Button changed state? The grid answers these instantly.
+The 🧩 rasterization grid is the universal spatial language for all agents. It bridges vision analysis with actionable coordinates regardless of the model used. Always produce it first when the caller includes the grid template. A consistent grid lets agents diff before/after states by comparing two grids side by side — modal appeared? Dropdown expanded? Button changed state? The grid answers these instantly.
 
 **Pattern V2: Stock/Financial Screenshots Need Price Precision**
 When analyzing financial pages (Yahoo Finance, MarketWatch, Bloomberg), always include exact numeric values in ELEMENTS for prices, PE ratios, market caps, and % changes. Text extraction alone can misinterpret "$1,234.56" — your human visual verification is critical. Cross-reference the screenshot value with any numbers visible in the DOM to catch rendering discrepancies.

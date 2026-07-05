@@ -85,7 +85,39 @@
     },
     "general": {
       "model": "deepseek/deepseek-v4-pro",
-      "maxTokens": 384000
+      "maxTokens": 384000,
+      "mode": "subagent",
+      "permission": {
+        "bash": "allow",
+        "websearch": "allow",
+        "task": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "browser_navigate": "allow",
+        "browser_click": "allow",
+        "browser_screenshot": "allow",
+        "browser_evaluate": "allow",
+        "browser_text": "allow",
+        "browser_html": "allow",
+        "browser_scroll": "allow",
+        "browser_waitFor": "allow",
+        "browser_url": "allow",
+        "browser_listTabs": "allow",
+        "browser_switchTab": "allow",
+        "browser_newTab": "allow",
+        "browser_closeTab": "allow",
+        "browser_status": "allow",
+        "browser_consoleLogs": "allow",
+        "browser_networkLogs": "allow",
+        "browser_cookies": "allow",
+        "browser_viewport": "allow",
+        "browser_clearLogs": "allow",
+        "external_directory": {
+          "/tmp/*": "allow",
+          "/tmp/opencode/*": "allow"
+        }
+      }
     },
     "explore": {
       "model": "deepseek/deepseek-v4-pro"

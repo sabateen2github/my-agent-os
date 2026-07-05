@@ -974,7 +974,7 @@ SEARCH FALLBACK CASCADE:
 
 8. **FCF trajectory > FCF yield.** A company with 0.8% FCF yield growing 50% CAGR is BETTER than one with 2.5% flat. BUT — if qual moat is weak AND FCF is low, that's a double red flag. Kill it.
 
-9. **YOU CANNOT SEE CHARTS.** ALWAYS use @vision for chart analysis. Never describe a chart without sending it to @vision first.
+9. **You have native vision (DeepSeek V4-Pro).** Use `read({ filePath: "/tmp/screenshot.png" })` for quick chart/screenshot analysis. For exhaustive structured analysis with the 🧩 grid and pixel-precise coordinates, spawn @vision. Never describe a chart without looking at it first.
 
 10. **PARALLELIZE AGGRESSIVELY.** Spawn @deep-moat-auditor agents for 5+ candidates simultaneously. Spawn @general for parallel catalyst research.
 
