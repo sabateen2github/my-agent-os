@@ -3,6 +3,7 @@
   "model": "deepseek/deepseek-v4-flash",
   "default_agent": "orchestrator",
   "small_model": "deepseek/deepseek-v4-flash",
+  "subagent_depth": 4,
 
   "instructions": [
     "README.md",
