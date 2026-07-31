@@ -266,33 +266,35 @@ python3 test_e2e.py
 
 **Problem:** With a single shared browser, subagents interfered with each other — `browser_close()` from one agent nuked everyone's tabs, `active_page` globals were clobbered, the MAX_TABS reaper and memory-watchdog recycle killed other agents' pages, and cookies leaked between sessions.
 
-**Solution:** Each agent is routed to its own dedicated browser instance:
+**Solution:** Each agent session is routed to its own dedicated browser instance:
 
 ```
 opencode process (tools/browser.ts)
-  │  context.agent = "surge-analyst" | "deep-moat-auditor" | ...
+  │  context.agent + context.sessionID
   ▼
-resolveOwnerUrl(agent)
+ownerKey(ctx)  →  "<agent>-<sha1(sessionID)[:8]>"   (shared agents → "")
   │  port from ~/.browser-agents/registry.json (or spawn new)
   ▼
-http://127.0.0.1:9230  ← surge-analyst's own window
-http://127.0.0.1:9231  ← deep-moat-auditor's own window
+http://127.0.0.1:9230  ← surge-analyst's window (session-scoped)
+http://127.0.0.1:9231  ← deep-moat-auditor's window (session-scoped)
 http://127.0.0.1:9222  ← orchestrator (shared default, systemd)
 ```
 
+> **v3.3 fix (hijack regression):** Ownership is keyed on **agent type + sessionID hash**, NOT agent type alone. The surge-analyst spawns 10-30 *parallel* subagents of the same type (e.g. 30x `general` at once). Keying only on the type made them all resolve to one shared window → mutual page hijacking + abort-hook churn (each finishing subagent closed the window for everyone else). Including the session hash gives every subagent invocation its own isolated window. Same session across calls keeps the same key (session continuity); parallel same-type sessions get distinct windows.
+
 **Guarantees:**
-- `browser_close()` closes ONLY the caller's own window — impossible to affect another agent
+- `browser_close()` closes ONLY the caller's own session window — impossible to affect another agent
 - `browser_listTabs()` / `browser_closeTab()` / `browser_switchTab()` only see the caller's tabs
-- Cookies, localStorage, and profile data are isolated per agent (no session leakage)
+- Cookies, localStorage, and profile data are isolated per session (no leakage between parallel same-type agents)
 - One agent's OOM/crash/recycle can never kill another agent's window
-- Each owner's user-data-dir persists — a closed window respawns with sessions intact
+- Each session's user-data-dir persists — a closed window respawns with sessions intact
 
 **Auto-close lifecycle (3 tiers):**
 1. **Termination** — if a subagent session is aborted/killed, `context.abort` fires and the window closes immediately
 2. **Idle reap** — the `browser-instance-reaper.timer` (every minute) closes windows whose owner hasn't used them for 5 min (covers normal completion; override: `BROWSER_INSTANCE_IDLE_MS`)
 3. **Explicit** — agents can call `browser_close()` to close their own window early
 
-**Tuning:** `MAX_INSTANCES` (default 6) evicts the least-recently-used idle instance when the pool is full. All instance settings live at the top of `tools/browser.ts`.
+**Tuning:** `MAX_INSTANCES` (default 12 — raised for per-session isolation, since surge-analyst legitimately needs many concurrent windows) evicts the least-recently-used idle instance when the pool is full. All instance settings live at the top of `tools/browser.ts`.
 
 ## Stealth / Anti-Detection
 

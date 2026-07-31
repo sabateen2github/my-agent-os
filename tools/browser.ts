@@ -1,5 +1,6 @@
 import { tool } from "@opencode-ai/plugin"
 import { execSync, spawn } from "child_process"
+import * as crypto from "crypto"
 import * as fs from "fs"
 import * as path from "path"
 
@@ -23,7 +24,10 @@ const REGISTRY_FILE = path.join(SUPERVISOR_DIR, "registry.json")
 // owner's user-data-dir persists — if the agent calls again, the window
 // respawns with cookies/sessions intact. Override: BROWSER_INSTANCE_IDLE_MS
 const INSTANCE_IDLE_MS = Number(process.env.BROWSER_INSTANCE_IDLE_MS || 5 * 60 * 1000)
-const MAX_INSTANCES = 6
+// Per-session isolation means parallel subagents of the same type each need
+// their own window (surge-analyst spawns 10-30 concurrent researchers).
+// 12 windows ≈ 60 ports available (9230-9289), ~200-500MB RAM each — safe.
+const MAX_INSTANCES = 12
 const PORT_START = 9230
 const PORT_END = 9289
 // Agents that share the default systemd instance (main session roles).
@@ -42,12 +46,30 @@ function findServerScript(): string {
 }
 const SERVER_SCRIPT = findServerScript()
 
-// owner (sanitized agent name) -> base URL of its private instance
+// owner (sanitized agent name + session hash) -> base URL of its private instance
 const ownerCache = new Map<string, string>()
 
 function sanitizeOwner(agent?: string): string {
   if (!agent) return ""
   return agent.toLowerCase().replace(/[^a-z0-9-_]/g, "-").slice(0, 32)
+}
+
+// Session-scoped owner key. The agent name alone is NOT enough — the
+// surge-analyst methodology spawns dozens of PARALLEL subagents of the same
+// type (e.g. 30x `general` at once). Keying only on the agent type made them
+// all share one browser window and hijack each other (v3.3 regression).
+// Including a short hash of the unique sessionID gives every subagent
+// invocation its own isolated window, while still allowing the shared
+// systemd instance for main-session roles.
+function ownerKey(ctx?: { agent?: string; sessionID?: string }): string {
+  const agent = ctx?.agent
+  if (isSharedAgent(agent)) return ""
+  const base = sanitizeOwner(agent)
+  if (!base) return ""
+  const sid = ctx?.sessionID || ""
+  if (!sid) return base // fallback: no sessionID available (legacy callers)
+  const h = crypto.createHash("sha1").update(sid).digest("hex").slice(0, 8)
+  return `${base}-${h}`
 }
 
 function isSharedAgent(agent?: string): boolean {
@@ -107,10 +129,9 @@ function closeOwnerInstance(owner: string): void {
 // owner's user-data-dir persists and the window respawns on the next call.
 const abortHookedSignals = new WeakSet<AbortSignal>()
 
-function hookAbortAutoClose(ctx?: { agent?: string; abort?: AbortSignal }): void {
-  if (!ctx || !ctx.abort || !ctx.agent) return
-  if (isSharedAgent(ctx.agent)) return
-  const owner = sanitizeOwner(ctx.agent)
+function hookAbortAutoClose(ctx?: { agent?: string; sessionID?: string; abort?: AbortSignal }): void {
+  if (!ctx || !ctx.abort) return
+  const owner = ownerKey(ctx)
   if (!owner) return
   if (abortHookedSignals.has(ctx.abort)) return
   abortHookedSignals.add(ctx.abort)
@@ -182,9 +203,8 @@ function spawnInstance(owner: string): string {
   return url
 }
 
-function resolveOwnerUrl(agent?: string): string {
-  if (isSharedAgent(agent)) return DEFAULT_AGENT_URL
-  const owner = sanitizeOwner(agent)
+function resolveOwnerUrl(ctx?: { agent?: string; sessionID?: string }): string {
+  const owner = ownerKey(ctx)
   if (!owner) return DEFAULT_AGENT_URL
   const cached = ownerCache.get(owner)
   if (cached && isAlive(cached)) {
@@ -222,8 +242,8 @@ function resolveOwnerUrl(agent?: string): string {
   return url
 }
 
-function agentUrl(ctx?: { agent?: string }): string {
-  return resolveOwnerUrl(ctx?.agent)
+function agentUrl(ctx?: { agent?: string; sessionID?: string }): string {
+  return resolveOwnerUrl(ctx)
 }
 
 function ensureServer(url: string = DEFAULT_AGENT_URL): void {
@@ -252,7 +272,7 @@ function ensureServer(url: string = DEFAULT_AGENT_URL): void {
   }
 }
 
-function call(command: Record<string, unknown>, ctx?: { agent?: string }): string {
+function call(command: Record<string, unknown>, ctx?: { agent?: string; sessionID?: string }): string {
   hookAbortAutoClose(ctx)
   const url = agentUrl(ctx)
   const body = JSON.stringify(command)
@@ -648,17 +668,16 @@ export const browser_close = tool({
   args: {},
   async execute(_args, ctx) {
     // Per-owner instances: fully terminate (browser + server process).
-    if (ctx && !isSharedAgent(ctx.agent)) {
-      const owner = sanitizeOwner(ctx.agent)
-      if (owner) {
-        closeOwnerInstance(owner)
-        return JSON.stringify({
-          status: "ok",
-          closed: true,
-          owner,
-          note: "Closed this agent's own browser window (isolated per-agent).",
-        })
-      }
+    // Keyed by agent+sessionID so we only ever close THIS session's window.
+    const owner = ownerKey(ctx)
+    if (owner) {
+      closeOwnerInstance(owner)
+      return JSON.stringify({
+        status: "ok",
+        closed: true,
+        owner,
+        note: "Closed this agent's own browser window (isolated per-session).",
+      })
     }
     // Shared/default instance (orchestrator session): existing behavior.
     return call({ action: "close" }, ctx)
