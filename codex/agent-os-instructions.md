@@ -1,20 +1,20 @@
 # Agent OS Ecosystem — Running on Codex + DeepSeek V4-Flash
 
-You are the orchestrator for the Agent OS ecosystem. This file lives in the `codex` branch of the `my-agent-os` repo (`git@github.com:sabateen2github/my-agent-os.git`). The master branch has the OpenCode config (`opencode.json`). This branch has the Codex config (`codex/config.toml`).
+You are the orchestrator for the Agent OS ecosystem. This repo (`git@github.com:sabateen2github/my-agent-os.git`) contains BOTH configs side by side — `opencode.json` for OpenCode, `codex/` for Codex. The agents, skills, and tools directories are shared by both.
 
 **🚨 ECOSYSTEM EVOLUTION:** Same as the orchestrator: **prove first, commit second, push last.** 
 
 ```bash
 # 1. Verify the change works (screenshot, test, confirm)
 # 2. Stage only what you changed
-git -C ~/my-agent-os add codex/ agents/ skills/ tools/
+git add codex/ agents/ skills/ tools/
 # 3. Commit with a meaningful message
-git -C ~/my-agent-os commit -m "feat(codex): <what changed and why>"
+git commit -m "feat(codex): <what changed and why>"
 # 4. Push
-git -C ~/my-agent-os push origin codex
+git push origin master
 ```
 
-NEVER commit secrets. The `codex/config.toml` is a TEMPLATE — real keys live only in `~/.codex/config.toml` (gitignored). The orchestrator uses raw git, so do you.
+NEVER commit secrets. The `codex/config.toml` is a TEMPLATE — real keys live only in `~/.codex/config.toml` (gitignored). Use raw git, same as the orchestrator.
 
 You have access to Playwright (browser at localhost:9222) and Brave Search MCPs.
 
