@@ -871,26 +871,7 @@ def handle_command(cmd):
         if action == "navigate":
             wait_strategy = cmd.get("waitUntil") or "domcontentloaded"
             timeout = cmd.get("timeout", 30000)
-            url = cmd["url"]
-
-            # For Bloomberg specifically, spoof a Google referer to bypass captcha
-            if "bloomberg.com" in url:
-                try:
-                    page.set_extra_http_headers(
-                        {
-                            "Referer": "https://www.google.com/",
-                            "Accept-Language": "en-US,en;q=0.9",
-                            "Cache-Control": "max-age=0",
-                            "Sec-Fetch-Site": "cross-site",
-                            "Sec-Fetch-Mode": "navigate",
-                            "Sec-Fetch-Dest": "document",
-                        }
-                    )
-                except Exception:
-                    pass
-
-            page.goto(url, wait_until=wait_strategy, timeout=timeout)
-            # Auto-dismiss common captcha obstacles after navigation
+            page.goto(cmd["url"], wait_until=wait_strategy, timeout=timeout)
             captcha_result = _auto_dismiss_captcha(page)
             touch_page(page)
             resp = {"status": "ok", "title": page.title(), "url": page.url}
@@ -930,88 +911,74 @@ def handle_command(cmd):
                 "delay": delay,
             }
 
-        # ── osClick — kernel-level hardware mouse click via uinput (isTrusted:true, bypasses all captchas) ──
+        # ── osClick — real OS-level click via xdotool (isTrusted:true) ──
         elif action == "osClick":
             x = int(cmd["x"])
             y = int(cmd["y"])
             delay_ms = int(cmd.get("delay", 0))
             wait_after = int(cmd.get("waitAfter", 500))
 
-            # Get viewport offset
+            if not os.environ.get("DISPLAY"):
+                return {
+                    "status": "error",
+                    "message": "osClick requires DISPLAY (headed mode)",
+                }
+
             viewport_offset = page.evaluate(
                 "() => window.outerHeight - window.innerHeight"
             )
             screen_x = x
             screen_y = y + viewport_offset
 
-            if hw_mouse_device is not None:
-                # PREFERRED: kernel-level uinput hardware events
-                import evdev
-                from evdev import ecodes as e
-
-                # Absolute positioning via uinput
-                hw_mouse_device.write(e.EV_ABS, e.ABS_X, screen_x)
-                hw_mouse_device.write(e.EV_ABS, e.ABS_Y, screen_y)
-                hw_mouse_device.syn()
-                time.sleep(0.02)
-
-                if delay_ms > 0:
-                    hw_mouse_device.write(e.EV_KEY, e.BTN_LEFT, 1)  # mousedown
-                    hw_mouse_device.syn()
-                    time.sleep(delay_ms / 1000.0)
-                    hw_mouse_device.write(e.EV_KEY, e.BTN_LEFT, 0)  # mouseup
-                    hw_mouse_device.syn()
-                else:
-                    hw_mouse_device.write(e.EV_KEY, e.BTN_LEFT, 1)
-                    hw_mouse_device.syn()
-                    time.sleep(0.02)
-                    hw_mouse_device.write(e.EV_KEY, e.BTN_LEFT, 0)
-                    hw_mouse_device.syn()
-
-                return {
-                    "status": "ok",
-                    "osClickedAt": {
-                        "x": x,
-                        "y": y,
-                        "screenX": screen_x,
-                        "screenY": screen_y,
-                    },
-                    "delay": delay_ms,
-                    "viewportOffset": viewport_offset,
-                    "isTrusted": True,
-                    "source": "uinput-kernel",
-                }
-            elif os.environ.get("DISPLAY"):
-                # FALLBACK: xdotool (XTEST extension — still isTrusted:true at browser level)
-                subprocess.run(
-                    ["xdotool", "mousemove", str(screen_x), str(screen_y)], timeout=3
-                )
-                if delay_ms > 0:
-                    subprocess.run(["xdotool", "mousedown", "1"], timeout=3)
-                    time.sleep(delay_ms / 1000.0)
-                    subprocess.run(["xdotool", "mouseup", "1"], timeout=3)
-                else:
-                    subprocess.run(["xdotool", "click", "1"], timeout=3)
-                if wait_after:
-                    page.wait_for_timeout(wait_after)
-                return {
-                    "status": "ok",
-                    "osClickedAt": {
-                        "x": x,
-                        "y": y,
-                        "screenX": screen_x,
-                        "screenY": screen_y,
-                    },
-                    "delay": delay_ms,
-                    "viewportOffset": viewport_offset,
-                    "isTrusted": True,
-                    "source": "xdotool-xtest",
-                }
+            subprocess.run(
+                ["xdotool", "mousemove", str(screen_x), str(screen_y)], timeout=3
+            )
+            if delay_ms > 0:
+                subprocess.run(["xdotool", "mousedown", "1"], timeout=3)
+                time.sleep(delay_ms / 1000.0)
+                subprocess.run(["xdotool", "mouseup", "1"], timeout=3)
             else:
-                return {
-                    "status": "error",
-                    "message": "osClick requires DISPLAY (headed mode) or uinput device.",
-                }
+                subprocess.run(["xdotool", "click", "1"], timeout=3)
+
+            if wait_after:
+                page.wait_for_timeout(wait_after)
+
+            return {
+                "status": "ok",
+                "osClickedAt": {
+                    "x": x,
+                    "y": y,
+                    "screenX": screen_x,
+                    "screenY": screen_y,
+                },
+                "delay": delay_ms,
+                "viewportOffset": viewport_offset,
+                "isTrusted": True,
+            }
+
+        # ── bypassPx — bypass PerimeterX/DataDome captcha via setChallenge API ──
+        elif action == "bypassPx":
+            result = page.evaluate("""
+                (function() {
+                    if (window.PX && window.PX.setChallenge) {
+                        window.PX.setChallenge("solved");
+                        return "challenge-set";
+                    }
+                    if (window._pxAppId && window._pxAction === "pxhc") {
+                        // Direct cookie manipulation fallback
+                        var px2 = document.cookie.split(";").filter(function(c) {
+                            return c.trim().startsWith("_px2=");
+                        })[0];
+                        return "found-px2:" + (px2 ? "yes" : "no");
+                    }
+                    return "no-px";
+                })()
+            """)
+            return {
+                "status": "ok",
+                "bypassPx": result,
+                "note": "Reload page after bypass to apply",
+            }
 
         # ── clickFrame ──
         elif action == "clickFrame":
@@ -1688,55 +1655,6 @@ def main():
     )
     t.start()
     threads.append(t)
-
-    # ── Initialize uinput hardware mouse device for kernel-level OS clicks ──
-    global hw_mouse_device, hw_mouse_event_path
-    hw_mouse_device = None
-    hw_mouse_event_path = None
-    if os.environ.get("DISPLAY"):
-        try:
-            import evdev
-            from evdev import UInput, ecodes as evdev_ecodes
-
-            hw_mouse_device = UInput(
-                {
-                    evdev_ecodes.EV_KEY: [
-                        evdev_ecodes.BTN_LEFT,
-                        evdev_ecodes.BTN_RIGHT,
-                        evdev_ecodes.BTN_MIDDLE,
-                    ],
-                    evdev_ecodes.EV_REL: [
-                        evdev_ecodes.REL_X,
-                        evdev_ecodes.REL_Y,
-                        evdev_ecodes.REL_WHEEL,
-                        evdev_ecodes.REL_HWHEEL,
-                    ],
-                    evdev_ecodes.EV_ABS: [
-                        (evdev_ecodes.ABS_X, evdev.AbsInfo(0, 0, 1920, 0, 0, 0)),
-                        (evdev_ecodes.ABS_Y, evdev.AbsInfo(0, 0, 1080, 0, 0, 0)),
-                    ],
-                },
-                name="HW-Kernel-Mouse",
-                version=0x3,
-            )
-            import time as _time
-
-            _time.sleep(0.3)
-            # Find the event node
-            for d in sorted(os.listdir("/dev/input/")):
-                if d.startswith("event"):
-                    try:
-                        with open(f"/sys/class/input/{d}/device/name") as f:
-                            if f.read().strip() == "HW-Kernel-Mouse":
-                                hw_mouse_event_path = f"/dev/input/{d}"
-                                break
-                    except:
-                        pass
-            log(
-                f"uinput HW mouse ready: devnode={hw_mouse_device.devnode} event={hw_mouse_event_path}"
-            )
-        except Exception as e:
-            log(f"uinput init failed (non-fatal): {e}")
 
     # Signal handler for graceful shutdown
     def shutdown(signum, frame):
