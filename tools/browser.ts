@@ -449,3 +449,12 @@ export const browser_viewport = tool({
     return call({ action: "viewport", width: args.width, height: args.height  , tabId: args.tabId })
   },
 })
+
+export const browser_bypassPx = tool({
+  description: "Bypass PerimeterX/DataDome captcha by calling window.PX.setChallenge('solved'). Navigate/reload the page after calling this to load the real content.",
+  args: {
+    tabId: tool.schema.number().optional().describe("Target a specific tab by ID"),
+  },  async execute(args) {
+    return call({ action: "bypassPx", tabId: args.tabId })
+  },
+})
