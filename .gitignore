@@ -6,3 +6,4 @@ __pycache__/
 /tmp/
 package-lock.json
 package.json
+codex/config.live.toml
