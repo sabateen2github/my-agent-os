@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "deepseek/deepseek-v4-pro",
+  "model": "deepseek/deepseek-v4-flash",
   "default_agent": "orchestrator",
   "small_model": "deepseek/deepseek-v4-flash",
 
@@ -76,15 +76,15 @@
 
   "agent": {
     "build": {
-      "model": "deepseek/deepseek-v4-pro",
+      "model": "deepseek/deepseek-v4-flash",
       "maxTokens": 384000
     },
     "plan": {
-      "model": "deepseek/deepseek-v4-pro",
+      "model": "deepseek/deepseek-v4-flash",
       "maxTokens": 384000
     },
     "general": {
-      "model": "deepseek/deepseek-v4-pro",
+      "model": "deepseek/deepseek-v4-flash",
       "maxTokens": 384000,
       "mode": "subagent",
       "permission": {
@@ -120,7 +120,7 @@
       }
     },
     "explore": {
-      "model": "deepseek/deepseek-v4-pro"
+      "model": "deepseek/deepseek-v4-flash"
     },
     "title": {
       "model": "deepseek/deepseek-v4-flash"
@@ -129,7 +129,7 @@
       "model": "deepseek/deepseek-v4-flash"
     },
     "discovery": {
-      "model": "deepseek/deepseek-v4-pro",
+      "model": "deepseek/deepseek-v4-flash",
       "mode": "subagent",
       "permission": {
         "bash": "allow",
@@ -180,7 +180,7 @@
       }
     },
     "deep-moat-auditor": {
-      "model": "deepseek/deepseek-v4-pro",
+      "model": "deepseek/deepseek-v4-flash",
       "mode": "subagent",
       "permission": {
         "bash": "allow",
@@ -216,7 +216,7 @@
       }
     },
     "surge-analyst": {
-      "model": "deepseek/deepseek-v4-pro",
+      "model": "deepseek/deepseek-v4-flash",
       "mode": "subagent",
       "permission": {
         "bash": "allow",
@@ -253,7 +253,7 @@
       }
     },
     "meta-cognition": {
-      "model": "deepseek/deepseek-v4-pro",
+      "model": "deepseek/deepseek-v4-flash",
       "mode": "subagent",
       "permission": {
         "bash": "allow",
