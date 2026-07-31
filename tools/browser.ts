@@ -295,9 +295,10 @@ export const browser_clickAt = tool({
     y: tool.schema.number().describe("Y pixel coordinate"),
     waitAfter: tool.schema.number().optional().default(500).describe("Wait ms after clicking"),
     clickCount: tool.schema.number().optional().default(1).describe("Number of clicks"),
+    delay: tool.schema.number().optional().default(0).describe("Delay between mousedown and mouseup in ms (for press-and-hold captchas)"),
     tabId: tool.schema.number().optional().describe("Target a specific tab by ID (from browser_newTab or browser_listTabs). Parallel-safe — bypasses shared active_page global."),
   },  async execute(args) {
-    return call({ action: "clickAt", x: args.x, y: args.y, waitAfter: args.waitAfter, clickCount: args.clickCount  , tabId: args.tabId })
+    return call({ action: "clickAt", x: args.x, y: args.y, waitAfter: args.waitAfter, clickCount: args.clickCount, delay: args.delay  , tabId: args.tabId })
   },
 })
 

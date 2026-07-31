@@ -889,7 +889,8 @@ def handle_command(cmd):
             x = int(cmd["x"])
             y = int(cmd["y"])
             click_count = cmd.get("clickCount", 1)
-            page.mouse.click(x, y, click_count=click_count)
+            delay = int(cmd.get("delay", 0))
+            page.mouse.click(x, y, click_count=click_count, delay=delay)
             touch_page(page)
             if cmd.get("waitAfter"):
                 page.wait_for_timeout(cmd["waitAfter"])
@@ -897,6 +898,7 @@ def handle_command(cmd):
                 "status": "ok",
                 "clickedAt": {"x": x, "y": y},
                 "clickCount": click_count,
+                "delay": delay,
             }
 
         # ── clickFrame ──
