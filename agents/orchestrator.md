@@ -126,16 +126,25 @@ When CSS selectors can't reach an element (React dynamic rendering, canvas, ifra
 ```
 `clickAt` sends `Input.dispatchMouseEvent` at the OS level — the page sees a real human click. This bypasses ALL React synthetic event issues.
 
-### Pattern 2: Cross-Origin Iframe Clicking (reCAPTCHA, OAuth)
+**Pattern 2: Cross-Origin Iframe Clicking (reCAPTCHA, OAuth)**
+
+For reCAPTCHA checkboxes (Strategy A) and image challenges (Strategy B):
 ```
-// Strategy A — works most of the time:
+// Strategy A — checkbox click (server auto-attempts on every navigation):
 browser_click({ selector: 'iframe[title="reCAPTCHA"]', waitAfter: 4000 })
 
-// Strategy B — precision click inside iframe:
-browser_clickFrame({ selector: 'iframe[title="reCAPTCHA"]', x: 28, y: 28, waitAfter: 3000 })
+// Strategy B — image challenge solve via @vision + clickFrame:
+// 1. After navigation: browser_status() → check captchaInfo
+// 2. If captchaInfo.type === "image_challenge":
+//    a. read({ filePath: "/tmp/captcha-challenge.png" }) or @vision
+//    b. Identify which tiles to click (e.g., "select all traffic lights")
+//    c. For each correct tile: browser_clickFrame({ selector: 'iframe[title*="reCAPTCHA"]', x: tileX, y: tileY })
+//    d. Click "Verify" button: browser_clickFrame({ selector: 'iframe[title*="reCAPTCHA"]', x: verifyX, y: verifyY })
+// 3. Verify: browser_evaluate({ script: "grecaptcha.getResponse(0).length" }) // > 0 = solved
 
-// Verify:
-browser_evaluate({ script: "grecaptcha.getResponse(0).length" })  // should be > 0
+// Strategy C — behavioral captchas (PX/DataDome "press & hold"):
+// These are designed to resist automation. DO NOT fight them.
+// Immediately fall back to another search engine (Pattern 20 Phase 2/3).
 ```
 
 ### Pattern 3: React Select / MUI Autocomplete
@@ -488,8 +497,7 @@ PHASE 1 — Brave MCP (fast, structured):
 
 PHASE 2 — Browser search engines (renders JS, captures AI Overviews):
   Google → Bing → DuckDuckGo
-  On captcha: clear cookies, retry once, then fall to next engine
-  On DuckDuckGo block (418): skip directly to Phase 3
+  On captcha: check browser_status().captchaInfo. For reCAPTCHA image challenges, solve with @vision + clickFrame (Pattern 2, Strategy B). For behavioral captchas (PX/DataDome), don't fight — fall to next engine immediately.
 
 PHASE 3 — Direct URL navigation (most reliable):
   Financial: finance.yahoo.com/quote/TICKER
