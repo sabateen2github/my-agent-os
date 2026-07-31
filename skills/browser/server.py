@@ -869,16 +869,27 @@ def handle_command(cmd):
     try:
         # ── navigate ──
         if action == "navigate":
-            # "domcontentloaded" fires as soon as HTML is parsed — never hangs
-            # on tracking pixels OR heavy JS. For SPAs that need full render,
-            # pass waitUntil: "networkidle" explicitly.
             wait_strategy = cmd.get("waitUntil") or "domcontentloaded"
             timeout = cmd.get("timeout", 30000)
-            page.goto(
-                cmd["url"],
-                wait_until=wait_strategy,
-                timeout=timeout,
-            )
+            url = cmd["url"]
+
+            # For Bloomberg specifically, spoof a Google referer to bypass captcha
+            if "bloomberg.com" in url:
+                try:
+                    page.set_extra_http_headers(
+                        {
+                            "Referer": "https://www.google.com/",
+                            "Accept-Language": "en-US,en;q=0.9",
+                            "Cache-Control": "max-age=0",
+                            "Sec-Fetch-Site": "cross-site",
+                            "Sec-Fetch-Mode": "navigate",
+                            "Sec-Fetch-Dest": "document",
+                        }
+                    )
+                except Exception:
+                    pass
+
+            page.goto(url, wait_until=wait_strategy, timeout=timeout)
             # Auto-dismiss common captcha obstacles after navigation
             captcha_result = _auto_dismiss_captcha(page)
             touch_page(page)
