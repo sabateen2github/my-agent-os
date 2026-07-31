@@ -31,8 +31,17 @@ from pathlib import Path
 # ── Configuration ────────────────────────────────────────────────────
 
 PORT = int(os.environ.get("BROWSER_AGENT_PORT", "9222"))
-USER_DATA_DIR = os.path.expanduser("~/browser-agent/user-data")
-SCREENSHOT_DIR = os.path.expanduser("~/browser-agent/screenshots")
+INSTANCE_NAME = os.environ.get("BROWSER_AGENT_NAME", "default")
+# Per-owner instances exit the whole process on the `close` action so the
+# browser window is fully gone (no orphaned server). The default/shared
+# instance keeps the old behavior (browser closes, server stays alive).
+EXIT_ON_CLOSE = os.environ.get("BROWSER_AGENT_EXIT_ON_CLOSE", "") == "1"
+USER_DATA_DIR = os.path.expanduser(
+    os.environ.get("BROWSER_AGENT_USER_DATA_DIR", "~/browser-agent/user-data")
+)
+SCREENSHOT_DIR = os.path.expanduser(
+    os.environ.get("BROWSER_AGENT_SCREENSHOT_DIR", "~/browser-agent/screenshots")
+)
 
 # Create directories
 Path(USER_DATA_DIR).mkdir(parents=True, exist_ok=True)
@@ -130,7 +139,7 @@ def get_rss_mb():
 def log(msg):
     """Log to stderr with timestamp."""
     ts = time.strftime("%Y-%m-%dT%H:%M:%S")
-    print(f"[browser-server] [{ts}] {msg}", file=sys.stderr, flush=True)
+    print(f"[browser-server:{INSTANCE_NAME}] [{ts}] {msg}", file=sys.stderr, flush=True)
 
 
 def touch_page(page):
@@ -856,6 +865,11 @@ def handle_command(cmd):
         js_errors.clear()
         _intercept_handler_ref = None
         _intercept_page_ref = None
+        if EXIT_ON_CLOSE:
+            log(
+                "Per-owner instance closed — exiting process (auto-close on subagent end)"
+            )
+            os._exit(0)
         return {"status": "ok", "closed": True}
 
     # ── All other actions need a browser ──

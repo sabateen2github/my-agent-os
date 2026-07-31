@@ -520,41 +520,17 @@ PHASE 4 — webfetch (emergency only):
 
 For deep research, always prefer browser navigation (renders full pages). Brave MCP is a fast first pass — not a replacement for reading actual pages.
 
-**Pattern 22: Subagent Tab Isolation (v3.2 — per-request tabId)**
+**Pattern 22: Subagent Window Isolation (v3.3 — per-owner browser instances, supersedes per-request tabId)**
 
-All browser tool calls go through a single Chromium instance at `localhost:9222`. The browser maintains a global `active_page` — whichever agent last did an action "owns" the active tab. Without isolation, subagents clobber each other's browsing state. **The `tabId` parameter on every browser action makes this fully parallel-safe.**
+Every subagent is automatically routed to its OWN browser instance via `context.agent` in `tools/browser.ts` — no manual tabId bookkeeping needed. The orchestrator shares the default instance on `127.0.0.1:9222`; each other agent gets a private window on ports 9230-9289 (registry: `~/.browser-agents/registry.json`).
 
-**The per-request pattern (simplest & parallel-safe):**
-```
-// Subagent creates its own tab
-myTab = browser_newTab({})  // → { tabId: 7 }
+**Guarantees:**
+- `browser_close()` closes ONLY the caller's own window — can never affect another agent
+- `browser_listTabs()` / `browser_closeTab()` / `browser_switchTab()` only see the caller's tabs
+- Cookies/storage isolated per agent; one agent's crash/OOM/recycle can't kill another's window
+- Auto-close: windows close instantly on session abort, or within ~5 min of idle (`browser-instance-reaper.timer`)
 
-// ALL actions pass tabId — no global state dependency, no switchTab needed
-browser_navigate({ url: "https://...", tabId: 7 })
-browser_click({ selector: ".result", tabId: 7 })
-browser_screenshot({ output: "/tmp/shot.png", tabId: 7 })
-
-// Cleanup
-browser_closeTab({ tabId: 7 })
-```
-
-**Why this is parallel-safe:** Two subagents can interleave requests arbitrarily:
-```
-Agent A: newTab() → tabId=5    Agent B: newTab() → tabId=6
-Agent A: navigate(url:"...", tabId:5)  
-Agent B: navigate(url:"...", tabId:6)   ← B hits tab 6, NOT tab 5
-Agent A: screenshot(tabId:5)            ← A hits tab 5, NOT tab 6
-```
-No race condition. Each request targets a specific tab by ID. The global `active_page` is bypassed.
-
-**The old switchTab pattern (deprecated for subagents):**
-```
-// AVOID THIS — requires global state synchronization
-browser_switchTab({ tabId: 7 })
-browser_navigate({ url: "..." })  // relies on active_page being tab 7
-browser_switchTab({ tabId: 7 })   // need to re-verify before every action
-```
-The `tabId` parameter makes `switchTab` unnecessary for subagents. Use `switchTab` only for the orchestrator to set its "home" tab for interactive browsing.
+**You do NOT need to pass tabId for isolation** — it's automatic. Just use `browser_newTab`/`browser_closeTab` within your own window as normal. The tabId parameter remains supported for intra-window multi-tab workflows.
 
 **Pattern 23: Stale Config Detection (v3.2 — config drift guard)**
 

@@ -245,19 +245,54 @@ python3 test_e2e.py
 - Use `browser_waitFor({ selector: "...", timeout: 5000 })` after clicking before reading results
 - Use `since` parameter on `browser_networkLogs` and `browser_consoleLogs` to only get new entries
 - Use `browser_clearLogs()` after checking to avoid re-reading old data on the next check
+- **Your browser window is private to you**: `browser_close()`, `browser_listTabs()`, `browser_closeTab()` only affect YOUR instance — never another agent's. Cookies/state do not leak between agents.
+- Your window auto-closes ~5 min after you stop using it (or instantly if your session is terminated). Don't rely on it being warm across long pauses — re-navigate if needed.
 - The browser persists between calls — closing one session and navigating starts fresh
 - If the browser crashes, it auto-restart on the next `browser_navigate` call
-- Screenshots save to `/home/ubuntu/browser-agent/screenshots/`
+- Screenshots save to `/home/ubuntu/browser-agent/screenshots/` (default) or `~/.browser-agents/<owner>/screenshots/` (per-agent)
 
 ## Technical details
 
-- Server: Python HTTP API on `127.0.0.1:9222` (`skills/browser/server.py`)
-- Systemd service: `browser-agent.service` (user scope, auto-starts on boot)
+- **Per-owner browser windows**: Every subagent gets its OWN browser instance (own port, own user-data-dir, own Chromium window). Routing is automatic via `context.agent` in `tools/browser.ts` — the orchestrator shares the default `127.0.0.1:9222` instance; every other agent gets a private instance on ports 9230-9289 (registry: `~/.browser-agents/registry.json`).
+- Server: Python HTTP API on `127.0.0.1:9222` (default) + per-owner ports (`skills/browser/server.py`)
+- Systemd service: `browser-agent.service` (user scope, default instance) + `browser-instance-reaper.timer` (auto-closes idle per-agent windows every minute)
 - Browser: Playwright Chromium with `launch_persistent_context` for session persistence
-- User data dir: `~/browser-agent/user-data` (cookies, localStorage, profile survive restarts)
+- User data dir: `~/browser-agent/user-data` (default), `~/.browser-agents/<owner>/user-data` (per-agent)
 - Stealth: Anti-detection enabled by default (webdriver=false, faked plugins, clean UA)
 - Page logs are buffered (up to 5000 network, 5000 console entries)
 - Migration: Replaced Puppeteer (server.js) with Playwright (server.py) — same API contract
+
+## 🔒 Per-Owner Window Isolation (Pattern 26)
+
+**Problem:** With a single shared browser, subagents interfered with each other — `browser_close()` from one agent nuked everyone's tabs, `active_page` globals were clobbered, the MAX_TABS reaper and memory-watchdog recycle killed other agents' pages, and cookies leaked between sessions.
+
+**Solution:** Each agent is routed to its own dedicated browser instance:
+
+```
+opencode process (tools/browser.ts)
+  │  context.agent = "surge-analyst" | "deep-moat-auditor" | ...
+  ▼
+resolveOwnerUrl(agent)
+  │  port from ~/.browser-agents/registry.json (or spawn new)
+  ▼
+http://127.0.0.1:9230  ← surge-analyst's own window
+http://127.0.0.1:9231  ← deep-moat-auditor's own window
+http://127.0.0.1:9222  ← orchestrator (shared default, systemd)
+```
+
+**Guarantees:**
+- `browser_close()` closes ONLY the caller's own window — impossible to affect another agent
+- `browser_listTabs()` / `browser_closeTab()` / `browser_switchTab()` only see the caller's tabs
+- Cookies, localStorage, and profile data are isolated per agent (no session leakage)
+- One agent's OOM/crash/recycle can never kill another agent's window
+- Each owner's user-data-dir persists — a closed window respawns with sessions intact
+
+**Auto-close lifecycle (3 tiers):**
+1. **Termination** — if a subagent session is aborted/killed, `context.abort` fires and the window closes immediately
+2. **Idle reap** — the `browser-instance-reaper.timer` (every minute) closes windows whose owner hasn't used them for 5 min (covers normal completion; override: `BROWSER_INSTANCE_IDLE_MS`)
+3. **Explicit** — agents can call `browser_close()` to close their own window early
+
+**Tuning:** `MAX_INSTANCES` (default 6) evicts the least-recently-used idle instance when the pool is full. All instance settings live at the top of `tools/browser.ts`.
 
 ## Stealth / Anti-Detection
 
