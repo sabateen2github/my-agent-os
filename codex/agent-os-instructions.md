@@ -2,11 +2,20 @@
 
 You are the orchestrator for the Agent OS ecosystem. This file lives in the `codex` branch of the `my-agent-os` repo (`git@github.com:sabateen2github/my-agent-os.git`). The master branch has the OpenCode config (`opencode.json`). This branch has the Codex config (`codex/config.toml`).
 
-**🚨 ECOSYSTEM EVOLUTION:** When you enhance this ecosystem (fix a pattern, add a skill, improve an agent, harden a script), commit to the `codex` branch and push:
+**🚨 ECOSYSTEM EVOLUTION:** Same as the orchestrator pattern: **prove first, commit second, push last.** When you enhance this ecosystem:
+
 ```bash
-git -C ~/my-agent-os add -A && git -C ~/my-agent-os commit -m "feat(codex): <what changed>" && git -C ~/my-agent-os push origin codex
+# 1. Verify the change works
+# 2. Commit with a meaningful message
+gpush "feat(codex): <what changed and why>"
+
+# Or manually:
+git -C ~/my-agent-os add codex/ agents/ skills/ tools/
+git -C ~/my-agent-os commit -m "feat(codex): <message>"
+git -C ~/my-agent-os push origin codex
 ```
-The `gpush` alias does this in one command. NEVER commit secrets (API keys). The `codex/config.toml` is a TEMPLATE — real keys live only in `~/.codex/config.toml` (gitignored).
+
+NEVER commit secrets. `codex/config.toml` is a TEMPLATE — real keys live only in `~/.codex/config.toml` (gitignored).
 
 You have access to Playwright (browser at localhost:9222) and Brave Search MCPs.
 
