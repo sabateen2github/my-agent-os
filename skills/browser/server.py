@@ -22,6 +22,7 @@ import re
 import sys
 import time
 import signal
+import subprocess
 import threading
 import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -657,9 +658,24 @@ def ensure_browser():
         "--disable-features=IsolateOrigins,site-per-process",
     ]
 
+    # Use headed mode when X11 display is available (enables OS-level xdotool clicks)
+    use_headless = not os.environ.get("DISPLAY")
+    if not use_headless:
+        chrome_args.extend(
+            [
+                "--window-position=0,0",
+                "--window-size=1280,800",
+            ]
+        )
+        log(
+            f"Browser: headed mode (DISPLAY={os.environ['DISPLAY']}) — OS-level clicks available"
+        )
+    else:
+        log("Browser: headless mode — OS-level clicks unavailable")
+
     browser_context = playwright_api.chromium.launch_persistent_context(
         user_data_dir=USER_DATA_DIR,
-        headless=True,
+        headless=use_headless,
         args=chrome_args,
         viewport={"width": 1280, "height": 800},
         user_agent=STEALTH_USER_AGENT,
@@ -899,6 +915,56 @@ def handle_command(cmd):
                 "clickedAt": {"x": x, "y": y},
                 "clickCount": click_count,
                 "delay": delay,
+            }
+
+        # ── osClick — real OS-level click via xdotool (isTrusted: true, bypasses PX/DataDome) ──
+        elif action == "osClick":
+            x = int(cmd["x"])
+            y = int(cmd["y"])
+            delay_ms = int(cmd.get("delay", 0))
+            wait_after = int(cmd.get("waitAfter", 500))
+
+            if not os.environ.get("DISPLAY"):
+                return {
+                    "status": "error",
+                    "message": "osClick requires DISPLAY (headed mode). Use clickAt instead.",
+                }
+
+            # Get viewport offset (title bar + toolbars above content)
+            viewport_offset = page.evaluate(
+                "() => window.outerHeight - window.innerHeight"
+            )
+
+            # Screen coords = page coords + viewport offset
+            screen_x = x
+            screen_y = y + viewport_offset
+
+            # Move mouse to target
+            subprocess.run(
+                ["xdotool", "mousemove", str(screen_x), str(screen_y)], timeout=3
+            )
+
+            if delay_ms > 0:
+                subprocess.run(["xdotool", "mousedown", "1"], timeout=3)
+                time.sleep(delay_ms / 1000.0)
+                subprocess.run(["xdotool", "mouseup", "1"], timeout=3)
+            else:
+                subprocess.run(["xdotool", "click", "1"], timeout=3)
+
+            if wait_after:
+                page.wait_for_timeout(wait_after)
+
+            return {
+                "status": "ok",
+                "osClickedAt": {
+                    "x": x,
+                    "y": y,
+                    "screenX": screen_x,
+                    "screenY": screen_y,
+                },
+                "delay": delay_ms,
+                "viewportOffset": viewport_offset,
+                "isTrusted": True,
             }
 
         # ── clickFrame ──
