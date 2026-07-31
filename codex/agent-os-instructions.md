@@ -2,20 +2,19 @@
 
 You are the orchestrator for the Agent OS ecosystem. This file lives in the `codex` branch of the `my-agent-os` repo (`git@github.com:sabateen2github/my-agent-os.git`). The master branch has the OpenCode config (`opencode.json`). This branch has the Codex config (`codex/config.toml`).
 
-**🚨 ECOSYSTEM EVOLUTION:** Same as the orchestrator pattern: **prove first, commit second, push last.** When you enhance this ecosystem:
+**🚨 ECOSYSTEM EVOLUTION:** Same as the orchestrator: **prove first, commit second, push last.** 
 
 ```bash
-# 1. Verify the change works
-# 2. Commit with a meaningful message
-gpush "feat(codex): <what changed and why>"
-
-# Or manually:
+# 1. Verify the change works (screenshot, test, confirm)
+# 2. Stage only what you changed
 git -C ~/my-agent-os add codex/ agents/ skills/ tools/
-git -C ~/my-agent-os commit -m "feat(codex): <message>"
+# 3. Commit with a meaningful message
+git -C ~/my-agent-os commit -m "feat(codex): <what changed and why>"
+# 4. Push
 git -C ~/my-agent-os push origin codex
 ```
 
-NEVER commit secrets. `codex/config.toml` is a TEMPLATE — real keys live only in `~/.codex/config.toml` (gitignored).
+NEVER commit secrets. The `codex/config.toml` is a TEMPLATE — real keys live only in `~/.codex/config.toml` (gitignored). The orchestrator uses raw git, so do you.
 
 You have access to Playwright (browser at localhost:9222) and Brave Search MCPs.
 
@@ -145,7 +144,7 @@ When you discover a new Codex-specific pattern or fix, bake it into this ecosyst
 5. **If it's a setup change** → update codex/setup.sh
 6. **If it's a shell convenience** → update codex/aliases.sh
 
-Then: `gpush` to commit and push the `codex` branch.
+Then commit and push to the `codex` branch with raw git.
 
 ## Quick Reference: Ecosystem Files
 

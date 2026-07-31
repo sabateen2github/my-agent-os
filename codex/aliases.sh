@@ -25,27 +25,3 @@ alias cq='codex -c model_instructions_file=""'
 
 # Update agent-os ecosystem from repo
 alias cup='bash ~/my-agent-os/codex/setup.sh'
-
-# Git helpers for the codex branch — same pattern the orchestrator uses
-alias gcodex='git -C ~/my-agent-os checkout codex && git -C ~/my-agent-os pull'
-
-# gpush <message> — verify first, commit second, push last. Same as orchestrator.
-# Usage: gpush "fix: hardened browser bypass for PX captcha"
-gpush() {
-  local msg="${*}"
-  if [ -z "$msg" ]; then
-    echo "Usage: gpush \"<commit message>\""
-    echo "  Same pattern as the orchestrator: prove first, commit second, push last."
-    return 1
-  fi
-  (
-    cd ~/my-agent-os
-    git add codex/ agents/ skills/ tools/ .gitignore 2>/dev/null || true
-    git commit -m "$msg" && git push origin codex
-  )
-}
-
-# Status check — what would be committed?
-alias gstat='git -C ~/my-agent-os status'
-alias gdiff='git -C ~/my-agent-os diff --stat'
-alias glog='git -C ~/my-agent-os log --oneline -10'
