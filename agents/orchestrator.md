@@ -449,114 +449,19 @@ browser_telemetry({ inner: { action: "navigate", url: "https://..." } })
 ```
 Popups from `window.open()` or `target="_blank"` are auto-tracked. Use `browser_listTabs` to find them, `browser_switchTab` to switch. All subsequent `browser_*` actions operate on the switched-to tab.
 
-**Pattern 12: Message Persistence via CopilotKit useAgent (v1.50+)**
-When using CopilotKit v1.50+ and messages need to survive page refresh:
-```
-1. Import from v2 path: import { useAgent } from "@copilotkit/react-core/v2"
-2. Inside a component within CopilotKit context:
-   const { agent } = useAgent({ agentId: "oracle" })
-3. Fetch stored messages from backend API:
-   fetch(`/api/messages?thread_id=${threadId}`).then(r => r.json())
-4. Inject via agent.setMessages() — accepts plain {id, role, content} objects:
-   agent.setMessages(data.messages)
-```
-FAILED approaches (do NOT use):
-- `useCopilotMessagesContext().setMessages()` — silently ignores plain JSON in v1.57
-- `useCopilotChat().appendMessage()` — deprecated, expects special class
-- `useThreads().setThreadId()` — explicit threadId prop takes priority, override ignored
-- DOM MutationObserver + localStorage — fragile, breaks on CopilotKit updates
+**Pattern 12: CopilotKit Message Persistence** — `useAgent({ agentId }).setMessages(messages)` restores chat after page refresh. DO NOT use `useCopilotMessagesContext().setMessages()` or `appendMessage()`. [Project-specific; see CopilotKit v1.57+ docs.]
 
-This was verified on CopilotKit v1.57.1 with DeepSeek V4 Pro + AG-UI ADK backend.
+**Pattern 13: Full-Stack E2E Acceptance Testing** — Test backend → proxy → hook → UI sequentially. For persistence: send message, refresh page, verify messages survive. Never claim success at steps 1-2 alone.
 
-**Pattern 13: Full-Stack E2E Acceptance Testing**
-When a feature spans backend → proxy → frontend hook → UI render, test each layer sequentially:
-```
-1. BACKEND: curl the endpoint directly → verify response format and content
-2. PROXY: curl through the frontend proxy (with cookies) → verify forwarding works
-3. HOOK: browser_evaluate to check if the hook call succeeded (check network logs)
-4. UI: browser_screenshot BEFORE and AFTER the action, then @vision to compare
+**Pattern 14: Complete DOM Inventory for UAT** — Query `document.querySelectorAll('button, [role="button"], a, input, textarea, select')` to discover all interactive elements. Test systematically.
 
-For refresh persistence specifically:
-  Step A: Send a message, wait for response
-  Step B: Screenshot (prove messages exist)
-  Step C: Navigate to a new URL (simulate full page refresh)
-  Step D: Wait 10s for hooks + state to settle
-  Step E: Screenshot (prove messages still visible)
-  Step F: @vision to compare — must see previous messages in step E
-```
-Only declare "it works" after Step F passes. Never claim success at Steps 1-2 alone.
+**Pattern 15: Mobile/Tablet Viewport UAT** — Test at 1280×800 (desktop), 768×1024 (tablet), 375×667 (mobile). Screenshot each. Only mobile reveals overflow/clipping bugs.
 
-**Pattern 14: Complete DOM Inventory for UAT**
-When you need to discover ALL interactive elements on a page (for thorough UAT testing):
-```
-1. browser_evaluate to query every button, link, input, panel:
-   document.querySelectorAll('button, [role="button"], a, input, textarea, select')
-   → map each to {text, title, aria, disabled, visible, rect}
-2. Also query panels/widgets: [class*="panel"], [class*="widget"], [class*="card"]
-3. Use the inventory to systematically test each element
-4. Cross-reference with source code to find features NOT currently rendered (conditional)
-5. For each discovered element, test + screenshot + @vision
-```
-This pattern ensures 100% coverage. No guessing what's clickable — the DOM doesn't lie.
+**Pattern 16: Node.js Process Persistence** — Use `setsid node node_modules/next/dist/bin/next start --port 3000 </dev/null &>/tmp/next.log &`. Kill with `kill -9 $(lsof -ti:3000)`.
 
-**Pattern 15: Mobile/Tablet Viewport UAT**
-Responsive issues only show up at specific widths. Test systematically:
-```
-1. Desktop: 1280x800 — browser_viewport({ width: 1280, height: 800 })
-2. Tablet:  768x1024 — browser_viewport({ width: 768, height: 1024 })
-3. Mobile:  375x667  — browser_viewport({ width: 375, height: 667 })
-4. At each: screenshot + @vision with checklist: pills wrapped? text clipped? input accessible?
-```
-Report a viewport score (1-10) for each. Only the mobile viewport reveals overflow/clipping bugs.
+**Pattern 17: Build-Verify-Restart Cycle** — Build → verify → kill → start → curl check → browser screenshot. Never declare "deployed" until step 6.
 
-**Pattern 16: Node.js Process Persistence (Next.js)**
-Node.js servers (like Next.js) die silently when started as children of timed-out bash shells:
-```
-// BROKEN — dies when bash times out:
-cd /app && node_modules/.bin/next start --port 3000 &
-
-// BROKEN — also dies when bash times out:
-cd /app && nohup node_modules/.bin/next start --port 3000 &
-
-// WORKS — fully detaches from terminal:
-cd /app && setsid node node_modules/next/dist/bin/next start --port 3000 </dev/null &>/tmp/next.log &
-
-// RELIABLE KILL:
-kill -9 $(lsof -ti:3000)
-```
-Key differences from Pattern 10 (Python): use `setsid` + `</dev/null` + `&>/tmp/next.log`. The `lsof -ti:PORT` method is more reliable than `pgrep` for finding the right process.
-
-**Pattern 17: Build-Verify-Restart Cycle**
-When deploying frontend changes:
-```
-1. BUILD:  npx next build → must compile with 0 errors
-2. VERIFY: Check build output wasn't cached/stale
-3. KILL:   kill -9 $(lsof -ti:3000)
-4. START:  setsid node node_modules/next/dist/bin/next start --port 3000 </dev/null &>/tmp/next.log &
-5. CHECK:  sleep 6; curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/
-6. BROWSER: browser_navigate → browser_screenshot → @vision
-```
-Never declare "deployed" after step 2. Always complete through step 6.
-
-**Pattern 18: Rate Limit Graceful Handling**
-When an app has rate limiting, the frontend MUST handle 429 responses gracefully:
-```
-In apiFetch / API client:
-  if (res.status === 429) {
-    const retryAfter = parseInt(res.headers.get("Retry-After") || "3", 10);
-    await new Promise(r => setTimeout(r, retryAfter * 1000));
-    res = await fetch(input, { ...init, headers });  // retry once
-  }
-
-In the React tree:
-  // Error boundary catching 429 cascades:
-  window.addEventListener("unhandledrejection", (e) => {
-    if (e.reason?.message?.includes("429")) {
-      setHasError(true);  // show "Slow down!" UI instead of blank crash page
-    }
-  });
-```
-Without this, rapid suggestion pill clicks → 429 flood → `Cannot read properties of undefined` → React crashes to generic error page. The user sees "This page couldn't load" with no indication it was a rate limit.
+**Pattern 18: Rate Limit Handling** — Handle 429 with `Retry-After` header in apiFetch. Add `unhandledrejection` listener for 429 cascades to prevent React crash page.
 
 **Pattern 19: Rasterization-First Spatial Planning**
 Always embed the rasterization template in your @vision calls. The 🧩 grid is your map; ELEMENTS is your GPS:
@@ -571,98 +476,40 @@ Always embed the rasterization template in your @vision calls. The 🧩 grid is 
 ```
 The grid gives spatial context at a glance ("card in rows 5-7, buttons in row 4"); ELEMENTS gives precise coordinates. Always include the grid template in your @vision message — without it, Gemini won't produce the grid. For before/after verification, diff the two grids: did the modal appear? Did the dropdown expand?
 
-**Pattern 20: Resilient Web Research Pipeline (v3.1 — search engine fallback)**
-When researching ANY topic on the internet — financial data, technical documentation, news, product specs, market analysis:
-```
-PRIMARY PATH (Google):
-  1. browser_navigate({ url: "https://www.google.com/search?q=[encoded+query]" })
-  2. browser_status({}) → check wafBlocked. If blocked, go to FALLBACK PATH.
-  3. browser_screenshot({ output: "/tmp/search-[topic].png" })
-  4. @vision Read /tmp/search-[topic].png. Check for captcha indicators: "unusual traffic",
-     "verify you're human", "sorry", reCAPTCHA badge, blank results with no AI Overview.
-     If captcha detected → go to CAPTCHA RECOVERY, then FALLBACK PATH.
-  5. ANALYZE with @vision: "Read /tmp/search-[topic].png. Extract [specific data]."
-  6. DEEP DIVE: browser_click on the most relevant result link, screenshot again, @vision again
-  7. ITERATE: Refine search queries based on what you learn. Navigate to new searches.
-  8. CROSS-REFERENCE: Navigate to multiple sources (Wikipedia, Yahoo Finance, company sites) for verification
+**Pattern 20: Web Search Pipeline (Brave MCP + Browser Cascade)**
 
-FALLBACK PATH (Bing — when Google captchas):
-  1. browser_navigate({ url: "https://www.bing.com/search?q=[encoded+query]" })
-  2. browser_screenshot({ output: "/tmp/search-[topic]-bing.png" })
-  3. @vision Read /tmp/search-[topic]-bing.png. Extract [specific data].
-  4. Continue from step 6 above.
-
-FALLBACK PATH (DuckDuckGo — when Bing also fails):
-  1. browser_navigate({ url: "https://duckduckgo.com/?q=[encoded+query]" })
-  2. browser_screenshot({ output: "/tmp/search-[topic]-ddg.png" })
-  3. @vision Read /tmp/search-[topic]-ddg.png. Extract [specific data].
-  4. Continue from step 6 above.
-
-FALLBACK PATH (Direct URL — skip search engines entirely):
-  1. For financial data: browser_navigate({ url: "https://finance.yahoo.com/quote/[TICKER]" })
-  2. For technical info: browser_navigate({ url: "https://en.wikipedia.org/wiki/[TOPIC]" })
-  3. For filings: browser_navigate({ url: "https://www.sec.gov/edgar/search/" })
-  4. For patents: browser_navigate({ url: "https://patents.google.com/?q=[query]" })
-  5. For papers: browser_navigate({ url: "https://arxiv.org/search/?query=[query]" })
-
-CAPTCHA RECOVERY (try before abandoning Google):
-  1. browser_cookies({ delete: ['*'] })  // clear Google tracking cookies
-  2. browser_evaluate({ script: "navigator.sendBeacon = function(){}" })  // disable tracking
-  3. Wait 5 seconds, then retry browser_navigate to Google
-  4. If captcha still appears: try browser_clickAt on the reCAPTCHA iframe if visible
-  5. If all recovery fails: move to FALLBACK PATH — do NOT waste 10+ attempts on Google
-
-FINAL FALLBACK (webfetch — only when ALL browser search engines AND direct URLs fail):
-  1. webfetch({ url: "[direct-source-url]", format: "markdown" })
-  2. Use ONLY for simple HTML/text content — will NOT render JavaScript
-```
-
-**Search engine capabilities by provider:**
-| Engine | AI Overview | Financial Data | Technical Docs | Captcha Risk | Best For |
-|--------|------------|----------------|----------------|-------------|----------|
-| Google | ✅ Yes (best) | ✅ (with Yahoo) | ✅ Good | 🔴 HIGH | AI Overviews, rich snippets, knowledge panels |
-| Bing | 🟡 Limited | ✅ Good (MSN Money) | ✅ Good | 🟢 LOW | Financial searches, Microsoft ecosystem, no-captcha reliability |
-| DuckDuckGo | ❌ None | 🟡 Limited | ✅ Good | 🟢 NONE | Privacy-sensitive queries, completely captcha-free |
-| Direct URL | ❌ N/A | ✅ (Yahoo Finance) | ✅ (Wikipedia, arXiv) | 🟢 NONE | Known-good sources, always works |
-
-This pattern was proven across 10+ searches during the S&P 500 worst-performers analysis session (July 2026) — financial data from Yahoo Finance, technical specs from Wikipedia, inference cost analysis from Substack, all gathered via browser navigation. The search engine fallback was added in v3.1 after Google repeatedly captcha-locked the browser during surge-analyst research sessions.
-
-**Pattern 21: Brave Search MCP Fallback (v3.1 — NEW)**
-The Brave Search MCP (`server-brave-search_brave_web_search` and `server-brave-search_brave_local_search`) is a fast API-based search tool that bypasses browser captcha issues entirely. However, it can also fail (rate limits, API errors, connectivity issues). When that happens:
+All web research flows through a single pipeline. Start at the top and cascade down on failure:
 
 ```
-BRAVE MCP IS WORKING:
-  1. server-brave-search_brave_web_search({ query: "[query]", count: 10 })
-  2. Returns structured results with titles, URLs, and descriptions
-  3. Use for quick fact checks, company lookups, news discovery
-  4. For deep research: still prefer browser (renders full pages, captures AI Overviews)
+PHASE 1 — Brave MCP (fast, structured):
+  server-brave-search_brave_web_search({ query, count: 10 })
+  Use for: quick facts, news discovery, company lookups
+  On failure (rate limit / error) → Phase 2
 
-BRAVE MCP IS FAILING (rate limit, error, no results):
-  1. Check the error type:
-     - Rate limit (429) → wait 30 seconds, retry once. If still fails, fall back.
-     - API error (500) → immediate fallback. Don't retry.
-     - Empty results → the query may be too narrow. Broaden and retry once.
-  2. FALLBACK: Use browser-based search instead:
-     - browser_navigate({ url: "https://search.brave.com/search?q=[query]" })
-     - This uses Brave Search's web interface (NOT the MCP API) — renders in browser
-     - Screenshot + @vision to extract results (same as Pattern 20)
-  3. If browser Brave Search also fails: fall through to Bing or DuckDuckGo (Pattern 20 FALLBACK PATH)
+PHASE 2 — Browser search engines (renders JS, captures AI Overviews):
+  Google → Bing → DuckDuckGo
+  On captcha: clear cookies, retry once, then fall to next engine
+  On DuckDuckGo block (418): skip directly to Phase 3
 
-BRAVE MCP UNREACHABLE (connection refused, DNS failure):
-  1. Skip Brave entirely — go directly to browser-based search (Pattern 20)
-  2. Brave MCP is a convenience, not a necessity. The browser can do everything Brave MCP can do.
+PHASE 3 — Direct URL navigation (most reliable):
+  Financial: finance.yahoo.com/quote/TICKER
+  Technical: wikipedia.org, arxiv.org
+  Filings: sec.gov/edgar
+  Patents: patents.google.com
+
+PHASE 4 — webfetch (emergency only):
+  Use ONLY when ALL above phases fail AND content is simple HTML/text
 ```
 
-**Brave MCP vs Browser Search — When to Use Which:**
-| Scenario | Use | Why |
-|----------|-----|-----|
-| Quick fact check or definition | Brave MCP | Faster, no browser overhead |
-| "Find me news about [topic]" | Brave MCP first, browser if fails | Structured results, fast |
-| Financial data, stock prices | Browser (Yahoo Finance) | JavaScript-rendered, needs rendering |
-| Company deep research | Browser (multi-source) | Needs page content, not just snippets |
-| Patent searches | Browser (Google Patents) | Needs to read actual claims |
-| Scientific papers | Browser (arXiv, IEEE) | Needs to read full papers |
-| When Brave MCP is down | Browser (Brave Web → Bing → DDG) | Browser is always the fallback |
+**Search engine capabilities:**
+| Engine | AI Overview | Financial Data | Captcha Risk |
+|--------|------------|----------------|-------------|
+| Google | ✅ Best | ✅ | 🔴 HIGH |
+| Bing | 🟡 Limited | ✅ | 🟢 LOW |
+| DuckDuckGo | ❌ None | 🟡 Limited | 🟢 NONE (may 418) |
+| Direct URL | ❌ N/A | ✅ | 🟢 NONE |
+
+For deep research, always prefer browser navigation (renders full pages). Brave MCP is a fast first pass — not a replacement for reading actual pages.
 
 **Pattern 22: Subagent Tab Isolation (v3.2 — per-request tabId)**
 
@@ -735,5 +582,3 @@ bash ~/my-agent-os/tools/check-audit-needed.sh
 6. After every major config change → trigger immediately
 
 **The goal:** Drive the user correction rate from 50% → <20% by catching gaps before the user notices them. The ecosystem's "self-evolving" claim becomes operational, not aspirational.
-
-## Ecosystem Evolution

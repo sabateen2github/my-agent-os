@@ -116,7 +116,7 @@ Filter to sectors relevant to physical infrastructure:
 
 ## Step 1: Quantitative Screen v3.0 (Score 0-40)
 
-**v3.0: This is a SCORING SYSTEM, not a kill gate. Every stock is scored 0-40. No hardcoded Path A/B — the scoring handles context automatically.**
+**Methodology: Extends the catalyst-detector skill's quantitative scoring (see `skills/catalyst-detector/SKILL.md`). Below are infrastructure-specific scoring tiers and sector context. For the general 0-40 scoring framework, cross-source verification requirements, and python implementation, see the catalyst-detector skill. What follows is infrastructure-tuned scoring with sector-specific thresholds.**
 
 ### Quantitative Scoring Rubric:
 
@@ -248,13 +248,9 @@ except:
 
 ---
 
-## Step 2: Qualitative Moat Audit v3.0 (Score 0-40) ← DEEP RESEARCH REQUIRED
+## Step 2: Qualitative Moat Audit v3.2 (Score 0-50)
 
-**THIS STEP DID NOT EXIST IN v2.0.** It is the qualitative half of the quant+qual reconciliation.
-
-### Research Mandate
-
-For EACH candidate being considered for the final portfolio, you MUST research at least 3 of the 5 deep sources below. This is delegated to @deep-moat-auditor subagents, but you should ALSO do your own research:
+**Methodology: Delegated to @deep-moat-auditor. The deep-moat-auditor agent (see `agents/deep-moat-auditor.md`) performs the full 5-dimension qualitative audit (Patent, Science, Mfg, Competitive, Data Flywheel). This skill provides infrastructure-specific scoring context — use the deep-moat-auditor's standardized output format and scoring scale (0-50).**
 
 #### Source 1: Patent Landscape → Google Patents / USPTO
 - What are the 3-5 most cited patents this company owns?

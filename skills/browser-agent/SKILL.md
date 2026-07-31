@@ -286,82 +286,13 @@ browser_evaluate({
 Restart the service: `systemctl --user restart browser-agent.service`
 The server.py applies stealth on every new page automatically.
 
-## Web Search Resilience (v3.1)
+## Web Search Resilience
 
-Google search is the primary research tool, but it frequently captcha-locks headless browsers. When Google blocks you, do NOT keep retrying — switch search engines. The browser can use any search engine.
-
-### Search Engine Fallback Cascade
-
-Always try these in order. Move to the next as soon as captcha/block is detected:
-
-```
-1. GOOGLE (primary):
-   browser_navigate({ url: "https://www.google.com/search?q=[encoded+query]" })
-   → browser_status({}) → check wafBlocked
-   → browser_screenshot({ output: "/tmp/search-google.png" })
-   → @vision: "Read /tmp/search-google.png. Any captcha, 'unusual traffic', blank results?"
-   
-   IF CAPTCHA DETECTED → clear cookies, wait 5s, retry once
-   IF STILL CAPTCHA → move to Bing
-
-2. BING (first fallback):
-   browser_navigate({ url: "https://www.bing.com/search?q=[encoded+query]" })
-   → Same screenshot + @vision flow
-   → Bing rarely captchas. Good for financial/news queries (MSN Money integration).
-   
-   IF BLOCKED → move to DuckDuckGo
-
-3. DUCKDUCKGO (last resort search engine):
-   browser_navigate({ url: "https://duckduckgo.com/?q=[encoded+query]" })
-   → Same screenshot + @vision flow
-   → DDG never captchas. Weaker for financial data, good for general/technical searches.
-   
-   IF BLOCKED → move to Direct URL Navigation
-
-4. DIRECT URL NAVIGATION (bypass search engines entirely):
-   These known-good URLs almost never block headless browsers:
-   - Yahoo Finance: https://finance.yahoo.com/quote/[TICKER]
-   - Wikipedia: https://en.wikipedia.org/wiki/[Topic]
-   - SEC EDGAR: https://www.sec.gov/edgar/search/
-   - Google Patents: https://patents.google.com/?q=[query]
-   - arXiv: https://arxiv.org/search/?query=[query]
-   - CompaniesMarketCap: https://companiesmarketcap.com/
-   - OpenInsider: http://openinsider.com/
-   - MarketWatch: https://www.marketwatch.com/investing/stock/[ticker]
-```
-
-### Captcha Detection Checklist
-
-When you screenshot Google/Bing results, @vision should check for:
-- ✅ "unusual traffic from your computer network" — captcha block
-- ✅ "verify you're human" / "I'm not a robot" — reCAPTCHA
-- ✅ Empty/blank results with no AI Overview — likely block
-- ✅ "Sorry..." or error page — block
-- ✅ Redirect to google.com/sorry — IP block
-- ❌ Normal results with AI Overview — NOT blocked, proceed
-
-### Captcha Recovery (before abandoning Google)
-
-```
-1. browser_cookies({ delete: ['*'] })  // clear all cookies including Google tracking
-2. browser_localStorage({ op: "clear" })  // clear localStorage
-3. browser_intercept({ blockPatterns: ["google-analytics", "doubleclick", "googletagmanager"] })
-4. Wait 5 seconds
-5. Retry: browser_navigate({ url: "https://www.google.com/search?q=test" })
-6. browser_screenshot({}) → @vision check if captcha is gone
-7. If captcha persists: browser_clickAt({ x: 390, y: 500 }) if reCAPTCHA iframe visible
-8. If still blocked after 2 attempts: ABANDON Google, switch to Bing
-```
-
-**Critical rule:** Never waste more than 2 recovery attempts on a captcha-locked search engine. The fallback engines work immediately with zero captcha overhead. It's faster to switch than to fight.
+Search engines may captcha-lock headless browsers. Google blocks? Switch to Bing (`https://www.bing.com/search?q=[query]`), DuckDuckGo, or navigate directly to known-good URLs (finance.yahoo.com, wikipedia.org, sec.gov/edgar). See `orchestrator.md` Pattern 20 for the full fallback cascade, captcha detection checklist, and recovery protocol.
 
 ### Brave Search Web Interface (browser-based fallback for Brave MCP)
 
-If the Brave Search MCP tool is failing, use Brave's regular web interface in the browser:
-```
-browser_navigate({ url: "https://search.brave.com/search?q=[encoded+query]" })
-```
-This renders in the browser just like Google/Bing — screenshot + @vision to extract results. Same workflow, different search engine.
+If the Brave Search MCP tool is failing, use Brave's web interface: `browser_navigate({ url: "https://search.brave.com/search?q=[query]" })`. Screenshot + vision extraction — same workflow, different engine.
 
 ## Ecosystem
 
