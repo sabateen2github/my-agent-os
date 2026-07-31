@@ -655,6 +655,9 @@ def ensure_browser():
         "--disable-dev-shm-usage",
         "--disable-blink-features=AutomationControlled",
         "--disable-features=IsolateOrigins,site-per-process",
+        "--ignore-gpu-blocklist",
+        "--enable-webgl",
+        "--enable-unsafe-swiftshader",
     ]
 
     # Use headed mode when X11 display is available (enables OS-level xdotool clicks)
