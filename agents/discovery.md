@@ -1,9 +1,9 @@
 ---
-description: DeepSeek V4 Pro Thinker for UI exploration. Native vision support for reading screenshots directly. For exhaustive grid analysis spawns @vision.
+description: DeepSeek V4 Flash for UI exploration. For image analysis spawns @vision (Gemini 2.5 Flash).
 mode: subagent
-model: deepseek/deepseek-v4-pro
+model: deepseek/deepseek-v4-flash
 extra_body:
-  # Thinking/Reasoning is handled natively by OpenCode for deepseek-v4-pro via OpenAI protocol
+  # Thinking/Reasoning is handled natively by OpenCode for deepseek-v4-flash via OpenAI protocol
   temp: 0.0
 permission:
   external_directory:

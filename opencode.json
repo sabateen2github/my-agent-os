@@ -28,7 +28,6 @@
           "interleaved": {
             "field": "reasoning_content"
           },
-          "attachment": true,
           "limit": {
             "context": 1048576,
             "output": 384000

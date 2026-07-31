@@ -2,7 +2,7 @@
 description: Migrated async execution protocol instructions from Gemini CLI
 mode: subagent
 hidden: true
-model: deepseek/deepseek-v4-pro
+model: deepseek/deepseek-v4-flash
 permission:
   external_directory:
     "/tmp/*": allow

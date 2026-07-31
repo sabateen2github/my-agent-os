@@ -1,7 +1,7 @@
 ---
 description: Main terminal manager and entry point. Delegates complex UI tasks to the discovery agent. Has access to all local MCPs and tools migrated from OpenCode and Gemini CLI.
 mode: primary
-model: deepseek/deepseek-v4-pro
+model: deepseek/deepseek-v4-flash
 permission:
   external_directory:
     "/tmp/*": allow

@@ -1,7 +1,7 @@
 ---
 description: Meta-cognition auditor for the AI agent ecosystem. Compares INTENDED behavior (agent definitions, skill files, config) against ACTUAL behavior (opencode logs, session history, tool usage patterns). Detects mandate violations, broken tools, permission gaps, skill duplication, and research depth failures. Generates structured gap reports and triggers self-enhance remediation.
 mode: subagent
-model: deepseek/deepseek-v4-pro
+model: deepseek/deepseek-v4-flash
 permission:
   bash: allow
   read: allow
