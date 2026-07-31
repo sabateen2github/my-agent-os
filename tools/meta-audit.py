@@ -96,10 +96,12 @@ def scan_logs(since_date=None):
 
         # ── Session tier classification ──
         try:
+            # Filename is YYYY-MM-DDTHHMMSS.log for session logs; the live
+            # opencode.log has no timestamp in the name → fall back to mtime.
             session_date = datetime.strptime(log_file.stem[:19], "%Y-%m-%dT%H%M%S")
-            age_hours = (now - session_date).total_seconds() / 3600
         except ValueError:
-            age_hours = 999
+            session_date = datetime.fromtimestamp(log_file.stat().st_mtime)
+        age_hours = (now - session_date).total_seconds() / 3600
         size_kb = len(content) / 1024
 
         if age_hours < 48 and size_kb > 100:
@@ -393,6 +395,70 @@ def run_audit(since_date=None, quick=False):
 
     print()
     print("🔍 Phase 3: Detecting gaps...")
+
+    # ─── Rule 26: Per-Owner Browser Isolation Consistency ───
+    # Detects stale instructions that contradict the per-owner model
+    # (Pattern 26): old "tabId on EVERY action" mandates, "native vision"
+    # claims that no longer hold (V4 Flash has no image support), and
+    # references to the old single-shared-browser era.
+    STALE_ISOLATION_PATTERNS = [
+        (
+            "Use `tabId` on EVERY browser action",
+            "stale tabId-mandatory instruction — contradicts Pattern 26 per-owner isolation (tabId is automatic now)",
+        ),
+        (
+            "Never navigate without `tabId`",
+            "stale tabId-mandatory instruction — contradicts Pattern 26 per-owner isolation",
+        ),
+        (
+            "DeepSeek V4-Pro supports native vision",
+            "stale claim — ecosystem moved to V4-Flash which has NO image attachment support; @vision is the only vision-capable agent",
+        ),
+        (
+            "You have native vision (DeepSeek V4-Pro)",
+            "stale claim — V4-Flash has no image attachment support; must spawn @vision",
+        ),
+    ]
+    for agent_file in AGENTS_DIR.glob("*.md"):
+        try:
+            content = agent_file.read_text()
+        except Exception:
+            continue
+        for needle, description in STALE_ISOLATION_PATTERNS:
+            if needle in content:
+                gap(
+                    "HIGH",
+                    f"{agent_file.stem}: {description}",
+                    f"{agent_file.name} should follow Pattern 26 per-owner isolation and spawn @vision for images",
+                    f"'{needle}' found in {agent_file.name}",
+                    "File was written before the per-owner browser model (commit d8628a9) and was not updated",
+                    "Subagents waste effort managing tabIds that are now automatic, or try to read images the model cannot see",
+                    f"Replace the stale block in {agent_file.name} with Pattern 26 guidance (see orchestrator.md Pattern 22 / SKILL.md Pattern 26)",
+                )
+
+    # Per-owner runtime files must exist for the model to work
+    reaper_path = Path.home() / ".browser-agents" / "reaper.py"
+    registry_path = Path.home() / ".browser-agents" / "registry.json"
+    if not reaper_path.exists():
+        gap(
+            "HIGH",
+            "Missing browser-instance-reaper: ~/.browser-agents/reaper.py not found",
+            "Per-owner windows auto-close via browser-instance-reaper.timer + reaper.py (Pattern 26)",
+            f"reaper.py missing at {reaper_path}",
+            "The reaper was never deployed or was removed",
+            "Idle per-owner browser windows accumulate; subagent windows leak after sessions end",
+            "Re-deploy ~/.browser-agents/reaper.py and enable browser-instance-reaper.timer",
+        )
+    if not registry_path.exists():
+        gap(
+            "LOW",
+            "Browser instance registry missing: ~/.browser-agents/registry.json",
+            "Per-owner instance registry should exist (may be empty {})",
+            f"registry.json missing at {registry_path}",
+            "Not yet created — created on first per-owner spawn",
+            "No impact; created automatically on first spawn",
+            "No action needed unless instances fail to spawn",
+        )
 
     # ─── Rule 1: Tool Integrity ───
     missing = tool_data.get("missing_handlers", [])

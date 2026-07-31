@@ -1,6 +1,6 @@
 # Agent OS
 
-A version-controlled, global Agent OS toolkit for [OpenCode](https://opencode.ai). Consolidates AI configurations from OpenCode and Gemini CLI into a 3-tier deep reasoning architecture backed by **DeepSeek V4 Pro** (orchestrator/agents) and **Gemini 2.5 Flash** (vision).
+A version-controlled, global Agent OS toolkit for [OpenCode](https://opencode.ai). Consolidates AI configurations from OpenCode and Gemini CLI into a 3-tier deep reasoning architecture backed by **DeepSeek V4 Flash** (orchestrator/agents) and **Gemini 2.5 Flash** (vision).
 
 ## Quick Start
 
@@ -49,8 +49,8 @@ export OPENCODE_CONFIG_DIR="$HOME/my-agent-os"
 my-agent-os/
 ├── opencode.json              # Central configuration (providers, MCP, permissions)
 ├── agents/
-│   ├── orchestrator.md        # Tier 1: Primary terminal manager (DeepSeek V4 Pro)
-│   ├── discovery.md           # Tier 2: UI exploration thinker (DeepSeek V4 Pro + reasoning)
+│   ├── orchestrator.md        # Tier 1: Primary terminal manager (DeepSeek V4 Flash)
+│   ├── discovery.md           # Tier 2: UI exploration thinker (DeepSeek V4 Flash)
 │   ├── vision.md              # Tier 3: Headless vision parser (Gemini 2.5 Flash)
 │   └── gemini-instructions.md # Migrated Gemini CLI async execution protocol
 ├── skills/
@@ -78,7 +78,7 @@ my-agent-os/
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                 TIER 1: orchestator                         │
-│              Model: DeepSeek V4 Pro                         │
+│              Model: DeepSeek V4 Flash                    │
 │  Routes tasks, manages terminal, delegates complex work      │
 │                                                             │
 │  Tools: bash, browser_navigate, browser_click, read, edit,  │
@@ -93,19 +93,19 @@ my-agent-os/
                       │
           ┌───────────┴───────────┐
           ▼                       ▼
-┌──────────────────┐    ┌──────────────────┐
-│  TIER 2: discovery│    │  TIER 3: vision   │
-│  DeepSeek V4 Pro  │    │  Gemini 2.5 Flash │
-│  (thinking mode)  │    │  (image analysis) │
-│                   │    │                   │
-│  Maps complex UIs │    │  Reads screenshots│
-│  Finds selectors  │    │  Returns spatial  │
-│  Plans interactions│   │  text maps        │
-│                   │    │                   │
-│  Uses:             │    │  Uses:            │
-│  browser-agent API │    │  Read tool        │
-│  @vision           │    │                   │
-└────────┬──────────┘    └──────────────────┘
+┌────────────────────┐  ┌──────────────────┐
+│  TIER 2: discovery │  │  TIER 3: vision  │
+│  DeepSeek V4 Flash │  │  Gemini 2.5 Flash│
+│  (thinking mode)   │  │  (image analysis)│
+│                    │  │                  │
+│  Maps complex UIs  │  │  Reads screenshots│
+│  Finds selectors   │  │  Returns spatial  │
+│  Plans interactions│  │  text maps        │
+│                    │  │                  │
+│  Uses:             │  │  Uses:           │
+│  browser-agent API │  │  Read tool       │
+│  @vision           │  │                  │
+└────────┬───────────┘  └──────────────────┘
          │
          ▼
 ┌─────────────────────────────────────────────────────────────┐
@@ -114,15 +114,21 @@ my-agent-os/
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │  browser-agent (Playwright, persistent, HTTP API)     │  │
 │  │                                                       │  │
-│  │  • HTTP API on :9222                                  │  │
+│  │  • HTTP API on :9222 (orchestrator default)           │  │
+│  │  • Per-owner windows :9230-9289 for subagents         │  │
+│  │    (routed by context.agent, registry:                │  │
+│  │     ~/.browser-agents/registry.json)                  │  │
 │  │  • Stays alive between calls (persistent Chromium)    │  │
 │  │  • systemd service (auto-starts on boot)              │  │
-│  │  • userDataDir persists cookies/sessions              │  │
+│  │  • userDataDir persists cookies/sessions per owner    │  │
 │  │  • Tab management (listTabs, switchTab)               │  │
 │  │  • Aggregated telemetry endpoint                      │  │
+│  │  • Auto-close: browser-instance-reaper.timer closes   │  │
+│  │    idle per-agent windows every minute                │  │
 │  │                                                       │  │
 │  │  ✓ Stealth mode (always on)                           │  │
 │  │  ✓ Session persistence                                │  │
+│  │  ✓ Per-agent isolation (cookies/tabs/state)           │  │
 │  │  ✓ Network/console log capture                        │  │
 │  │  ✓ Memory hygiene (auto-recycle at 800MB)             │  │
 │  │  ✓ Tab switching & popup tracking                     │  │
@@ -142,10 +148,10 @@ my-agent-os/
 
 | Component | Runtime | Model | Persistence | Stealth | Purpose |
 |-----------|---------|-------|-------------|---------|---------|
-| **orchestrator** | OpenCode agent | DeepSeek V4 Pro | — | — | Task routing, terminal ops, delegation |
-| **discovery** | OpenCode subagent | DeepSeek V4 Pro (thinking) | — | Inherited | UI mapping, selector discovery |
+| **orchestrator** | OpenCode agent | DeepSeek V4 Flash | — | — | Task routing, terminal ops, delegation |
+| **discovery** | OpenCode subagent | DeepSeek V4 Flash | — | Inherited | UI mapping, selector discovery |
 | **vision** | OpenCode subagent | Gemini 2.5 Flash | — | — | Screenshot → spatial text report |
-| **browser-agent** | systemd service (:9222) | Playwright + Chromium | ✅ userDataDir | ✅ built-in | Interactive browsing, persistent session, tab management, aggregated telemetry |
+| **browser-agent** | systemd service (:9222) + per-owner (:9230-9289) | Playwright + Chromium | ✅ per-owner userDataDir | ✅ built-in | Interactive browsing, persistent session, per-agent isolation, tab management, aggregated telemetry |
 | **Brave Search** | MCP server | Brave API | — | — | Web + local search |
 
 ### Data Flow: A Real Example

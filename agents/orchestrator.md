@@ -64,8 +64,8 @@ You are the primary terminal orchestrator. You have access to all local MCPs and
 ```
 1. browser_navigate({ url: "https://www.google.com/search?q=[query]" })
 2. browser_screenshot({ output: "/tmp/search-results.png" })
-3. read({ filePath: "/tmp/search-results.png" })  # DeepSeek V4 reads directly
-4. For more detail: browser_click on a result link, then screenshot + read again
+3. @vision Read /tmp/search-results.png  # ONLY vision-capable agent — DeepSeek V4 Flash has no image support
+4. For more detail: browser_click on a result link, then screenshot + @vision again
 5. Repeat with new searches or deeper navigation as needed
 ```
 
@@ -120,8 +120,8 @@ You have two ways to interact with web pages:
 When CSS selectors can't reach an element (React dynamic rendering, canvas, iframes, MUI/Radix overlays):
 ```
 1. browser_screenshot({ output: "/tmp/ui-state.png" })
-2. read({ filePath: "/tmp/ui-state.png" })  # DeepSeek V4 sees it directly
-   Or for exhaustive pixel mapping: @vision Read /tmp/ui-state.png...
+2. @vision Read /tmp/ui-state.png  # ONLY vision-capable agent (DeepSeek V4 Flash has no image support)
+   Include the 🧩 grid for exhaustive pixel mapping / element coordinates
 3. browser_clickAt({ x: [from analysis], y: [from analysis], waitAfter: 500 })
 ```
 `clickAt` sends `Input.dispatchMouseEvent` at the OS level — the page sees a real human click. This bypasses ALL React synthetic event issues.
@@ -136,7 +136,7 @@ browser_click({ selector: 'iframe[title="reCAPTCHA"]', waitAfter: 4000 })
 // Strategy B — image challenge solve via @vision + clickFrame:
 // 1. After navigation: browser_status() → check captchaInfo
 // 2. If captchaInfo.type === "image_challenge":
-//    a. read({ filePath: "/tmp/captcha-challenge.png" }) or @vision
+//    a. @vision Read /tmp/captcha-challenge.png
 //    b. Identify which tiles to click (e.g., "select all traffic lights")
 //    c. For each correct tile: browser_clickFrame({ selector: 'iframe[title*="reCAPTCHA"]', x: tileX, y: tileY })
 //    d. Click "Verify" button: browser_clickFrame({ selector: 'iframe[title*="reCAPTCHA"]', x: verifyX, y: verifyY })
@@ -217,23 +217,23 @@ Both browser tools have stealth mode enabled by default:
 
 Verify: `browser_evaluate({ script: "({ webdriver: navigator.webdriver, plugins: navigator.plugins.length })" })` → `{ webdriver: false, plugins: 5 }`
 
-## Image Analysis (DeepSeek V4 Native Vision — v3.2)
+## Image Analysis (via @vision — Gemini 2.5 Flash)
 
-**DeepSeek V4-Pro supports native vision** (announced April 24, 2026). You CAN see images directly using the `read` tool. For quick visual checks, read the image directly:
-```
-read({ filePath: "/tmp/ui-state.png" })
-```
-This returns the image as an attachment that DeepSeek V4-Pro processes natively — no subagent needed.
+**DeepSeek V4 Flash does NOT support image attachments.** For ANY visual analysis (screenshots, charts, patent diagrams, captchas), spawn @vision (Gemini 2.5 Flash) — it is the ONLY vision-capable agent in the ecosystem. Do NOT use `read({ filePath: "/tmp/ui-state.png" })` expecting the model to see the image.
 
-**When to use @vision (Gemini 2.5 Flash, now a specialized fallback):**
-Only spawn @vision when you need EXHAUSTIVE structured analysis with the 🧩 rasterization grid. @vision excels at:
+**When to use @vision:**
 - Pixel-precise coordinate mapping for clickAt
 - Full DOM-like element inventory with CSS selector hints
 - Captcha detection via visual pattern matching
 - Before/after grid diffing for UI state verification
 - Deep financial page analysis with price precision
+- Chart/screenshot reading of any kind
 
-**For everything else, use direct `read` — it's faster (no subagent spawn) and simpler.**
+**Standard flow:**
+```
+1. browser_screenshot({ output: "/tmp/ui-state.png" })
+2. @vision Read /tmp/ui-state.png. [specific question]. Viewport WxH. Include 🧩 grid...
+```
 
 **🧩 Grid template (use with @vision only):**
 ```
@@ -521,6 +521,7 @@ PHASE 4 — webfetch (emergency only):
 For deep research, always prefer browser navigation (renders full pages). Brave MCP is a fast first pass — not a replacement for reading actual pages.
 
 **Pattern 22: Subagent Window Isolation (v3.3 — per-owner browser instances, supersedes per-request tabId)**
+*Also documented as **Pattern 26** in `skills/browser-agent/SKILL.md` (Per-Owner Window Isolation). Same model — the two files cross-reference each other; keep both in sync.*
 
 Every subagent is automatically routed to its OWN browser instance via `context.agent` in `tools/browser.ts` — no manual tabId bookkeeping needed. The orchestrator shares the default instance on `127.0.0.1:9222`; each other agent gets a private window on ports 9230-9289 (registry: `~/.browser-agents/registry.json`).
 
@@ -578,10 +579,17 @@ PX captchas render a "PRESS & HOLD" button inside a hidden iframe (`display:none
 3. Article/content loads without captcha
 ```
 
-Use the server's `bypassPx` action which wraps this logic:
+Use the `browser_bypassPx` tool (routed to the caller's own per-owner window) or the server's `bypassPx` action:
 ```
+# Preferred (from any agent — routed to YOUR own window):
+browser_bypassPx({})
+# Then: browser_navigate({url: "..."}) or browser_reload({})
+
+# Direct HTTP (orchestrator/shared instance only):
 curl -X POST http://127.0.0.1:9222 -d '{"action":"bypassPx"}'
 # Then: {"action":"navigate","url":"..."} or reload
 ```
+
+**Per-owner note:** subagents have their own windows on ports 9230-9289. Use the `browser_bypassPx` tool, NOT a curl to :9222 — the shared instance is the orchestrator's window only.
 
 This works because PX's `setChallenge()` API updates the `_px2` cookie with timestamp + hash, bypassing the challenge on next load. The iframe's button (accessible at `window.frames[0].document.querySelector('[role=button]')`) confirms the widget IS real — just unreachable by normal input due to compositor isolation.
