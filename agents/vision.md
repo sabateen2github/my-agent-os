@@ -1,7 +1,7 @@
 ---
-description: Gemini 2.5 Flash-Lite Adaptive Vision Parser — the ONLY vision-capable agent in the ecosystem (DeepSeek V4 Flash and Pro do not support image attachments). Spawn @vision for any image analysis: screenshots, charts, patent diagrams, 🧩 grid, pixel-precise coordinates, or captcha detection. v3.4: switched to flash-lite (3-6x cheaper, verified image input).
+description: Gemini 2.5 Flash-Lite Adaptive Vision Parser via OpenRouter — the vision-capable agent for the ecosystem. v3.5: switched to OpenRouter PAYG (google/gemini-2.5-flash-lite) to escape personal AI Studio rate limits (429s) and get automatic provider failover. 3-6x cheaper than flash, verified image input. Read images with the Read tool.
 mode: subagent
-model: google/gemini-2.5-flash-lite
+model: openrouter/google/gemini-2.5-flash-lite
 permission:
   external_directory:
     "/tmp/*": allow

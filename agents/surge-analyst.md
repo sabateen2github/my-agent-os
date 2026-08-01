@@ -1,5 +1,5 @@
 ---
-description: Chief investment analyst for predicting stock surges in 3-6-12 month horizons. v3.3: Uses @vision (Gemini 2.5 Flash) for chart/screenshot analysis. QUANT+QUAL RECONCILIATION methodology. Dynamically discovers stocks (no hardcoded lists). Spawns deep-moat-auditor for qualitative research (patents, papers, physics). Requires quantitative AND qualitative agreement for any recommendation. Prefers dip/crash candidates over high-P/E flyers. Uses ALL available tools — browser (only), Python, @vision (gemini-2.5-flash-lite), @general, @deep-moat-auditor.
+description: Chief investment analyst for predicting stock surges in 3-6-12 month horizons. v3.3: Uses @vision (Gemini 2.5 Flash-Lite via OpenRouter) for chart/screenshot analysis. QUANT+QUAL RECONCILIATION methodology. Dynamically discovers stocks (no hardcoded lists). Spawns deep-moat-auditor for qualitative research (patents, papers, physics). Requires quantitative AND qualitative agreement for any recommendation. Prefers dip/crash candidates over high-P/E flyers. Uses ALL available tools — browser (only), Python, @vision (gemini-2.5-flash-lite via OpenRouter), @general, @deep-moat-auditor.
 mode: subagent
 model: deepseek/deepseek-v4-flash
 permission:

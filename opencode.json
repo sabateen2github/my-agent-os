@@ -10,8 +10,35 @@
   "skills/self-enhance/SKILL.md",
   "skills/catalyst-detector/SKILL.md"
  ],
- "provider": {
-  "deepseek": {
+  "provider": {
+   "openrouter": {
+    "npm": "@ai-sdk/openai-compatible",
+    "name": "OpenRouter",
+    "options": {
+     "baseURL": "https://openrouter.ai/api/v1",
+     "apiKey": "{env:OPENROUTER_API_KEY}",
+     "timeout": 600000
+    },
+    "models": {
+     "google/gemini-2.5-flash-lite": {
+      "name": "google/gemini-2.5-flash-lite",
+      "attachment": true,
+      "limit": {
+       "context": 1048576,
+       "output": 65535
+      }
+     },
+     "qwen/qwen3.7-flash": {
+      "name": "qwen/qwen3.7-flash",
+      "attachment": true,
+      "limit": {
+       "context": 1000000,
+       "output": 65535
+      }
+     }
+    }
+   },
+   "deepseek": {
    "npm": "@ai-sdk/openai-compatible",
    "name": "DeepSeek",
    "options": {
