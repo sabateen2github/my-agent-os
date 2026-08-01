@@ -11,7 +11,7 @@ git clone https://github.com/sabateen2github/my-agent-os.git ~/my-agent-os
 # 2. Set API keys
 export DEEPSEEK_API_KEY="sk-..."      # https://platform.deepseek.com/api_keys
 export GEMINI_API_KEY="AIza..."        # https://aistudio.google.com/apikey
-export BRAVE_API_KEY="BSA..."          # https://brave.com/search/api/
+
 
 # 3. Install Playwright (needed for browser-agent server)
 python3 -m pip install --break-system-packages playwright
@@ -29,7 +29,6 @@ To make it permanent, add to your `~/.bashrc`:
 ```bash
 export DEEPSEEK_API_KEY="sk-..."
 export GEMINI_API_KEY="AIza..."
-export BRAVE_API_KEY="BSA..."
 export OPENCODE_CONFIG_DIR="$HOME/my-agent-os"
 ```
 
@@ -52,17 +51,22 @@ my-agent-os/
 │   ├── orchestrator.md        # Tier 1: Primary terminal manager (DeepSeek V4 Flash)
 │   ├── discovery.md           # Tier 2: UI exploration thinker (DeepSeek V4 Flash)
 │   ├── vision.md              # Tier 3: Headless vision parser (Gemini 2.5 Flash)
-│   └── gemini-instructions.md # Migrated Gemini CLI async execution protocol
+│   ├── deep-moat-auditor.md   # Tier 4: Qualitative tech moat research (patents, papers, physics)
+│   └── surge-analyst.md       # Tier 4: Investment analyst (quant+qual reconciliation)
 ├── skills/
 │   ├── browser/                # Playwright HTTP API server (deployed to systemd)
-│   │   └── server.py           # Persistent browser backend
+│   │   ├── server.py           # Persistent browser backend
+│   │   ├── router.py           # Single-entry multiplexer (browser-router.service)
+│   │   └── reaper.py           # Idle-instance reaper (systemd timer)
 │   ├── browser-agent/           # Browser skill documentation
 │   │   └── SKILL.md            # Agent-facing browser documentation
+│   ├── catalyst-detector/       # Single source of truth for stock scoring (v3.2)
+│   │   └── SKILL.md            # 10 categories, 140 pts, quant+qual reconciliation
 │   └── self-enhance/           # Ecosystem self-evolution skill
 ├── tools/
-│   └── browser.ts             # Browser tool definitions (migrated from OpenCode)
+│   └── browser.ts             # Browser tool definitions (thin client → :9290 router)
 └── mcp/
-    └── settings.json          # MCP server configurations (Brave Search)
+    └── settings.json          # MCP server configurations (empty — browser-only search)
 ```
 
 ## Components & How They Work Together
@@ -82,7 +86,7 @@ my-agent-os/
 │  Routes tasks, manages terminal, delegates complex work      │
 │                                                             │
 │  Tools: bash, browser_navigate, browser_click, read, edit,  │
-│         webfetch, glob, grep, Brave Search MCP              │
+│         webfetch, glob, grep, browser search (only)              │
 │                                                             │
 │  --- When task needs UI exploration ---                     │
 │  spawns ──────────► @discovery                              │
@@ -152,7 +156,7 @@ my-agent-os/
 | **discovery** | OpenCode subagent | DeepSeek V4 Flash | — | Inherited | UI mapping, selector discovery |
 | **vision** | OpenCode subagent | Gemini 2.5 Flash | — | — | Screenshot → spatial text report |
 | **browser-agent** | systemd service (:9222) + per-owner (:9230-9289) | Playwright + Chromium | ✅ per-owner userDataDir | ✅ built-in | Interactive browsing, persistent session, per-agent isolation, tab management, aggregated telemetry |
-| **Brave Search** | MCP server | Brave API | — | — | Web + local search |
+
 
 ### Data Flow: A Real Example
 
@@ -227,7 +231,7 @@ Output: JSON with `screenshot`, `dom`, `network` (requests + responses), `consol
 |-----|----------|-------------|
 | `DEEPSEEK_API_KEY` | DeepSeek | [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) |
 | `GEMINI_API_KEY` | Google | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
-| `BRAVE_API_KEY` | Brave Search | [brave.com/search/api](https://brave.com/search/api/) |
+
 
 > **Note:** The DeepSeek provider also works through OpenCode's built-in credential store (`opencode providers` → `/connect`). The env var is a fallback.
 
@@ -256,7 +260,7 @@ opencode models google | head -5
 | `npx` prompts or hangs | Ensure Node.js ≥18 is installed and `npx` is on PATH |
 | Google OAuth / sign-in blocked | Verify stealth is active: `browser_evaluate({ script: "navigator.webdriver" })` → should be `false`. Restart with `systemctl --user restart browser-agent.service` |
 | Browser session lost after restart | `userDataDir` persistence was added in stealth update. First restart after upgrade wipes session; subsequent restarts preserve it |
-| `MCP error -32601: Method not found` (Brave Search) | **Benign.** Brave Search MCP server doesn't implement optional `resources/list` and `prompts/list` MCP endpoints. The client probes for these on startup and the server rejects with -32601 (spec-compliant). No functional impact — safe to ignore. |
+
 | `Subagent depth limit reached (N)` | OpenCode ≥1.18 blocks subagents from launching subagents by default (`subagent_depth` defaults to 1). The ecosystem nests up to 4 levels (orchestrator → surge-analyst → deep-moat-auditor → vision), so `opencode.json` sets `"subagent_depth": 4` at the top level. If the limit regresses (e.g., stale config merge), re-add it and sync the fallback. |
 | Config loads from wrong location | Ensure `OPENCODE_CONFIG_DIR=~/my-agent-os` is in `.bashrc`. Without it, OpenCode falls back to `~/.config/opencode/opencode.json` which may be stale. |
 | Stale config divergence detected | Run `diff ~/my-agent-os/opencode.json ~/.config/opencode/opencode.json`. If they differ, canonical config is at `my-agent-os/`. Sync: `cp ~/my-agent-os/opencode.json ~/.config/opencode/opencode.json` |
@@ -267,7 +271,6 @@ This repo was built by scanning and migrating existing configurations:
 
 | Source | → Destination |
 |--------|--------------|
-| `~/.gemini/GEMINI.md` | `agents/gemini-instructions.md` |
 | `~/.config/opencode/skills/browser-agent/` | `skills/browser-agent/` |
 | `~/.config/opencode/tools/browser.ts` | `tools/browser.ts` |
 | `~/.config/opencode/mcp.json` | `mcp/settings.json` |

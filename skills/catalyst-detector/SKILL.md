@@ -66,24 +66,24 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 1. **Sector performance (3 sources):**
    - Browser → Yahoo Finance sector performance page → screenshot → @vision extract rankings
    - yfinance: pull 1-year returns for XLK, XLE, XLI, XLB, XLF, XLP, XLU, XLV, XLY sectors
-   - Brave Search: `"best performing sectors 2026 Q3"` + `"sector rotation trend 2026"`
+   - Browser search: `"best performing sectors 2026 Q3"` + `"sector rotation trend 2026"`
    - Cross-check: do all 3 sources agree on which sectors lead/lag?
 
 2. **Hyperscaler capex verification (3 sources):**
-   - Brave Search: `"hyperscaler CapEx 2026"` + `"Microsoft Meta Google Amazon AI capex Q3 2026"`
+   - Browser search: `"hyperscaler CapEx 2026"` + `"Microsoft Meta Google Amazon AI capex Q3 2026"`
    - Browser → each hyperscaler's latest earnings transcript → extract capex guidance
    - Independent analyst: `"hyperscaler capex forecast 2026 2027 analyst"`
    - Cross-check: do capex numbers converge? If estimates diverge >20%, flag as uncertain.
 
 3. **Physical AI deployment data (4 sources — NEW v3.2):**
-   - Brave Search: `"humanoid robot deployments 2026 count"` + `"industrial robot installed base 2026"`
+   - Browser search: `"humanoid robot deployments 2026 count"` + `"industrial robot installed base 2026"`
    - Trade journals: Robotics Business Review, IEEE Spectrum → `"[company] robot fleet size"`
    - Government data: International Federation of Robotics (IFR) annual report → deployment stats
    - Company disclosures: 10-K segment data, investor presentations → deployment unit counts
    - Cross-check: verify deployment counts against 2+ independent sources.
 
 4. **US-China decoupling evidence (3 sources):**
-   - Brave Search: `"US China AI chip export controls 2026"` + `"China semiconductor self-sufficiency progress"`
+   - Browser search: `"US China AI chip export controls 2026"` + `"China semiconductor self-sufficiency progress"`
    - Government sources: BIS export control announcements, China's 14th Five-Year Plan tech targets
    - Industry analysis: `"China AI supply chain independence 2026"` + `"Taiwan semiconductor risk assessment"`
 
@@ -95,7 +95,7 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
    - **NEVER** assume theme alignment from company name or sector label alone.
 
 6. **Energy/defense/grid data (3+ sources each):**
-   - Brave Search: `"NATO defense spending 2026 budget"` + `"global grid investment 2026 forecast"` + `"LNG demand forecast 2026 2030"`
+   - Browser search: `"NATO defense spending 2026 budget"` + `"global grid investment 2026 forecast"` + `"LNG demand forecast 2026 2030"`
    - Government: DoD budget documents, IEA World Energy Outlook, EIA Annual Energy Outlook
    - Industry: EEI (Edison Electric Institute), API (American Petroleum Institute) reports
    - Cross-check: government vs industry forecasts — if they diverge, use the more conservative number.
@@ -140,7 +140,7 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 
 3. **Earnings quality check (3 sources):**
    - Read the FULL latest earnings call transcript (not a summary) → extract guidance, one-time items, segment commentary
-   - Brave Search: `"[TICKER] earnings quality analysis"` + `"[TICKER] non-GAAP vs GAAP reconciliation"`
+   - Browser search: `"[TICKER] earnings quality analysis"` + `"[TICKER] non-GAAP vs GAAP reconciliation"`
    - Check for: one-time gains/losses, changes in accounting methods, revenue recognition changes
    - Cross-check: `"[TICKER] earnings surprise history last 8 quarters"` → Yahoo Finance Earnings tab
 
@@ -152,11 +152,11 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 5. **Segment revenue deep dive (mandatory for diversified companies):**
    - 10-K → Segment Reporting note → extract revenue by segment for last 3 years
    - Identify which segments are growing/declining → is total revenue growth hiding segment decline?
-   - Brave Search: `"[TICKER] [segment] revenue growth driver 2026"`
+   - Browser search: `"[TICKER] [segment] revenue growth driver 2026"`
 
 6. **Competitor comparison (2 sources):**
    - Pull same metrics for top 2-3 competitors → is this company outperforming or just riding industry tailwinds?
-   - Brave Search: `"[TICKER] vs [COMPETITOR] revenue growth margins comparison 2026"`
+   - Browser search: `"[TICKER] vs [COMPETITOR] revenue growth margins comparison 2026"`
 
 **Critical rule:** If you cannot verify revenue growth against the SEC filing, do NOT score Category 1. Default to 0. A yfinance API call alone is insufficient.
 
@@ -187,15 +187,15 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
    - Browser → MarketWatch → `https://www.marketwatch.com/investing/stock/[ticker]` → short interest data
    - Browser → Yahoo Finance → ticker → Statistics tab → short % of float, short ratio
    - Cross-check: if the 3 sources differ >10%, flag as data quality issue
-   - Brave Search: `"[TICKER] short interest trend last 6 months"` + `"[TICKER] short squeeze candidate 2026"`
+   - Browser search: `"[TICKER] short interest trend last 6 months"` + `"[TICKER] short squeeze candidate 2026"`
 
 3. **Volume and institutional flow analysis (2 sources):**
    - @vision on chart → "Identify volume spikes. Are they on up days or down days? Accumulation or distribution?"
-   - Brave Search: `"[TICKER] institutional ownership change Q3 2026"` + `"[TICKER] 13F filing recent"`
+   - Browser search: `"[TICKER] institutional ownership change Q3 2026"` + `"[TICKER] 13F filing recent"`
    - Browser → WhaleWisdom or Dataroma → institutional holdings trend
 
 4. **Options market check (1 source — optional but high-signal):**
-   - Brave Search: `"[TICKER] unusual options activity 2026"` + `"[TICKER] options flow put call ratio"`
+   - Browser search: `"[TICKER] unusual options activity 2026"` + `"[TICKER] options flow put call ratio"`
 
 ---
 
@@ -216,11 +216,11 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 **Minimum 5 distinct queries. Cross-check government + company + media sources.**
 
 1. **Regulatory event search (all of these, not just one):**
-   - Brave Search: `"[TICKER] FDA approval PDUFA date 2026"` + `"[TICKER] FDA advisory committee outcome"`
-   - Brave Search: `"[TICKER] CHIPS Act grant award announcement"` + `"[TICKER] IRA tax credit 2026"`
-   - Brave Search: `"[TICKER] defense contract award DoD 2026"` + `"[TICKER] Pentagon contract announcement"`
-   - Brave Search: `"[TICKER] DOE loan guarantee"` + `"[TICKER] FERC permit approval"`
-   - Brave Search: `"[TICKER] export license granted BIS 2026"` + `"[TICKER] CFIUS review outcome"`
+   - Browser search: `"[TICKER] FDA approval PDUFA date 2026"` + `"[TICKER] FDA advisory committee outcome"`
+   - Browser search: `"[TICKER] CHIPS Act grant award announcement"` + `"[TICKER] IRA tax credit 2026"`
+   - Browser search: `"[TICKER] defense contract award DoD 2026"` + `"[TICKER] Pentagon contract announcement"`
+   - Browser search: `"[TICKER] DOE loan guarantee"` + `"[TICKER] FERC permit approval"`
+   - Browser search: `"[TICKER] export license granted BIS 2026"` + `"[TICKER] CFIUS review outcome"`
 
 2. **Government source verification (2+ sources):**
    - Browser → SAM.gov → search for company name → active contracts
@@ -231,11 +231,11 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 3. **Company guidance cross-check (2 sources):**
    - Company IR page → investor presentation → regulatory timeline slide
    - Latest earnings call transcript → management regulatory commentary
-   - Brave Search: `"[TICKER] regulatory catalyst timeline 2026 2027"`
+   - Browser search: `"[TICKER] regulatory catalyst timeline 2026 2027"`
 
 4. **Export control / tariff risk assessment (3 sources):**
    - 10-K → Geographic Revenue breakdown → % revenue from China, Taiwan, etc.
-   - Brave Search: `"[TICKER] China exposure risk"` + `"[TICKER] tariff impact analysis"`
+   - Browser search: `"[TICKER] China exposure risk"` + `"[TICKER] tariff impact analysis"`
    - Industry analysis: `"semiconductor export controls impact 2026"` (or sector-specific)
 
 **Critical:** If a regulatory event is scored, you MUST have the EXACT DATE from an official source. "Expected in Q3 2026" ≠ confirmed. Score accordingly (5 pts max vs 10 for confirmed date).
@@ -258,22 +258,22 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 1. **Activist / 13D filing search (2 sources):**
    - Browser → SEC EDGAR → search for company name + "SC 13D" (not 13G, which is passive)
    - Browser → SEC EDGAR → search for "SC 13D/A" (amendments — shows position changes)
-   - Brave Search: `"[TICKER] activist investor 13D filing 2026"` + `"[TICKER] Elliott Starboard Third Point 2026"`
+   - Browser search: `"[TICKER] activist investor 13D filing 2026"` + `"[TICKER] Elliott Starboard Third Point 2026"`
 
 2. **Spin-off / strategic review search (3 sources):**
-   - Brave Search: `"[TICKER] spin-off announcement"` + `"[TICKER] strategic alternatives"` + `"[TICKER] business separation"`
+   - Browser search: `"[TICKER] spin-off announcement"` + `"[TICKER] strategic alternatives"` + `"[TICKER] business separation"`
    - Company press releases page → filter by "corporate" → last 12 months
    - Browser → SEC EDGAR → 8-K filings → Items 2.01, 2.05, 2.06 (restructuring events)
 
 3. **M&A speculation research (3 sources):**
-   - Brave Search: `"[TICKER] merger talks"` + `"[TICKER] acquisition target"` + `"[TICKER] takeover rumors"`
+   - Browser search: `"[TICKER] merger talks"` + `"[TICKER] acquisition target"` + `"[TICKER] takeover rumors"`
    - Financial media: Reuters, Bloomberg, WSJ → `"[TICKER] deal talks"`
    - Industry consolidation analysis: `"[SECTOR] consolidation 2026 M&A activity"`
 
 4. **Hedge fund 13F analysis (3 sources):**
    - Browser → Dataroma.com → search ticker → which funds own it? Changes since last filing?
    - Browser → WhaleWisdom → 13F filings → institutional ownership trend
-   - Brave Search: `"[TICKER] new hedge fund position 13F Q2 2026"`
+   - Browser search: `"[TICKER] new hedge fund position 13F Q2 2026"`
 
 ---
 
@@ -309,12 +309,12 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
    - Check: are multiple insiders buying simultaneously? (Cluster buy = high signal)
    - Check: are CEO/CFO buying or selling? (C-suite transactions = highest signal)
    - Check: are transactions 10b5-1 planned or discretionary? (10b5-1 = lower signal)
-   - Brave Search: `"[TICKER] insider buying cluster 2026"` + `"[TICKER] CEO [NAME] stock purchase"`
-   - Brave Search: `"[TICKER] insider selling investigation"` (flag for legal issues)
+   - Browser search: `"[TICKER] insider buying cluster 2026"` + `"[TICKER] CEO [NAME] stock purchase"`
+   - Browser search: `"[TICKER] insider selling investigation"` (flag for legal issues)
 
 3. **Institutional / smart money flow (2 additional sources):**
    - Browser → WhaleWisdom → 13F filings → institutional % ownership trend (last 4 quarters)
-   - Brave Search: `"[TICKER] largest shareholders buying selling 2026"` + `"[TICKER] institutional flow"`
+   - Browser search: `"[TICKER] largest shareholders buying selling 2026"` + `"[TICKER] institutional flow"`
 
 ---
 
@@ -334,24 +334,24 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 1. **Analyst coverage deep dive (3 sources):**
    - Browser → Yahoo Finance → ticker → Analysis tab → Ratings trend (last 3 months) → screenshot
    - Browser → MarketWatch → ticker → Analyst Ratings → count upgrades/downgrades in last 90 days
-   - Brave Search: `"[TICKER] analyst upgrade downgrade 2026 Q3"` + `"[TICKER] price target change summary"`
+   - Browser search: `"[TICKER] analyst upgrade downgrade 2026 Q3"` + `"[TICKER] price target change summary"`
    - Cross-check: do all 3 sources agree on the upgrade/downgrade count?
 
 2. **Analyst target analysis (3 data points):**
    - yfinance: `info.get("targetMeanPrice")`, `info.get("targetHighPrice")`, `info.get("targetLowPrice")`, `info.get("numberOfAnalystOpinions")`
    - Compute: upside to mean target = (targetMean - currentPrice) / currentPrice × 100
    - Check: % of analysts rating BUY vs HOLD vs SELL
-   - Brave Search: `"[TICKER] most recent analyst report 2026"` → read at least 1 full analyst note (not just headline)
+   - Browser search: `"[TICKER] most recent analyst report 2026"` → read at least 1 full analyst note (not just headline)
 
 3. **Short interest trend analysis (2 sources):**
    - yfinance: pull short % of float for last 6 months (if available via history)
-   - Brave Search: `"[TICKER] short interest trend declining increasing 2026"` + `"[TICKER] days to cover"`
+   - Browser search: `"[TICKER] short interest trend declining increasing 2026"` + `"[TICKER] days to cover"`
    - Browser → MarketWatch → short interest historical data
 
 4. **Social sentiment / narrative check (3 sources — optional but informative):**
-   - Brave Search: `"[TICKER] reddit wallstreetbets discussion 2026"` + `"[TICKER] stocktwits sentiment"`
-   - Brave Search: `"[TICKER] investor presentation narrative shift"` + `"[TICKER] CEO interview transcript 2026"`
-   - Brave Search: `"[TICKER] bear case article 2026"` (read the bear thesis — always understand the counter-narrative)
+   - Browser search: `"[TICKER] reddit wallstreetbets discussion 2026"` + `"[TICKER] stocktwits sentiment"`
+   - Browser search: `"[TICKER] investor presentation narrative shift"` + `"[TICKER] CEO interview transcript 2026"`
+   - Browser search: `"[TICKER] bear case article 2026"` (read the bear thesis — always understand the counter-narrative)
 
 ---
 
@@ -374,21 +374,21 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
 1. **Earnings date verification (3 sources):**
    - Yahoo Finance → ticker → Earnings tab → next earnings date
    - Browser → company IR website → Events calendar → confirmed earnings date
-   - Brave Search: `"[TICKER] earnings date Q3 2026 confirmed"` + `"[TICKER] earnings announcement schedule"`
+   - Browser search: `"[TICKER] earnings date Q3 2026 confirmed"` + `"[TICKER] earnings announcement schedule"`
    - Cross-check: all 3 sources must agree on the date. If any source says "estimated," flag it.
 
 2. **Investor day / product launch search (3 sources):**
    - Company IR page → Events → upcoming presentations
-   - Brave Search: `"[TICKER] investor day 2026 date"` + `"[TICKER] analyst day announcement"`
-   - Brave Search: `"[TICKER] product launch event 2026 confirmed"` + `"[TICKER] keynote announcement date"`
+   - Browser search: `"[TICKER] investor day 2026 date"` + `"[TICKER] analyst day announcement"`
+   - Browser search: `"[TICKER] product launch event 2026 confirmed"` + `"[TICKER] keynote announcement date"`
 
 3. **Index rebalancing events (2 sources):**
-   - Brave Search: `"S&P 500 rebalancing date 2026"` + `"NASDAQ-100 reconstitution schedule"`
-   - Brave Search: `"[TICKER] S&P 500 addition candidate"` + `"[TICKER] index inclusion speculation"`
+   - Browser search: `"S&P 500 rebalancing date 2026"` + `"NASDAQ-100 reconstitution schedule"`
+   - Browser search: `"[TICKER] S&P 500 addition candidate"` + `"[TICKER] index inclusion speculation"`
 
 4. **Conference / roadshow appearances (2 sources):**
    - Company IR page → Presentations → conference schedule
-   - Brave Search: `"[TICKER] conference presentation 2026"` + `"[TICKER] fireside chat transcript"`
+   - Browser search: `"[TICKER] conference presentation 2026"` + `"[TICKER] fireside chat transcript"`
 
 ---
 
@@ -422,9 +422,9 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
    - Browser → Yahoo Finance → ticker → 5Y chart → is this a normal cycle dip or a structural breakdown?
 
 2. **Crash cause investigation (3 sources — THE MOST IMPORTANT):**
-   - Brave Search: `"[TICKER] stock drop reason [DATE OF CRASH]"` → identify the catalyst
+   - Browser search: `"[TICKER] stock drop reason [DATE OF CRASH]"` → identify the catalyst
    - Read the earnings call transcript FROM THE QUARTER OF THE CRASH → what did management say?
-   - Brave Search: `"[TICKER] [CRASH REASON] temporary or structural analyst assessment"`
+   - Browser search: `"[TICKER] [CRASH REASON] temporary or structural analyst assessment"`
    - **CRITICAL CLASSIFICATION:**
      - ✅ **Temporary:** one-time charge, supply chain disruption, macro fear (not company-specific), sector rotation, post-earnings overreaction to minor miss
      - ❌ **Structural:** business model obsolescence, secular demand decline, competitive displacement, accounting fraud, debt default risk, management credibility destroyed
@@ -433,14 +433,14 @@ Secular mega-trends create a rising tide. Stocks aligned with dominant macro the
    - Check: is revenue STILL growing? (If revenue is declining, it might be structural)
    - Check: is FCF STILL positive and improving? (If FCF is cratering, it might be structural)
    - Check: insiders — are they BUYING the dip? (Most important confirmation signal)
-   - Brave Search: `"[TICKER] fundamentals after crash analysis"` + `"[TICKER] earnings trajectory post-selloff"`
+   - Browser search: `"[TICKER] fundamentals after crash analysis"` + `"[TICKER] earnings trajectory post-selloff"`
 
 4. **Sector context (2 sources):**
    - yfinance: pull sector ETF 1-year performance → is the whole sector down or just this stock?
-   - Brave Search: `"[SECTOR] underperformance 2026 reasons"` + `"[SECTOR] rotation outlook"`
+   - Browser search: `"[SECTOR] underperformance 2026 reasons"` + `"[SECTOR] rotation outlook"`
 
 5. **Value trap check (3 sources — NEGATIVE CASE):**
-   - Brave Search: `"[TICKER] value trap 2026"` + `"[TICKER] why stock keeps falling"` + `"[TICKER] short thesis 2026"`
+   - Browser search: `"[TICKER] value trap 2026"` + `"[TICKER] why stock keeps falling"` + `"[TICKER] short thesis 2026"`
    - Read at least 1 bearish analyst report in full — understand WHY the bears are right
    - If you cannot articulate the bear case in 3 sentences, you haven't researched enough
 
@@ -586,7 +586,7 @@ v2.0 listed red flags but didn't enforce them. v3.0 embeds penalties directly in
 
 **v3.0 enforcement rule:** If a stock triggers 3+ red flags, automatically remove from consideration regardless of other scores. Don't try to rationalize a "good company with some concerns" — 3+ red flags = something is wrong.
 
-## Integration with Infrastructure Moat SOP (v3.1)
+## Complete Pipeline Sequence (v3.1)
 
 The v3.1 sequence:
 ```
@@ -643,7 +643,7 @@ The v3.1 sequence:
 
 ## 🔥 v3.2 VERIFICATION PROTOCOL — RESEARCH-HEAVY
 
-**⚠️ Search Resilience:** If Google captcha-locks, switch to Bing/DuckDuckGo. Brave MCP fails → use browser `search.brave.com`. Direct URLs rarely block. No more than 2 captcha recovery attempts.
+**⚠️ Search Resilience:** If Google captcha-locks, switch to Bing/DuckDuckGo. Direct URLs rarely block. No more than 2 captcha recovery attempts.
 
 **🔥 MANDATORY: Every data point cross-checked against 3+ independent sources.**
 

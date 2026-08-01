@@ -143,6 +143,38 @@ Filter by HTTP method, URL regex, or substring. Cuts noise from tracking pixels.
 browser_status({})
 // → { wafBlocked: true, wafMessage: '403 from ...' }
 ```
+
+## 🔐 Captcha Bypass — 3 Strategies (router-aware)
+
+Captchas are the #1 web-research blocker (Google Patents, Bing, Bloomberg, Google Search all use them). Every browser_* call already goes through the router (`:9290`), so the tools below automatically hit YOUR per-owner window — no manual port handling.
+
+**Strategy 1 — PerimeterX / DataDome (PX): use `browser_bypassPx`**
+PX captchas render a "PRESS & HOLD" button inside a hidden iframe (`display:none`) that blocks mouse/keyboard. The bypass calls `window.PX.setChallenge('solved')` which updates the `_px2` cookie — the page reloads past the challenge.
+```
+browser_bypassPx({})          # sets PX.setChallenge("solved")
+browser_navigate({ url: "..." })  # or browser_reload({}) — apply after bypass
+```
+Verified E2E through the router: `bypassPx` → `{status: ok, bypassPx: "challenge-set"}` → evaluate confirms `window.__pxResult === "solved"`.
+
+**Strategy 2 — reCAPTCHA v2 checkbox (inside iframe):**
+```
+browser_click({ selector: 'iframe[title="reCAPTCHA"]', waitAfter: 4000 })
+```
+The server auto-attempts this on every navigation. If a checkbox challenge appears:
+```
+browser_clickFrame({ selector: 'iframe[title*="reCAPTCHA"]', x: 28, y: 28, waitAfter: 3000 })
+```
+Verify: `browser_evaluate({ script: "grecaptcha.getResponse(0).length" })` → `> 0` = solved.
+
+**Strategy 3 — reCAPTCHA image challenge (select all traffic lights):**
+1. `browser_status({})` → if `captchaInfo.type === "image_challenge"`
+2. `browser_screenshot({ output: "/tmp/captcha-challenge.png" })`
+3. `@vision Read /tmp/captcha-challenge.png` → which tiles are correct
+4. `browser_clickFrame({ selector: 'iframe[title*="reCAPTCHA"]', x: tileX, y: tileY })` for each tile
+5. Click Verify via `browser_clickFrame` at the verify button coords
+6. Confirm with `grecaptcha.getResponse(0).length > 0`
+
+**Recovery rule:** Never burn more than 2 attempts on one engine. A captcha-locked Google → switch to Bing/DDG or navigate directly to the target URL. Direct URLs rarely captcha.
 Detects CloudFront/AWS WAF blocks, helps you know when to clear cookies and re-authenticate.
 
 **For complex E2E test flows (multi-step auth, form sequences, chat interactions, full user journeys), write a standalone Playwright test script and run it with `python3`, instead of using browser-agent tool calls step-by-step.**
@@ -331,9 +363,9 @@ The server.py applies stealth on every new page automatically.
 
 Search engines may captcha-lock headless browsers. Google blocks? Switch to Bing (`https://www.bing.com/search?q=[query]`), DuckDuckGo, or navigate directly to known-good URLs (finance.yahoo.com, wikipedia.org, sec.gov/edgar). See `orchestrator.md` Pattern 20 for the full fallback cascade, captcha detection checklist, and recovery protocol.
 
-### Brave Search Web Interface (browser-based fallback for Brave MCP)
+### Search Engines via Browser (Brave MCP removed — browser-only)
 
-If the Brave Search MCP tool is failing, use Brave's web interface: `browser_navigate({ url: "https://search.brave.com/search?q=[query]" })`. Screenshot + vision extraction — same workflow, different engine.
+Search engines are accessed via the browser ONLY (Brave MCP was removed). Use `browser_navigate({ url: "https://www.bing.com/search?q=[query]" })` (or Google/DDG), then screenshot + vision extraction, or `browser_text` on `li.b_algo`.
 
 ## Ecosystem
 

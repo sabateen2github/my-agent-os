@@ -106,7 +106,7 @@ Extract:
 ### Source 4: Tool Usage Frequency
 Parse log files for actual tool call counts:
 - `webfetch` count vs `browser_navigate` count
-- `server-brave-search_brave_web_search` count
+- browser search usage (navigate/telemetry) count
 - `browser_screenshot` count vs `browser_text` count
 - `@vision` spawning frequency
 

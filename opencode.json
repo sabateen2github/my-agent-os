@@ -1,364 +1,348 @@
 {
-  "$schema": "https://opencode.ai/config.json",
-  "model": "deepseek/deepseek-v4-flash",
-  "default_agent": "orchestrator",
-  "small_model": "deepseek/deepseek-v4-flash",
-  "subagent_depth": 4,
-  "instructions": [
-    "README.md",
-    "skills/browser-agent/SKILL.md",
-    "skills/self-enhance/SKILL.md",
-    "skills/infrastructure-moat/SKILL.md",
-    "skills/catalyst-detector/SKILL.md"
-  ],
-  "provider": {
-    "deepseek": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "DeepSeek",
-      "options": {
-        "baseURL": "https://api.deepseek.com",
-        "apiKey": "{env:DEEPSEEK_API_KEY}",
-        "timeout": 600000
-      },
-      "models": {
-        "deepseek-v4-pro": {
-          "name": "deepseek-v4-pro",
-          "reasoning": true,
-          "interleaved": {
-            "field": "reasoning_content"
-          },
-          "limit": {
-            "context": 1048576,
-            "output": 384000
-          }
-        },
-        "deepseek-v4-flash": {
-          "name": "deepseek-v4-flash",
-          "reasoning": true,
-          "interleaved": {
-            "field": "reasoning_content"
-          },
-          "limit": {
-            "context": 1048576,
-            "output": 384000
-          }
-        }
-      }
+ "$schema": "https://opencode.ai/config.json",
+ "model": "deepseek/deepseek-v4-flash",
+ "default_agent": "orchestrator",
+ "small_model": "deepseek/deepseek-v4-flash",
+ "subagent_depth": 6,
+ "instructions": [
+  "README.md",
+  "skills/browser-agent/SKILL.md",
+  "skills/self-enhance/SKILL.md",
+  "skills/catalyst-detector/SKILL.md"
+ ],
+ "provider": {
+  "deepseek": {
+   "npm": "@ai-sdk/openai-compatible",
+   "name": "DeepSeek",
+   "options": {
+    "baseURL": "https://api.deepseek.com",
+    "apiKey": "{env:DEEPSEEK_API_KEY}",
+    "timeout": 600000
+   },
+   "models": {
+    "deepseek-v4-pro": {
+     "name": "deepseek-v4-pro",
+     "reasoning": true,
+     "interleaved": {
+      "field": "reasoning_content"
+     },
+     "limit": {
+      "context": 1048576,
+      "output": 384000
+     }
     },
-    "crofai": {
-      "npm": "@ai-sdk/openai-compatible",
-      "options": {
-        "baseURL": "https://crof.ai/v1"
-      },
-      "models": {
-        "glm-5.1-precision": {},
-        "deepseek-v3.2": {}
-      }
-    },
-    "google": {
-      "npm": "@ai-sdk/openai-compatible",
-      "options": {
-        "baseURL": "https://generativelanguage.googleapis.com/v1beta/openai",
-        "apiKey": "{env:GEMINI_API_KEY}"
-      },
-      "models": {
-        "gemini-2.5-flash": {
-          "attachment": true
-        },
-        "gemini-2.5-pro": {
-          "attachment": true
-        }
-      }
+    "deepseek-v4-flash": {
+     "name": "deepseek-v4-flash",
+     "reasoning": true,
+     "interleaved": {
+      "field": "reasoning_content"
+     },
+     "limit": {
+      "context": 1048576,
+      "output": 384000
+     }
     }
+   }
   },
-  "agent": {
-    "build": {
-      "model": "deepseek/deepseek-v4-flash",
-      "maxTokens": 384000
+  "crofai": {
+   "npm": "@ai-sdk/openai-compatible",
+   "options": {
+    "baseURL": "https://crof.ai/v1"
+   },
+   "models": {
+    "glm-5.1-precision": {},
+    "deepseek-v3.2": {}
+   }
+  },
+  "google": {
+   "npm": "@ai-sdk/openai-compatible",
+   "options": {
+    "baseURL": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "apiKey": "{env:GEMINI_API_KEY}"
+   },
+   "models": {
+    "gemini-2.5-flash": {
+     "attachment": true
     },
-    "plan": {
-      "model": "deepseek/deepseek-v4-flash",
-      "maxTokens": 384000
-    },
-    "general": {
-      "model": "deepseek/deepseek-v4-flash",
-      "maxTokens": 384000,
-      "mode": "subagent",
-      "permission": {
-        "bash": "allow",
-        "websearch": "allow",
-        "task": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "browser_navigate": "allow",
-        "browser_click": "allow",
-        "browser_clickAt": "allow",
-        "browser_clickFrame": "allow",
-        "browser_type": "allow",
-        "browser_press": "allow",
-        "browser_hover": "allow",
-        "browser_select": "allow",
-        "browser_screenshot": "allow",
-        "browser_evaluate": "allow",
-        "browser_text": "allow",
-        "browser_html": "allow",
-        "browser_scroll": "allow",
-        "browser_waitFor": "allow",
-        "browser_url": "allow",
-        "browser_networkLogs": "allow",
-        "browser_consoleLogs": "allow",
-        "browser_clearLogs": "allow",
-        "browser_cookies": "allow",
-        "browser_localStorage": "allow",
-        "browser_sessionStorage": "allow",
-        "browser_intercept": "allow",
-        "browser_stopIntercept": "allow",
-        "browser_goBack": "allow",
-        "browser_goForward": "allow",
-        "browser_reload": "allow",
-        "browser_telemetry": "allow",
-        "browser_reactSetValue": "allow",
-        "browser_triggerForm": "allow",
-        "browser_viewport": "allow",
-        "browser_listTabs": "allow",
-        "browser_switchTab": "allow",
-        "browser_newTab": "allow",
-        "browser_closeTab": "allow",
-        "browser_close": "allow",
-        "browser_status": "allow",
-        "external_directory": {
-          "/tmp/*": "allow",
-          "/tmp/opencode/*": "allow"
-        },
-        "browser_bypassPx": "allow"
-      }
-    },
-    "explore": {
-      "model": "deepseek/deepseek-v4-flash"
-    },
-    "title": {
-      "model": "deepseek/deepseek-v4-flash"
-    },
-    "compaction": {
-      "model": "deepseek/deepseek-v4-flash"
-    },
-    "discovery": {
-      "model": "deepseek/deepseek-v4-flash",
-      "mode": "subagent",
-      "permission": {
-        "bash": "allow",
-        "task": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "browser_navigate": "allow",
-        "browser_click": "allow",
-        "browser_clickAt": "allow",
-        "browser_clickFrame": "allow",
-        "browser_type": "allow",
-        "browser_press": "allow",
-        "browser_scroll": "allow",
-        "browser_screenshot": "allow",
-        "browser_evaluate": "allow",
-        "browser_text": "allow",
-        "browser_html": "allow",
-        "browser_waitFor": "allow",
-        "browser_url": "allow",
-        "browser_networkLogs": "allow",
-        "browser_consoleLogs": "allow",
-        "browser_clearLogs": "allow",
-        "browser_cookies": "allow",
-        "browser_localStorage": "allow",
-        "browser_sessionStorage": "allow",
-        "browser_status": "allow",
-        "browser_viewport": "allow",
-        "browser_intercept": "allow",
-        "browser_stopIntercept": "allow",
-        "browser_hover": "allow",
-        "browser_select": "allow",
-        "browser_goBack": "allow",
-        "browser_goForward": "allow",
-        "browser_reload": "allow",
-        "browser_listTabs": "allow",
-        "browser_switchTab": "allow",
-        "browser_newTab": "allow",
-        "browser_closeTab": "allow",
-        "browser_telemetry": "allow",
-        "browser_reactSetValue": "allow",
-        "browser_triggerForm": "allow",
-        "browser_close": "allow",
-        "external_directory": {
-          "/tmp/*": "allow",
-          "/tmp/opencode/*": "allow"
-        },
-        "browser_bypassPx": "allow"
-      }
-    },
-    "deep-moat-auditor": {
-      "model": "deepseek/deepseek-v4-flash",
-      "mode": "subagent",
-      "permission": {
-        "bash": "allow",
-        "websearch": "allow",
-        "task": "allow",
-        "read": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "browser_navigate": "allow",
-        "browser_click": "allow",
-        "browser_clickAt": "allow",
-        "browser_clickFrame": "allow",
-        "browser_type": "allow",
-        "browser_press": "allow",
-        "browser_hover": "allow",
-        "browser_select": "allow",
-        "browser_screenshot": "allow",
-        "browser_evaluate": "allow",
-        "browser_text": "allow",
-        "browser_html": "allow",
-        "browser_scroll": "allow",
-        "browser_waitFor": "allow",
-        "browser_url": "allow",
-        "browser_networkLogs": "allow",
-        "browser_consoleLogs": "allow",
-        "browser_clearLogs": "allow",
-        "browser_cookies": "allow",
-        "browser_localStorage": "allow",
-        "browser_sessionStorage": "allow",
-        "browser_intercept": "allow",
-        "browser_stopIntercept": "allow",
-        "browser_goBack": "allow",
-        "browser_goForward": "allow",
-        "browser_reload": "allow",
-        "browser_telemetry": "allow",
-        "browser_reactSetValue": "allow",
-        "browser_triggerForm": "allow",
-        "browser_viewport": "allow",
-        "browser_listTabs": "allow",
-        "browser_switchTab": "allow",
-        "browser_newTab": "allow",
-        "browser_closeTab": "allow",
-        "browser_close": "allow",
-        "browser_status": "allow",
-        "external_directory": {
-          "/tmp/*": "allow",
-          "/tmp/opencode/*": "allow"
-        },
-        "browser_bypassPx": "allow"
-      }
-    },
-    "surge-analyst": {
-      "model": "deepseek/deepseek-v4-flash",
-      "mode": "subagent",
-      "permission": {
-        "bash": "allow",
-        "websearch": "allow",
-        "task": "allow",
-        "read": "allow",
-        "edit": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "browser_navigate": "allow",
-        "browser_click": "allow",
-        "browser_clickAt": "allow",
-        "browser_clickFrame": "allow",
-        "browser_type": "allow",
-        "browser_press": "allow",
-        "browser_hover": "allow",
-        "browser_select": "allow",
-        "browser_screenshot": "allow",
-        "browser_evaluate": "allow",
-        "browser_text": "allow",
-        "browser_html": "allow",
-        "browser_scroll": "allow",
-        "browser_waitFor": "allow",
-        "browser_url": "allow",
-        "browser_networkLogs": "allow",
-        "browser_consoleLogs": "allow",
-        "browser_clearLogs": "allow",
-        "browser_cookies": "allow",
-        "browser_localStorage": "allow",
-        "browser_sessionStorage": "allow",
-        "browser_intercept": "allow",
-        "browser_stopIntercept": "allow",
-        "browser_goBack": "allow",
-        "browser_goForward": "allow",
-        "browser_reload": "allow",
-        "browser_telemetry": "allow",
-        "browser_reactSetValue": "allow",
-        "browser_triggerForm": "allow",
-        "browser_viewport": "allow",
-        "browser_listTabs": "allow",
-        "browser_switchTab": "allow",
-        "browser_newTab": "allow",
-        "browser_closeTab": "allow",
-        "browser_close": "allow",
-        "browser_status": "allow",
-        "external_directory": {
-          "/tmp/*": "allow",
-          "/tmp/opencode/*": "allow"
-        },
-        "browser_bypassPx": "allow"
-      }
-    },
-    "meta-cognition": {
-      "model": "deepseek/deepseek-v4-flash",
-      "mode": "subagent",
-      "permission": {
-        "bash": "allow",
-        "read": "allow",
-        "edit": "allow",
-        "write": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "task": "allow",
-        "browser_listTabs": "allow",
-        "browser_switchTab": "allow",
-        "browser_newTab": "allow",
-        "browser_closeTab": "allow",
-        "external_directory": {
-          "/home/ubuntu/my-agent-os/*": "allow",
-          "/home/ubuntu/.local/share/opencode/log/*": "allow",
-          "/home/ubuntu/.local/state/opencode/*": "allow",
-          "/tmp/*": "allow"
-        }
-      }
+    "gemini-2.5-pro": {
+     "attachment": true
     }
+   }
+  }
+ },
+ "agent": {
+  "build": {
+   "model": "deepseek/deepseek-v4-flash",
+   "maxTokens": 384000
   },
-  "compaction": {
-    "auto": true,
-    "prune": true,
-    "reserved": 10000
+  "plan": {
+   "model": "deepseek/deepseek-v4-flash",
+   "maxTokens": 384000
   },
-  "formatter": true,
-  "lsp": true,
-  "mcp": {
-    "server-brave-search": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-brave-search"
-      ],
-      "environment": {
-        "BRAVE_API_KEY": "{env:BRAVE_API_KEY}"
-      }
-    }
-  },
-  "permission": {
-    "skill": {
-      "browser-agent": "allow",
-      "self-enhance": "allow"
-    },
-    "external_directory": {
-      "/tmp/opencode/*": "allow",
-      "/tmp/ui-state.png": "allow",
-      "/home/ubuntu/my-agent-os/skills/*": "allow"
-    },
+  "general": {
+   "model": "deepseek/deepseek-v4-flash",
+   "maxTokens": 384000,
+   "mode": "subagent",
+   "permission": {
     "bash": "allow",
+    "task": "allow",
     "read": "allow",
     "glob": "allow",
-    "grep": "allow"
+    "grep": "allow",
+    "browser_navigate": "allow",
+    "browser_click": "allow",
+    "browser_clickAt": "allow",
+    "browser_clickFrame": "allow",
+    "browser_type": "allow",
+    "browser_press": "allow",
+    "browser_hover": "allow",
+    "browser_select": "allow",
+    "browser_screenshot": "allow",
+    "browser_evaluate": "allow",
+    "browser_text": "allow",
+    "browser_html": "allow",
+    "browser_scroll": "allow",
+    "browser_waitFor": "allow",
+    "browser_url": "allow",
+    "browser_networkLogs": "allow",
+    "browser_consoleLogs": "allow",
+    "browser_clearLogs": "allow",
+    "browser_cookies": "allow",
+    "browser_localStorage": "allow",
+    "browser_sessionStorage": "allow",
+    "browser_intercept": "allow",
+    "browser_stopIntercept": "allow",
+    "browser_goBack": "allow",
+    "browser_goForward": "allow",
+    "browser_reload": "allow",
+    "browser_telemetry": "allow",
+    "browser_reactSetValue": "allow",
+    "browser_triggerForm": "allow",
+    "browser_viewport": "allow",
+    "browser_listTabs": "allow",
+    "browser_switchTab": "allow",
+    "browser_newTab": "allow",
+    "browser_closeTab": "allow",
+    "browser_close": "allow",
+    "browser_status": "allow",
+    "external_directory": {
+     "/tmp/*": "allow",
+     "/tmp/opencode/*": "allow"
+    },
+    "browser_bypassPx": "allow"
+   }
+  },
+  "explore": {
+   "model": "deepseek/deepseek-v4-flash"
+  },
+  "title": {
+   "model": "deepseek/deepseek-v4-flash"
+  },
+  "compaction": {
+   "model": "deepseek/deepseek-v4-flash"
+  },
+  "discovery": {
+   "model": "deepseek/deepseek-v4-flash",
+   "mode": "subagent",
+   "permission": {
+    "bash": "allow",
+    "task": "allow",
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "browser_navigate": "allow",
+    "browser_click": "allow",
+    "browser_clickAt": "allow",
+    "browser_clickFrame": "allow",
+    "browser_type": "allow",
+    "browser_press": "allow",
+    "browser_scroll": "allow",
+    "browser_screenshot": "allow",
+    "browser_evaluate": "allow",
+    "browser_text": "allow",
+    "browser_html": "allow",
+    "browser_waitFor": "allow",
+    "browser_url": "allow",
+    "browser_networkLogs": "allow",
+    "browser_consoleLogs": "allow",
+    "browser_clearLogs": "allow",
+    "browser_cookies": "allow",
+    "browser_localStorage": "allow",
+    "browser_sessionStorage": "allow",
+    "browser_status": "allow",
+    "browser_viewport": "allow",
+    "browser_intercept": "allow",
+    "browser_stopIntercept": "allow",
+    "browser_hover": "allow",
+    "browser_select": "allow",
+    "browser_goBack": "allow",
+    "browser_goForward": "allow",
+    "browser_reload": "allow",
+    "browser_listTabs": "allow",
+    "browser_switchTab": "allow",
+    "browser_newTab": "allow",
+    "browser_closeTab": "allow",
+    "browser_telemetry": "allow",
+    "browser_reactSetValue": "allow",
+    "browser_triggerForm": "allow",
+    "browser_close": "allow",
+    "external_directory": {
+     "/tmp/*": "allow",
+     "/tmp/opencode/*": "allow"
+    },
+    "browser_bypassPx": "allow"
+   }
+  },
+  "deep-moat-auditor": {
+   "model": "deepseek/deepseek-v4-flash",
+   "mode": "subagent",
+   "permission": {
+    "bash": "allow",
+    "task": "allow",
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "browser_navigate": "allow",
+    "browser_click": "allow",
+    "browser_clickAt": "allow",
+    "browser_clickFrame": "allow",
+    "browser_type": "allow",
+    "browser_press": "allow",
+    "browser_hover": "allow",
+    "browser_select": "allow",
+    "browser_screenshot": "allow",
+    "browser_evaluate": "allow",
+    "browser_text": "allow",
+    "browser_html": "allow",
+    "browser_scroll": "allow",
+    "browser_waitFor": "allow",
+    "browser_url": "allow",
+    "browser_networkLogs": "allow",
+    "browser_consoleLogs": "allow",
+    "browser_clearLogs": "allow",
+    "browser_cookies": "allow",
+    "browser_localStorage": "allow",
+    "browser_sessionStorage": "allow",
+    "browser_intercept": "allow",
+    "browser_stopIntercept": "allow",
+    "browser_goBack": "allow",
+    "browser_goForward": "allow",
+    "browser_reload": "allow",
+    "browser_telemetry": "allow",
+    "browser_reactSetValue": "allow",
+    "browser_triggerForm": "allow",
+    "browser_viewport": "allow",
+    "browser_listTabs": "allow",
+    "browser_switchTab": "allow",
+    "browser_newTab": "allow",
+    "browser_closeTab": "allow",
+    "browser_close": "allow",
+    "browser_status": "allow",
+    "external_directory": {
+     "/tmp/*": "allow",
+     "/tmp/opencode/*": "allow"
+    },
+    "browser_bypassPx": "allow"
+   }
+  },
+  "surge-analyst": {
+   "model": "deepseek/deepseek-v4-flash",
+   "mode": "subagent",
+   "permission": {
+    "bash": "allow",
+    "task": "allow",
+    "read": "allow",
+    "edit": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "browser_navigate": "allow",
+    "browser_click": "allow",
+    "browser_clickAt": "allow",
+    "browser_clickFrame": "allow",
+    "browser_type": "allow",
+    "browser_press": "allow",
+    "browser_hover": "allow",
+    "browser_select": "allow",
+    "browser_screenshot": "allow",
+    "browser_evaluate": "allow",
+    "browser_text": "allow",
+    "browser_html": "allow",
+    "browser_scroll": "allow",
+    "browser_waitFor": "allow",
+    "browser_url": "allow",
+    "browser_networkLogs": "allow",
+    "browser_consoleLogs": "allow",
+    "browser_clearLogs": "allow",
+    "browser_cookies": "allow",
+    "browser_localStorage": "allow",
+    "browser_sessionStorage": "allow",
+    "browser_intercept": "allow",
+    "browser_stopIntercept": "allow",
+    "browser_goBack": "allow",
+    "browser_goForward": "allow",
+    "browser_reload": "allow",
+    "browser_telemetry": "allow",
+    "browser_reactSetValue": "allow",
+    "browser_triggerForm": "allow",
+    "browser_viewport": "allow",
+    "browser_listTabs": "allow",
+    "browser_switchTab": "allow",
+    "browser_newTab": "allow",
+    "browser_closeTab": "allow",
+    "browser_close": "allow",
+    "browser_status": "allow",
+    "external_directory": {
+     "/tmp/*": "allow",
+     "/tmp/opencode/*": "allow"
+    },
+    "browser_bypassPx": "allow"
+   }
+  },
+  "meta-cognition": {
+   "model": "deepseek/deepseek-v4-flash",
+   "mode": "subagent",
+   "permission": {
+    "bash": "allow",
+    "read": "allow",
+    "edit": "allow",
+    "write": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "task": "allow",
+    "browser_listTabs": "allow",
+    "browser_switchTab": "allow",
+    "browser_newTab": "allow",
+    "browser_closeTab": "allow",
+    "external_directory": {
+     "/home/ubuntu/my-agent-os/*": "allow",
+     "/home/ubuntu/.local/share/opencode/log/*": "allow",
+     "/home/ubuntu/.local/state/opencode/*": "allow",
+     "/tmp/*": "allow"
+    }
+   }
   }
+ },
+ "compaction": {
+  "auto": true,
+  "prune": true,
+  "reserved": 10000
+ },
+ "formatter": true,
+ "lsp": true,
+ "mcp": {},
+ "permission": {
+  "skill": {
+   "browser-agent": "allow",
+   "self-enhance": "allow"
+  },
+  "external_directory": {
+   "/tmp/opencode/*": "allow",
+   "/tmp/ui-state.png": "allow",
+   "/home/ubuntu/my-agent-os/skills/*": "allow"
+  },
+  "bash": "allow",
+  "read": "allow",
+  "glob": "allow",
+  "grep": "allow"
+ }
 }
