@@ -178,6 +178,16 @@ If Google captchas, try Bing → DuckDuckGo → direct URL. Never stop at one so
 Do NOT use webfetch except as a last resort after browser attempts fail.
 ```
 
+## 🔥 VISION RATE-LIMIT THROTTLING (v3.4 — CRITICAL, propagated from surge-analyst)
+
+**@vision uses Gemini (2.5-flash-lite), which has strict requests-per-minute limits.** In the 07-31 and 08-01 sessions, parallel vision spawns caused **131 Gemini "Too Many Requests" errors** — 56 vision spawns landed within 10 seconds of each other because 7+ @general agents (each spawned by a different deep-moat-auditor) each spawned their own vision subagents simultaneously. RULES:
+
+1. **Never spawn more than 2 @vision subagents concurrently** from this audit. If you need 10+ extractions, batch them (2 at a time).
+2. **When you spawn @general agents, tell each one: "At most 1 @vision spawn. If rate-limited (429), wait 30-60s and retry ONCE. Do not spawn parallel vision subagents."**
+3. Prefer sending MULTIPLE screenshots to ONE vision subagent over spawning many — one comprehensive vision call with 2-3 images beats 3 single-image spawns.
+4. If you get a 429 stream error from a vision spawn: **wait 30-60s, retry once**, then fall back to `browser_text`/manual DOM extraction. Never retry a 429 back-to-back.
+5. When @general agents are working in parallel, stagger their vision usage: do not all screenshot → vision at the same moment.
+
 ### Phase 1: Surface Research (15 min — browser + search)
 ```
 1. Navigate to Google Scholar / arXiv → search for key technology papers
