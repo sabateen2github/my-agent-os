@@ -160,19 +160,37 @@ For every company you analyze, you MUST research at least 5 of these 7 deep sour
 
 ## Research Tools & Workflow
 
+### ⚠️ SUBAGENT TASK PROMPT RULES (v3.5 — CRITICAL, read before spawning @general)
+
+**When you write a task prompt for an @general subagent, you MUST follow these rules. Violations caused a full ecosystem audit (meta-cognition 2026-08-01):**
+
+1. **NEVER mention Brave Search.** It was REMOVED from the ecosystem (commit 4232533). There is no `server-brave-search_brave_web_search` tool. Do NOT write "Use Brave Search" in any prompt. The model hallucinates this from training data — actively suppress it.
+2. **NEVER instruct "use webfetch" as a primary tool.** webfetch is EMERGENCY-ONLY. Write: "Use the browser (`browser_navigate`) for ALL web research. webfetch is a last resort."
+3. **NEVER write `waitUntil: "networkidle2"`.** That is a Puppeteer value that fails on the Playwright server. The valid values are `load`, `domcontentloaded`, `networkidle`, `commit` — or just omit waitUntil (defaults to networkidle).
+4. **MANDATE the retry cascade:** "If Google is captcha-locked, try Bing → DuckDuckGo → direct URL before giving up. Never stop after one failed attempt."
+5. **MANDATE normal browser interaction:** "Use navigate → screenshot (@vision) → click → read. Do NOT reverse-engineer internal APIs, walk React fiber trees, or inspect shadow DOM unless normal interaction has failed 3+ times."
+
+Example of the CORRECT task prompt header:
+```
+Research [TICKER]'s patent portfolio for a deep-moat audit. Today is [DATE].
+Use the browser for ALL research: browser_navigate → screenshot (@vision) → read.
+If Google captchas, try Bing → DuckDuckGo → direct URL. Never stop at one source.
+Do NOT use webfetch except as a last resort after browser attempts fail.
+```
+
 ### Phase 1: Surface Research (15 min — browser + search)
 ```
 1. Navigate to Google Scholar / arXiv → search for key technology papers
 2. Navigate to Google Patents → search company's top patents
 3. Screenshot key findings → send to @vision for extraction
-4. Spawn @general agents for parallel deep searches (v3.2: expanded to 7 agents — one per source):
-   - "@general: Research [TICKER] patent portfolio. Find top 10 most-cited patents, expiration dates, recent filings. Map the citation network. Use Google Patents and USPTO."
-   - "@general: Find scientific papers about [TECHNOLOGY] on arXiv. What are the key papers? What do they say about physical limits and future direction? Find at least 5 papers — 3 seminal + 2 recent breakthroughs."
-   - "@general: Research [TICKER]'s manufacturing process. What equipment do they use? What are the barriers to replication? What are the capex requirements? Use SemiEngineering, IEEE Spectrum."
-   - "@general: Trace [TICKER]'s supply chain demand integrity. Who are their customers' customers? What is the actual end-user AI revenue vs. supply chain capex? Check hyperscaler AI revenue disclosures, enterprise AI adoption surveys, and inventory levels across the chain. Minimum 5 distinct sources."
-   - "@general: Research [TICKER]'s competitive technology position. How do their products benchmark against competitors? What do competitors say about them? What startups are emerging? Use competitor IR pages, benchmark reports, startup databases."
-   - "@general: Research [TICKER]'s physical deployment and data flywheel. How many units deployed? What telemetry is generated? Is there a closed-loop learning system? Compare to Chinese competitors. Use robotics trade journals, company deployment announcements, patent filings on fleet learning, industry reports."
-   - "@general: Collect ALL company filings for [TICKER] — last 2 10-Ks, last 4 10-Qs, last 3 earnings call transcripts, any 8-Ks with material events. Extract deployment numbers, customer concentration, risk factors, supply chain disclosures."
+4. Spawn @general agents for parallel deep searches (v3.2: expanded to 7 agents — one per source). **Every prompt MUST start with the Subagent Task Prompt Rules header above:**
+   - "@general: Research [TICKER] patent portfolio. Find top 10 most-cited patents, expiration dates, recent filings. Map the citation network. Use Google Patents and USPTO. [Browser-first rules]"
+   - "@general: Find scientific papers about [TECHNOLOGY] on arXiv. What are the key papers? What do they say about physical limits and future direction? Find at least 5 papers — 3 seminal + 2 recent breakthroughs. [Browser-first rules]"
+   - "@general: Research [TICKER]'s manufacturing process. What equipment do they use? What are the barriers to replication? What are the capex requirements? Use SemiEngineering, IEEE Spectrum. [Browser-first rules]"
+   - "@general: Trace [TICKER]'s supply chain demand integrity. Who are their customers' customers? What is the actual end-user AI revenue vs. supply chain capex? Check hyperscaler AI revenue disclosures, enterprise AI adoption surveys, and inventory levels across the chain. Minimum 5 distinct sources. [Browser-first rules]"
+   - "@general: Research [TICKER]'s competitive technology position. How do their products benchmark against competitors? What do competitors say about them? What startups are emerging? Use competitor IR pages, benchmark reports, startup databases. [Browser-first rules]"
+   - "@general: Research [TICKER]'s physical deployment and data flywheel. How many units deployed? What telemetry is generated? Is there a closed-loop learning system? Compare to Chinese competitors. Use robotics trade journals, company deployment announcements, patent filings on fleet learning, industry reports. [Browser-first rules]"
+   - "@general: Collect ALL company filings for [TICKER] — last 2 10-Ks, last 4 10-Qs, last 3 earnings call transcripts, any 8-Ks with material events. Extract deployment numbers, customer concentration, risk factors, supply chain disclosures. [Browser-first rules]"
 ```
 
 ### Phase 2: Deep Reading (20 min — read actual papers/patents)

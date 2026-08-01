@@ -884,6 +884,11 @@ def handle_command(cmd):
         # ── navigate ──
         if action == "navigate":
             wait_strategy = cmd.get("waitUntil") or "domcontentloaded"
+            # Defensive alias (meta-cognition audit 2026-08-01): agents keep passing
+            # Puppeteer-style values 'networkidle2'/'networkidle0' which Playwright rejects.
+            # Map them to the closest valid Playwright strategy instead of failing.
+            if wait_strategy in ("networkidle2", "networkidle0"):
+                wait_strategy = "networkidle"
             timeout = cmd.get("timeout", 30000)
             page.goto(cmd["url"], wait_until=wait_strategy, timeout=timeout)
             captcha_result = _auto_dismiss_captcha(page)

@@ -363,6 +363,37 @@ The server.py applies stealth on every new page automatically.
 
 Search engines may captcha-lock headless browsers. Google blocks? Switch to Bing (`https://www.bing.com/search?q=[query]`), DuckDuckGo, or navigate directly to known-good URLs (finance.yahoo.com, wikipedia.org, sec.gov/edgar). See `orchestrator.md` Pattern 20 for the full fallback cascade, captcha detection checklist, and recovery protocol.
 
+### 🔥 NEVER-GIVE-UP BROWSER MANDATE (v3.5 — from meta-cognition audit 2026-08-01)
+
+**The browser is your PRIMARY tool. Never abandon it after one failure.** When the browser fails:
+
+1. **Do NOT switch to webfetch/curl/yfinance immediately.** webfetch is an EMERGENCY fallback, not the second attempt.
+2. **Retry with the fallback cascade in order:** Google → Bing → DuckDuckGo → direct URL.
+3. **If a navigation times out:** retry with a longer timeout or `waitUntil: "domcontentloaded"` (not `networkidle` on slow pages) — do NOT give up.
+4. **If captcha appears:** use `browser_bypassPx` (PX/DataDome), `browser_clickFrame` (reCAPTCHA), or switch engines. Pattern 2 strategy list.
+5. **Only after ALL of these fail** (3+ distinct attempts across engines) may you consider webfetch.
+
+**Giving up after 1 failed attempt = research failure.** The user explicitly requires exhaustive multi-engine triangulation.
+
+### 🔥 NO-REVERSE-ENGINEERING MANDATE (v3.5)
+
+**Use normal browser interaction FIRST.** The documented order is:
+```
+navigate → screenshot (@vision for reading) → text → click → read → evaluate (LAST)
+```
+`browser_evaluate` is for INSPECTION, not a substitute for normal interaction:
+- ❌ DO NOT walk React fiber trees or inspect shadow DOM to "extract data" when `browser_text` or a screenshot would work.
+- ❌ DO NOT call internal XHR/JSON APIs (e.g. `patents.google.com/xhr/query`, internal GraphQL) before trying normal page interaction.
+- ✅ Use `browser_text` / `browser_screenshot` → @vision to read rendered content.
+- ✅ Use `browser_evaluate` only when the page is truly opaque to normal tools AND you've confirmed the DOM has no readable rendered content (3+ failed attempts).
+
+**If you cannot read a screenshot (no vision model): spawn @vision — never hack the DOM to compensate.**
+
+### waitUntil parameter — VALID VALUES ONLY
+
+The Playwright server accepts ONLY: `load` | `domcontentloaded` | `networkidle` | `commit`.
+`networkidle2` and `networkidle0` are PUPPETEER values and WILL FAIL. The server now auto-maps them (defensive), but do not rely on it — omit `waitUntil` or use a valid value.
+
 ### Search Engines via Browser (Brave MCP removed — browser-only)
 
 Search engines are accessed via the browser ONLY (Brave MCP was removed). Use `browser_navigate({ url: "https://www.bing.com/search?q=[query]" })` (or Google/DDG), then screenshot + vision extraction, or `browser_text` on `li.b_algo`.
