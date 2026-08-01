@@ -1,53 +1,22 @@
 import { tool } from "@opencode-ai/plugin"
-import { execSync, spawn } from "child_process"
+import { execSync } from "child_process"
 import * as crypto from "crypto"
-import * as fs from "fs"
-import * as path from "path"
 
-const DEFAULT_AGENT_URL = "http://127.0.0.1:9222"
-// Backward-compatible alias (kept so external references still resolve)
-const AGENT_URL = DEFAULT_AGENT_URL
+// ── Browser Router — single-entry multiplexer (Pattern 27) ─────────────
+// ALL browser_* calls go to ONE router port (:9290). The router owns the
+// per-owner instance pool (registry, spawn, eviction, close) and proxies
+// each call to the correct instance based on the X-Agent header. browser.ts
+// is a THIN CLIENT — it never touches ports, processes, or the registry.
+//   • Subagents get their own window: X-Agent = '<agent>-<session-hash>'
+//   • Shared roles (orchestrator/build/plan/title/compaction) → router
+//     proxies to the systemd default instance on 9222.
+// The router uses the same mkdir registry lock as reaper.py, so there is
+// exactly ONE writer of the port pool (no more "failed to start on port"
+// storms from concurrent spawners racing on the registry).
+const ROUTER_URL = process.env.BROWSER_ROUTER_URL || "http://127.0.0.1:9290"
 
-// ── Per-Owner Browser Windows (Pattern 26) ─────────────────────────────
-// Every subagent gets its OWN browser instance (separate port, separate
-// user-data-dir, separate Chromium window). `context.agent` from each
-// tool.execute() routes the call to that agent's private instance, so:
-//   • browser_close() can only ever close the CALLER's own window
-//   • browser_closeTab / switchTab / listTabs only see the caller's tabs
-//   • cookies / localStorage are isolated per agent (no session leakage)
-//   • one agent's OOM/crash/recycle can never kill another agent's window
-// Main-session roles share the systemd-managed default instance on 9222.
-
-const SUPERVISOR_DIR = path.join(process.env.HOME || "/home/ubuntu", ".browser-agents")
-const REGISTRY_FILE = path.join(SUPERVISOR_DIR, "registry.json")
-// Idle TTL before a per-owner window is auto-closed. Short because each
-// owner's user-data-dir persists — if the agent calls again, the window
-// respawns with cookies/sessions intact. Override: BROWSER_INSTANCE_IDLE_MS
-const INSTANCE_IDLE_MS = Number(process.env.BROWSER_INSTANCE_IDLE_MS || 5 * 60 * 1000)
-// Per-session isolation means parallel subagents of the same type each need
-// their own window (surge-analyst spawns 10-30 concurrent researchers).
-// 12 windows ≈ 60 ports available (9230-9289), ~200-500MB RAM each — safe.
-const MAX_INSTANCES = 12
-const PORT_START = 9230
-const PORT_END = 9289
 // Agents that share the default systemd instance (main session roles).
 const SHARED_AGENTS = new Set(["orchestrator", "build", "plan", "title", "compaction"])
-// Where server.py lives (checked in order; both copies are kept in sync).
-const SERVER_SCRIPT_CANDIDATES = [
-  path.join(process.env.HOME || "", "browser-agent", "server.py"),
-  path.join(process.env.HOME || "", "my-agent-os", "skills", "browser", "server.py"),
-  "/home/ubuntu/browser-agent/server.py",
-]
-function findServerScript(): string {
-  for (const p of SERVER_SCRIPT_CANDIDATES) {
-    try { if (fs.existsSync(p)) return p } catch {}
-  }
-  return SERVER_SCRIPT_CANDIDATES[0]
-}
-const SERVER_SCRIPT = findServerScript()
-
-// owner (sanitized agent name + session hash) -> base URL of its private instance
-const ownerCache = new Map<string, string>()
 
 function sanitizeOwner(agent?: string): string {
   if (!agent) return ""
@@ -76,324 +45,53 @@ function isSharedAgent(agent?: string): boolean {
   return !agent || SHARED_AGENTS.has(agent)
 }
 
-function readRegistry(): Record<string, any> {
-  try {
-    return JSON.parse(fs.readFileSync(REGISTRY_FILE, "utf-8"))
-  } catch { return {} }
+// ── Thin client: POST to the router with an X-Agent header ─────────────
+// Everything below is stateless. The router owns the port pool, the
+// registry, spawning, eviction, and close. browser.ts only:
+//   1. computes the owner key (agent + sessionID hash)
+//   2. POSTs the command JSON to the router with `X-Agent: <owner>`
+//   3. returns the router's (already JSON) response verbatim
+// Shared agents send no X-Agent header → router proxies to :9222.
+
+function curlPost(url: string, body: string, extraHeaders: string[] = []): string {
+  const headers = [...extraHeaders, "-H", "Content-Type: application/json"]
+    .map((h) => `"${h.replace(/"/g, '\\"')}"`).join(" ")
+  return execSync(
+    `curl -s -X POST ${url} ${headers} -d '${body.replace(/'/g, "'\\''")}'`,
+    { timeout: 120000, encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 }
+  )
 }
 
-function writeRegistry(reg: Record<string, any>): void {
+function ensureRouter(): void {
+  // Router is a systemd user service (browser-router.service). Start it and
+  // poll /status until it answers or we time out.
   try {
-    fs.mkdirSync(SUPERVISOR_DIR, { recursive: true })
-    const tmp = REGISTRY_FILE + ".tmp"
-    fs.writeFileSync(tmp, JSON.stringify(reg, null, 2))
-    fs.renameSync(tmp, REGISTRY_FILE) // atomic write
+    execSync("systemctl --user start browser-router.service", { encoding: "utf-8", timeout: 10000 })
   } catch {}
-}
-
-// ── Cross-process registry lock ──────────────────────────────────────
-// The registry is read-modify-write'd by BOTH this process (opencode tool
-// calls) and the systemd reaper (reaper.py). Without a lock they can
-// clobber each other: the reaper may delete an entry this process just
-// wrote, leaving an orphaned server bound to a port that the next spawn
-// then picks and fails to bind (the "failed to start on port 9230" storm).
-// mkdir() is atomic on POSIX; the lock is stale-safe (mtime + holder pid).
-const REGISTRY_LOCK = path.join(SUPERVISOR_DIR, "registry.lock")
-
-function acquireRegistryLock(timeoutMs = 15000): void {
-  const deadline = Date.now() + timeoutMs
-  while (true) {
+  let retries = 0
+  while (retries < 15) {
     try {
-      fs.mkdirSync(REGISTRY_LOCK)
-      fs.writeFileSync(path.join(REGISTRY_LOCK, "pid"), String(process.pid))
+      execSync(`curl -s -m 2 ${ROUTER_URL}/status`, { encoding: "utf-8" })
       return
-    } catch (e: any) {
-      if (e.code !== "EEXIST") throw e
-      try {
-        const st = fs.statSync(REGISTRY_LOCK)
-        if (Date.now() - st.mtimeMs > 30000) {
-          fs.rmSync(REGISTRY_LOCK, { recursive: true, force: true })
-          continue
-        }
-      } catch { continue }
-      if (Date.now() > deadline) throw new Error("Registry lock timeout")
-      execSync("sleep 0.2", { encoding: "utf-8" })
+    } catch {
+      retries++
+      execSync("sleep 1", { encoding: "utf-8" })
     }
   }
-}
-
-function releaseRegistryLock(): void {
-  try { fs.rmSync(REGISTRY_LOCK, { recursive: true, force: true }) } catch {}
-}
-
-// Run fn with the cross-process registry lock held (recursive-safe).
-function withRegistryLock<T>(fn: () => T): T {
-  acquireRegistryLock()
-  try { return fn() } finally { releaseRegistryLock() }
-}
-
-// OS-level ports actually in LISTEN state within our pool range. The
-// registry can lie (orphaned servers whose entry was deleted); ss cannot.
-function boundPortsInRange(): Set<number> {
-  const out = new Set<number>()
-  try {
-    // awk '{print $4}' = "Local Address:Port" column; regex captures trailing :PORT
-    const raw = execSync(`ss -tln | awk '{print $4}'`, { encoding: "utf-8", timeout: 5000 })
-    for (const line of raw.split("\n")) {
-      const m = line.match(/:(\d+)$/)
-      if (m) {
-        const p = Number(m[1])
-        if (p >= PORT_START && p <= PORT_END) out.add(p)
-      }
-    }
-  } catch {}
-  return out
-}
-
-// Real PID actually listening on a port (setsid may fork, so the spawned
-// pid can be a dead wrapper while the real server lives on).
-function pidListeningOn(port: number): number | null {
-  try {
-    const raw = execSync(`ss -tlnp | grep ':${port}\\b'`, { encoding: "utf-8", timeout: 5000 })
-    const m = raw.match(/pid=(\d+)/)
-    if (m) return Number(m[1])
-  } catch {}
-  return null
-}
-
-function instanceUrl(port: number): string {
-  return `http://127.0.0.1:${port}`
-}
-
-function isAlive(url: string): boolean {
-  try {
-    execSync(`curl -s -m 2 ${url}/status`, { encoding: "utf-8" })
-    return true
-  } catch { return false }
-}
-
-function closeInstancePort(port: number): void {
-  try {
-    execSync(`curl -s -m 4 -X POST ${instanceUrl(port)} -H "Content-Type: application/json" -d '{"action":"close"}'`, { timeout: 10000, encoding: "utf-8" })
-  } catch {}
-}
-
-// Fully terminate an owner's instance: close browser + kill server process
-// + remove registry entry. Idempotent — safe to call multiple times.
-function closeOwnerInstance(owner: string): void {
-  withRegistryLock(() => {
-    const reg = readRegistry()
-    const info = reg[owner]
-    if (info) {
-      closeInstancePort(info.port)
-      // Kill both the tracked pid AND whatever is actually listening on the
-      // port (setsid wrapper may differ from the real server).
-      try { if (info.pid && info.pid > 0) process.kill(info.pid, "SIGKILL") } catch {}
-      const realPid = pidListeningOn(info.port)
-      if (realPid && realPid !== info.pid) { try { process.kill(realPid, "SIGKILL") } catch {} }
-      delete reg[owner]
-      writeRegistry(reg)
-    }
-  })
-  ownerCache.delete(owner)
-}
-
-// Auto-close: when a subagent session is terminated/aborted (user cancel,
-// parent interruption, subagent killed), close its browser window at once.
-// The AbortSignal is session-scoped — it does NOT fire on normal tool
-// completion, so active agents are never affected. Even if it did, the
-// owner's user-data-dir persists and the window respawns on the next call.
-const abortHookedSignals = new WeakSet<AbortSignal>()
-
-function hookAbortAutoClose(ctx?: { agent?: string; sessionID?: string; abort?: AbortSignal }): void {
-  if (!ctx || !ctx.abort) return
-  const owner = ownerKey(ctx)
-  if (!owner) return
-  if (abortHookedSignals.has(ctx.abort)) return
-  abortHookedSignals.add(ctx.abort)
-  ctx.abort.addEventListener("abort", () => {
-    try { closeOwnerInstance(owner) } catch {}
-  }, { once: true })
-}
-
-function reapIdleInstances(): void {
-  withRegistryLock(() => {
-    const reg = readRegistry()
-    const now = Date.now()
-    let changed = false
-    for (const [owner, info] of Object.entries(reg)) {
-      if (!info || typeof info.lastUsed !== "number") continue
-      if (now - info.lastUsed > INSTANCE_IDLE_MS) {
-        try { closeInstancePort(info.port) } catch {}
-        // Kill tracked pid + real listening pid (setsid fork safety).
-        try { if (info.pid && info.pid > 0) process.kill(info.pid, "SIGKILL") } catch {}
-        const realPid = pidListeningOn(info.port)
-        if (realPid && realPid !== info.pid) { try { process.kill(realPid, "SIGKILL") } catch {} }
-        delete reg[owner]
-        ownerCache.delete(owner)
-        changed = true
-      }
-    }
-    if (changed) writeRegistry(reg)
-  })
-}
-
-function spawnInstance(owner: string): string {
-  // Reserve a port atomically: pick a port that is (a) not in the registry
-  // AND (b) not actually bound at the OS level (orphaned servers whose
-  // registry entry was deleted would otherwise cause a bind failure), then
-  // write the registry entry BEFORE spawning so concurrent callers and the
-  // reaper see the port as taken. The previous code wrote the registry only
-  // AFTER the server came up — 5 parallel subagents would all read the same
-  // empty registry, all pick port 9230, and all spawn → bind storm.
-  return withRegistryLock(() => {
-    const reg = readRegistry()
-    const usedPorts = new Set<number>()
-    for (const info of Object.values(reg)) {
-      if (info && typeof info.port === "number") usedPorts.add(info.port)
-    }
-    const bound = boundPortsInRange()
-    let port = 0
-    for (let p = PORT_START; p <= PORT_END; p++) {
-      if (!usedPorts.has(p) && !bound.has(p)) { port = p; break }
-    }
-    if (!port) {
-      throw new Error(`Browser instance pool exhausted (${PORT_START}-${PORT_END}). Close idle instances or raise MAX_INSTANCES.`)
-    }
-    const userDataDir = path.join(SUPERVISOR_DIR, owner, "user-data")
-    try { fs.mkdirSync(path.dirname(userDataDir), { recursive: true }) } catch {}
-    // RESERVE the port before spawning — concurrent callers/reaper skip it.
-    reg[owner] = { port, userDataDir, status: "starting", lastUsed: Date.now(), createdAt: Date.now() }
-    writeRegistry(reg)
-    const env: Record<string, string> = {
-      ...(process.env as Record<string, string>),
-      BROWSER_AGENT_PORT: String(port),
-      BROWSER_AGENT_USER_DATA_DIR: userDataDir,
-      BROWSER_AGENT_NAME: owner,
-      BROWSER_AGENT_SCREENSHOT_DIR: path.join(SUPERVISOR_DIR, owner, "screenshots"),
-      BROWSER_AGENT_EXIT_ON_CLOSE: "1", // `close` action fully exits this instance
-      DISPLAY: (process.env.DISPLAY as string) || ":99", // headed mode if Xvfb present
-    }
-    // Keep per-owner server logs for debugging (~/.browser-agents/<owner>/server.log)
-    let logFd = -1
-    try { logFd = fs.openSync(path.join(SUPERVISOR_DIR, owner, "server.log"), "a") } catch {}
-    const child = spawn("setsid", ["/usr/bin/python3", SERVER_SCRIPT], {
-      env, detached: true,
-      stdio: logFd >= 0 ? ["ignore", "ignore", logFd] : "ignore",
-    })
-    child.unref()
-    const url = instanceUrl(port)
-    for (let i = 0; i < 30; i++) {
-      if (isAlive(url)) break
-      execSync("sleep 0.5", { encoding: "utf-8" })
-    }
-    if (!isAlive(url)) {
-      try { process.kill(child.pid, "SIGKILL") } catch {}
-      delete reg[owner]
-      writeRegistry(reg)
-      throw new Error(`Browser instance for "${owner}" failed to start on port ${port}`)
-    }
-    // Track the REAL listening pid (setsid may fork; the spawned pid can be
-    // a wrapper that exits, which previously let the reaper "prove" the
-    // instance was dead and delete the entry while the server kept running).
-    const realPid = pidListeningOn(port) || child.pid
-    reg[owner] = { port, userDataDir, pid: realPid, status: "ready", lastUsed: Date.now(), createdAt: Date.now() }
-    writeRegistry(reg)
-    return url
-  })
-}
-
-function resolveOwnerUrl(ctx?: { agent?: string; sessionID?: string }): string {
-  const owner = ownerKey(ctx)
-  if (!owner) return DEFAULT_AGENT_URL
-  const cached = ownerCache.get(owner)
-  if (cached && isAlive(cached)) {
-    const reg = readRegistry()
-    if (reg[owner]) { reg[owner].lastUsed = Date.now(); writeRegistry(reg) }
-    return cached
-  }
-  ownerCache.delete(owner)
-  reapIdleInstances() // opportunistic cleanup before allocating
-  // The registry read + stale-entry drop + MAX_INSTANCES eviction + spawn
-  // must be atomic — a concurrent caller or the reaper could otherwise pick
-  // the same free port. spawnInstance() already holds the lock for its own
-  // read-modify-write, so here we only lock the eviction bookkeeping.
-  withRegistryLock(() => {
-    const reg = readRegistry()
-    const existing = reg[owner]
-    if (existing && isAlive(instanceUrl(existing.port))) {
-      existing.lastUsed = Date.now()
-      writeRegistry(reg)
-      const url = instanceUrl(existing.port)
-      ownerCache.set(owner, url)
-      return url
-    }
-    if (existing) { delete reg[owner]; writeRegistry(reg) } // stale entry
-    // Enforce MAX_INSTANCES: evict the least-recently-used idle instance
-    const entries = Object.entries(readRegistry())
-    if (entries.length >= MAX_INSTANCES) {
-      entries.sort((a, b) => (a[1].lastUsed || 0) - (b[1].lastUsed || 0))
-      const victim = entries[0]
-      if (victim && victim[0] !== owner) {
-        closeInstancePort(victim[1].port)
-        try { if (victim[1].pid && victim[1].pid > 0) process.kill(victim[1].pid, "SIGKILL") } catch {}
-        const realPid = pidListeningOn(victim[1].port)
-        if (realPid && realPid !== victim[1].pid) { try { process.kill(realPid, "SIGKILL") } catch {} }
-        delete reg[victim[0]]
-        ownerCache.delete(victim[0])
-        writeRegistry(reg)
-      }
-    }
-    return null
-  })
-  const url = spawnInstance(owner)
-  ownerCache.set(owner, url)
-  return url
-}
-
-function agentUrl(ctx?: { agent?: string; sessionID?: string }): string {
-  return resolveOwnerUrl(ctx)
-}
-
-function ensureServer(url: string = DEFAULT_AGENT_URL): void {
-  try {
-    execSync(`curl -s -m 2 ${url}/status`, { encoding: "utf-8" })
-  } catch {
-    // Per-owner instances that died: drop cache so the next call respawns them.
-    if (url !== DEFAULT_AGENT_URL) {
-      for (const [owner, u] of ownerCache) {
-        if (u === url) ownerCache.delete(owner)
-      }
-      return
-    }
-    execSync("systemctl --user start browser-agent.service", { encoding: "utf-8", timeout: 10000 })
-    let retries = 0
-    while (retries < 15) {
-      try {
-        execSync(`curl -s -m 2 ${url}/status`, { encoding: "utf-8" })
-        return
-      } catch {
-        retries++
-        execSync("sleep 1", { encoding: "utf-8" })
-      }
-    }
-    throw new Error("Browser agent server failed to start after 15 seconds")
-  }
+  throw new Error("Browser router failed to start after 15 seconds")
 }
 
 function call(command: Record<string, unknown>, ctx?: { agent?: string; sessionID?: string }): string {
-  hookAbortAutoClose(ctx)
-  const url = agentUrl(ctx)
+  const owner = ownerKey(ctx)
   const body = JSON.stringify(command)
+  const headers = owner ? ["-H", `X-Agent: ${owner}`] : []
   try {
-    const result = execSync(`curl -s -X POST ${url} -H "Content-Type: application/json" -d '${body.replace(/'/g, "'\\''")}'`, { timeout: 120000, encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 })
-    return result
+    return curlPost(ROUTER_URL, body, headers)
   } catch (e: any) {
     if (e.stderr && e.stderr.includes("Failed to connect")) {
-      ensureServer(url)
+      ensureRouter()
       try {
-        const retry = execSync(`curl -s -X POST ${url} -H "Content-Type: application/json" -d '${body.replace(/'/g, "'\\''")}'`, { timeout: 120000, encoding: "utf-8", maxBuffer: 100 * 1024 * 1024 })
-        return retry
+        return curlPost(ROUTER_URL, body, headers)
       } catch (e2: any) {
         try { return e2.stdout || e2.message } catch { return JSON.stringify({ status: "error", message: e2.message }) }
       }
@@ -776,19 +474,9 @@ export const browser_close = tool({
   description: "Close THIS agent's own browser window and clear its captured logs. Every agent has an isolated window — this can never close another agent's window. The window restarts automatically on the next navigation.",
   args: {},
   async execute(_args, ctx) {
-    // Per-owner instances: fully terminate (browser + server process).
-    // Keyed by agent+sessionID so we only ever close THIS session's window.
-    const owner = ownerKey(ctx)
-    if (owner) {
-      closeOwnerInstance(owner)
-      return JSON.stringify({
-        status: "ok",
-        closed: true,
-        owner,
-        note: "Closed this agent's own browser window (isolated per-session).",
-      })
-    }
-    // Shared/default instance (orchestrator session): existing behavior.
+    // Stateless: POST {action:"close"} to the router. The router reads the
+    // X-Agent header and closes ONLY the caller's own instance (per-owner)
+    // or the shared :9222 instance (shared roles). Never another agent's.
     return call({ action: "close" }, ctx)
   },
 })

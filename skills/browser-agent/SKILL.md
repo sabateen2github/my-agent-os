@@ -253,27 +253,29 @@ python3 test_e2e.py
 
 ## Technical details
 
-- **Per-owner browser windows**: Every subagent gets its OWN browser instance (own port, own user-data-dir, own Chromium window). Routing is automatic via `context.agent` in `tools/browser.ts` — the orchestrator shares the default `127.0.0.1:9222` instance; every other agent gets a private instance on ports 9230-9289 (registry: `~/.browser-agents/registry.json`).
-- Server: Python HTTP API on `127.0.0.1:9222` (default) + per-owner ports (`skills/browser/server.py`)
-- Systemd service: `browser-agent.service` (user scope, default instance) + `browser-instance-reaper.timer` (auto-closes idle per-agent windows every minute)
+- **Single-entry router (Pattern 27)**: ALL browser_* calls go to ONE router port (`:9290`, `browser-router.service`). The router owns the per-owner instance pool (registry, spawn, eviction, close) and proxies each command to the right instance based on the `X-Agent` header. `tools/browser.ts` is a thin client — it computes the owner key and POSTs; it never touches ports, processes, or the registry. This eliminated the port-pool race class: exactly ONE process writes the registry (under a cross-process lock shared with the reaper).
+- **Per-owner browser windows**: Every subagent gets its OWN browser instance (own port, own user-data-dir, own Chromium window). The orchestrator shares the default `127.0.0.1:9222` instance; every other agent gets a private instance on ports 9230-9289 (registry: `~/.browser-agents/registry.json`).
+- Server: Python HTTP API on `127.0.0.1:9222` (default) + per-owner ports (`skills/browser/server.py`); router: `skills/browser/router.py` on `:9290`
+- Systemd services (user scope): `browser-router.service` (router), `browser-agent.service` (default :9222 instance), `browser-instance-reaper.timer` (auto-closes idle per-agent windows every minute)
 - Browser: Playwright Chromium with `launch_persistent_context` for session persistence
 - User data dir: `~/browser-agent/user-data` (default), `~/.browser-agents/<owner>/user-data` (per-agent)
 - Stealth: Anti-detection enabled by default (webdriver=false, faked plugins, clean UA)
 - Page logs are buffered (up to 5000 network, 5000 console entries)
 - Migration: Replaced Puppeteer (server.js) with Playwright (server.py) — same API contract
 
-## 🔒 Per-Owner Window Isolation (Pattern 26)
+## 🔒 Per-Owner Window Isolation (Pattern 26 → Pattern 27 Router)
 
 **Problem:** With a single shared browser, subagents interfered with each other — `browser_close()` from one agent nuked everyone's tabs, `active_page` globals were clobbered, the MAX_TABS reaper and memory-watchdog recycle killed other agents' pages, and cookies leaked between sessions.
 
-**Solution:** Each agent session is routed to its own dedicated browser instance:
+**Solution (v3.3 → v3.4):** Each agent session is routed to its own dedicated browser instance, now through a single router entry:
 
 ```
-opencode process (tools/browser.ts)
-  │  context.agent + context.sessionID
+opencode process (tools/browser.ts — thin client)
+  │  context.agent + context.sessionID  →  ownerKey(ctx)
   ▼
-ownerKey(ctx)  →  "<agent>-<sha1(sessionID)[:8]>"   (shared agents → "")
-  │  port from ~/.browser-agents/registry.json (or spawn new)
+POST http://127.0.0.1:9290   (browser-router.service)
+  header: X-Agent: "<agent>-<sha1(sessionID)[:8]>"   (shared agents → no header)
+  │  router: registry lookup → spawn if needed (atomic, under lock) → proxy
   ▼
 http://127.0.0.1:9230  ← surge-analyst's window (session-scoped)
 http://127.0.0.1:9231  ← deep-moat-auditor's window (session-scoped)
@@ -282,8 +284,10 @@ http://127.0.0.1:9222  ← orchestrator (shared default, systemd)
 
 > **v3.3 fix (hijack regression):** Ownership is keyed on **agent type + sessionID hash**, NOT agent type alone. The surge-analyst spawns 10-30 *parallel* subagents of the same type (e.g. 30x `general` at once). Keying only on the type made them all resolve to one shared window → mutual page hijacking + abort-hook churn (each finishing subagent closed the window for everyone else). Including the session hash gives every subagent invocation its own isolated window. Same session across calls keeps the same key (session continuity); parallel same-type sessions get distinct windows.
 
+> **v3.4 fix (port-pool race → router):** Previously every agent resolved its own port directly (`ownerCache` in browser.ts) while the reaper wrote the same registry — concurrent spawners all picked port 9230, and the reaper deleted live entries. Now the router is the ONLY registry writer (under a cross-process mkdir lock shared with reaper.py), reserves ports in the registry BEFORE spawning, and skips OS-bound ports (`ss -tln`). The port pool is invisible to agents: they just POST to `:9290` with an `X-Agent` header.
+
 **Guarantees:**
-- `browser_close()` closes ONLY the caller's own session window — impossible to affect another agent
+- `browser_close()` closes ONLY the caller's own session window — impossible to affect another agent (router handles close locally per X-Agent)
 - `browser_listTabs()` / `browser_closeTab()` / `browser_switchTab()` only see the caller's tabs
 - Cookies, localStorage, and profile data are isolated per session (no leakage between parallel same-type agents)
 - One agent's OOM/crash/recycle can never kill another agent's window
@@ -294,7 +298,7 @@ http://127.0.0.1:9222  ← orchestrator (shared default, systemd)
 2. **Idle reap** — the `browser-instance-reaper.timer` (every minute) closes windows whose owner hasn't used them for 5 min (covers normal completion; override: `BROWSER_INSTANCE_IDLE_MS`)
 3. **Explicit** — agents can call `browser_close()` to close their own window early
 
-**Tuning:** `MAX_INSTANCES` (default 12 — raised for per-session isolation, since surge-analyst legitimately needs many concurrent windows) evicts the least-recently-used idle instance when the pool is full. All instance settings live at the top of `tools/browser.ts`.
+**Tuning:** `MAX_INSTANCES` (default 12 — raised for per-session isolation, since surge-analyst legitimately needs many concurrent windows) evicts the least-recently-used idle instance when the pool is full. All instance settings live at the top of `skills/browser/router.py` (env-overridable: `BROWSER_POOL_START/END`, `BROWSER_MAX_INSTANCES`, `BROWSER_INSTANCE_IDLE_MS`).
 
 ## Stealth / Anti-Detection
 

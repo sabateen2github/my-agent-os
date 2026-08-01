@@ -520,18 +520,19 @@ PHASE 4 — webfetch (emergency only):
 
 For deep research, always prefer browser navigation (renders full pages). Brave MCP is a fast first pass — not a replacement for reading actual pages.
 
-**Pattern 22: Subagent Window Isolation (v3.3 — per-owner browser instances, supersedes per-request tabId)**
-*Also documented as **Pattern 26** in `skills/browser-agent/SKILL.md` (Per-Owner Window Isolation). Same model — the two files cross-reference each other; keep both in sync.*
+**Pattern 22: Subagent Window Isolation (v3.4 — single-entry router, supersedes per-request tabId)**
+*Also documented as **Pattern 26/27** in `skills/browser-agent/SKILL.md` (Per-Owner Window Isolation + Browser Router). Same model — the two files cross-reference each other; keep both in sync.*
 
-Every subagent is automatically routed to its OWN browser instance via `context.agent` in `tools/browser.ts` — no manual tabId bookkeeping needed. The orchestrator shares the default instance on `127.0.0.1:9222`; each other agent gets a private window on ports 9230-9289 (registry: `~/.browser-agents/registry.json`).
+Every subagent is automatically routed to its OWN browser instance through the router at `:9290` — no manual tabId or port bookkeeping needed. `tools/browser.ts` is a thin client: it computes the owner key (`<agent>-<sha1(sessionID)[:8]>`) and POSTs the command to the router with an `X-Agent` header. The router (sole registry writer, under a cross-process lock shared with the reaper) owns the port pool 9230-9289 and proxies to the per-owner instance. The orchestrator shares the default instance on `127.0.0.1:9222` (no X-Agent header).
 
 **Guarantees:**
-- `browser_close()` closes ONLY the caller's own window — can never affect another agent
+- `browser_close()` closes ONLY the caller's own window — can never affect another agent (router closes locally per X-Agent)
 - `browser_listTabs()` / `browser_closeTab()` / `browser_switchTab()` only see the caller's tabs
 - Cookies/storage isolated per agent; one agent's crash/OOM/recycle can't kill another's window
 - Auto-close: windows close instantly on session abort, or within ~5 min of idle (`browser-instance-reaper.timer`)
+- Port pool race class eliminated: exactly ONE process (the router) writes the registry, reserves ports BEFORE spawn, and skips OS-bound ports
 
-**You do NOT need to pass tabId for isolation** — it's automatic. Just use `browser_newTab`/`browser_closeTab` within your own window as normal. The tabId parameter remains supported for intra-window multi-tab workflows.
+**You do NOT need to pass tabId for isolation** — it's automatic. Just use `browser_newTab`/`browser_closeTab` within your own window as normal. The tabId parameter remains supported for intra-window multi-tab workflows. The router (`browser-router.service`, `:9290`) must be running — `browser.ts` auto-starts it via systemd if it's down.
 
 **Pattern 23: Stale Config Detection (v3.2 — config drift guard)**
 
@@ -590,6 +591,6 @@ curl -X POST http://127.0.0.1:9222 -d '{"action":"bypassPx"}'
 # Then: {"action":"navigate","url":"..."} or reload
 ```
 
-**Per-owner note:** subagents have their own windows on ports 9230-9289. Use the `browser_bypassPx` tool, NOT a curl to :9222 — the shared instance is the orchestrator's window only.
+**Per-owner note:** subagents get their own private windows via the router (`:9290`, `X-Agent` header). Use the `browser_bypassPx` tool, NOT a curl to :9222 — the shared instance is the orchestrator's window only.
 
 This works because PX's `setChallenge()` API updates the `_px2` cookie with timestamp + hash, bypassing the challenge on next load. The iframe's button (accessible at `window.frames[0].document.querySelector('[role=button]')`) confirms the widget IS real — just unreachable by normal input due to compositor isolation.
