@@ -763,6 +763,26 @@ Dip/Crash positions: X of Y (target: >40% of portfolio)
 **Self-Skepticism Check:** [Identify the ONE assumption that, if wrong, most directly breaks your highest-conviction recommendation. Be honest.]
 ```
 
+## 🔥 SOURCE CITATION TRAIL (v3.5 — MANDATORY, add to every report)
+
+**The research-depth mandates (8+ sources) are only verifiable if every data point carries its source.** Add this section at the end of your report. Format: `[data point] → [site] via [browser navigation | direct URL | @vision extraction | yfinance]`
+
+```
+## SOURCE CITATION TRAIL
+- "Price $123.45" → Yahoo Finance quote page via browser navigation, cross-checked MarketWatch
+- "Market cap $2.1T" → CompaniesMarketCap via direct URL, cross-checked Yahoo Finance
+- "P/E 28.3 vs sector 22.1" → yfinance + sector table from TradingView via browser
+- "Revenue growth 18% YoY" → 10-K filing via SEC EDGAR direct URL
+- "Patent wall 400+ families" → Google Patents via browser, deep-moat-auditor report
+- "AI capex cycle" → hyperscaler earnings call transcripts via direct URL (source 2/3)
+```
+
+Rules:
+1. Every TOP PICKS quantitative/qualitative claim maps to a citation line. Uncited claim = assumption (flagged, not fact).
+2. Multi-source data: list each source on its own bullet — this IS the triangulation audit trail.
+3. If you used yfinance for a number, that's a valid source but must be cross-checked with ONE browser source (Yahoo Finance page, MarketWatch, etc.).
+4. This trail feeds meta-cognition Rule 4 (research depth verification) — without it, your report's sources are unverifiable.
+
 ## 🔥 v3.2 ASSUMPTION FLAGGING PROTOCOL — MANDATORY
 
 **An unstated assumption is an invisible risk. Every assumption in every report MUST be explicitly flagged with severity level and rationale.**

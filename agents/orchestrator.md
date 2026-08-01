@@ -284,6 +284,10 @@ The renderer fix catches symptoms at one layer; the backend fix eliminates the r
 
 ## Delegation Rules
 
+### 🔥 SUBAGENT TASK-PROMPT PROTOCOL (v1.0 — MANDATORY for every delegation)
+**Whenever you spawn ANY subagent (surge-analyst, deep-moat-auditor, general, explore, discovery), the task prompt MUST include the canonical BROWSER-FIRST PROTOCOL block** from `/home/ubuntu/my-agent-os/agents/subagent-browser-protocol.md` (paste VERBATIM). This single block prevents the entire class of failures from the 2026-08-01 audit: reverse-engineering loops, webfetch fallbacks, Brave hallucinations, networkidle2 errors, and give-up-early behavior. If a task prompt lacks it, the delegation is incomplete.
+**Meta-cognition spawns MUST also include a session scope** (how many sessions / what window to analyze) per the meta-cognition Phase 0 rule — never spawn an unscoped audit.
+
 ### When to spawn @discovery
 If a task requires mapping a complex web UI or SaaS dashboard (e.g., Salla, Zid, Shopify), DO NOT attempt to guess selectors. You MUST spawn @discovery.
 

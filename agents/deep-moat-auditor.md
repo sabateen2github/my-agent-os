@@ -170,6 +170,8 @@ For every company you analyze, you MUST research at least 5 of these 7 deep sour
 4. **MANDATE the retry cascade:** "If Google is captcha-locked, try Bing → DuckDuckGo → direct URL before giving up. Never stop after one failed attempt."
 5. **MANDATE normal browser interaction:** "Use navigate → screenshot (@vision) → click → read. Do NOT reverse-engineer internal APIs, walk React fiber trees, or inspect shadow DOM unless normal interaction has failed 3+ times."
 
+**🔥 CANONICAL PROTOCOL (v1.0):** Paste the `subagent-browser-protocol.md` block VERBATIM into every @general task prompt instead of rephrasing these rules. The single canonical block lives at `/home/ubuntu/my-agent-os/agents/subagent-browser-protocol.md`. It covers: browser-primary interaction order, no-reverse-engineering, never-give-up cascade, webfetch emergency-only, invalid-param guard, Brave suppression, 2-3 source verification, and vision rate-limit. Using the canonical block removes all ambiguity and keeps built-in agents (general/explore) on the same browser-first rules as full agents.
+
 Example of the CORRECT task prompt header:
 ```
 Research [TICKER]'s patent portfolio for a deep-moat audit. Today is [DATE].
@@ -321,8 +323,22 @@ Do NOT use webfetch except as a last resort after browser attempts fail.
 
 **Conservative Adjustment:** If any dimension is scored with <5 sources, the score is CAPPED at 7/10 (conservative assumption) unless otherwise noted above. Dimensions affected: [list].
 
+### Sources (v3.5 — SOURCE CITATION TRAIL, MANDATORY):
+For EVERY data point that affects a score, cite the source AND how you reached it.
+No bare URLs without method. Format: `[claim] → [site] via [browser navigation | direct URL | @vision extraction]`
+
+```
+Example citation trail:
+- "128GB HBM3e density" → SK Hynix IR page via browser navigation
+- "DRAM capex growth 22% YoY" → TrendForce via direct URL, cross-checked on 2nd site
+- "Patent US11,123,456 B2 expiration 2041" → Google Patents via browser, verified on USPTO
+```
+
+This trail is how the surge-analyst and meta-cognition audit verify your 20+ source
+mandate. If a claim has no citation, it is treated as an assumption — flagged, not fact.
+
 ### Sources:
-[List all URLs, paper IDs, patent numbers consulted]
+[List all URLs, paper IDs, patent numbers consulted — matching the citation trail above]
 ```
 
 ## Key Rules

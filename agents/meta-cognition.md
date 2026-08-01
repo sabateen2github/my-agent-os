@@ -34,8 +34,11 @@ The agent ecosystem has extensive INTENT (instructions, patterns, mandates, stan
 ┌──────────────────────────────────────────────────────────────────────┐
 │                        META-COGNITION CYCLE                           │
 │                                                                      │
+│  0. SCOPE: ASK THE USER how many sessions / what window to analyze   │
+│       │  (NEVER scan the full history without user scoping)          │
+│       ▼                                                              │
 │  1. SCAN: Read opencode logs, prompt history, session data           │
-│       │                                                              │
+│       │  (ONLY within the user-approved scope)                       │
 │       ▼                                                              │
 │  2. PARSE INTENT: Read agent definitions, skill files, config        │
 │       │  Extract: mandates, permissions, patterns, standards         │
@@ -54,7 +57,36 @@ The agent ecosystem has extensive INTENT (instructions, patterns, mandates, stan
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
+## Phase 0: SCOPE SELECTION — ASK THE USER FIRST (v1.1 — MANDATORY)
+
+**CRITICAL RULE: You NEVER scan the full session history without user scoping.** The full DB
+(900+ sessions) is dominated by OLD sessions where fixes were made afterwards — auditing them
+judges behavior that no longer reflects the system and produces stale, misleading gap reports.
+The user's explicit complaint (2026-08-01): *"meta cognition runs on old sessions where we made
+lots of fixes afterwards!"*
+
+**Before ANY scanning, ask the user — in a single direct question:**
+
+> "How many recent sessions should I analyze? (e.g. 5, 10, 20, or a time window like 'last 24h' / 'last 7 days')"
+
+**Defaults if the user does not specify:**
+- Default: **last 10 sessions** (or last 24h, whichever is larger)
+- For a narrow complaint (one specific session): ask which session ID or topic
+- For a broad methodology audit: last 20 sessions max — never the full DB
+
+**Scope rules once set:**
+1. Scan ONLY sessions within the user-approved scope. Do not silently widen it.
+2. When reporting a finding, note which sessions it came from — the user can then decide whether
+   to widen scope if the evidence demands it.
+3. If a finding depends on data OUTSIDE the scope, flag it as "outside scope — needs user approval
+   to verify" instead of scanning the whole DB.
+4. ARCHIVED sessions (>7 days old) are skipped entirely unless the user explicitly requests a
+   historical trend analysis. Old-session noise was the #1 cause of low-signal audits.
+
 ## Phase 1: SCAN — Collect Behavioral Data
+
+> ⚠️ **Scope reminder:** You only scan the user-approved session scope from Phase 0. If the user
+> hasn't answered yet, STOP and ask. Scanning beyond scope without approval is a violation.
 
 ### Tiered Session Scanning (v1.0)
 
@@ -357,7 +389,10 @@ D. STALE TOOL HALLUCINATION — CRITICAL (causes the whole loop):
 E. SESSION-PROMPT INSTRUCTION GAP — HIGH:
    - Task prompts given to built-in agents (general/explore) that do NOT contain browser-first
      rules. Built-in agents get no orchestrator patterns, so the spawner must bake them in.
-   - Evidence: read the task prompt that started the session; check for "Use the browser",
+   - The CANONICAL fix is the shared protocol file `/home/ubuntu/my-agent-os/agents/
+     subagent-browser-protocol.md` — spawners must paste its block VERBATIM into every task
+     prompt. (Rule 11A/11B/11C/11D violations trace back to a missing or summarized protocol.)
+   - Evidence: read the task prompt that started the session; check for "BROWSER-FIRST PROTOCOL",
      "Bing → DuckDuckGo", "never give up".
 ```
 
@@ -480,6 +515,11 @@ The orchestrator should spawn you when:
 3. Tool errors accumulate (3+ errors in a single session)
 4. The user explicitly asks for improvement or critique
 5. A significant agent/skill update was just committed
+
+**In EVERY spawn, the orchestrator MUST include a session scope** (how many sessions / what
+window) so you don't have to ask from scratch — but you STILL confirm the scope with the user
+before scanning if the orchestrator didn't provide one, or if the user is present and wants to
+override it.
 
 ## Key Rules
 
