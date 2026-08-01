@@ -25,6 +25,12 @@ Read every file and cross-reference:
 - Does `server.py` support all actions documented in `SKILL.md`?
 - Is stealth config consistent across server.py and docs?
 - Does `opencode.json` permission block cover all skills, agents, and directories?
+- **Do the agents' documented log sources actually exist and match reality?**
+  (meta-cognition must point at `~/.local/share/opencode/log/opencode.log` +
+  `~/.browser-agents/<owner>/server.log` + journalctl — see Source 1b/1c)
+- **Does `server.py` have the paint-settle guard before `screenshot`?**
+  (a missing `wait_for_function`/settle wait = blank/white screenshot risk on
+  heavy pages under SwiftShader)
 
 ### Phase 2: Fix
 For every gap found:
@@ -32,6 +38,11 @@ For every gap found:
 - Update SKILL.md to document newly exported tools
 - Fix orchestrator.md patterns to match available tools
 - Ensure all file references use absolute paths
+- **Verify fixes at the log layer, not just the code layer**: after changing
+  server.py/router.py, check `journalctl --user -u browser-*` and per-owner
+  server.logs for new errors; confirm the fixed behavior in the actual log
+  output (e.g. screenshot returns a non-blank file, router spawns without
+  "failed to start on port").
 
 ### Phase 3: Harden
 - Add any new patterns discovered since last run

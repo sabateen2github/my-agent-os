@@ -14,6 +14,7 @@ permission:
     "/home/ubuntu/my-agent-os/*": allow
     "/home/ubuntu/.local/share/opencode/log/*": allow
     "/home/ubuntu/.local/state/opencode/*": allow
+    "/home/ubuntu/.browser-agents/*": allow
     "/tmp/*": allow
 ---
 
@@ -70,7 +71,7 @@ Sessions are NOT equal. A 6-second aborted session does not deserve the same scr
 ### Source 1: OpenCode Session Logs
 ```
 Location: /home/ubuntu/.local/share/opencode/log/
-Format: Plaintext log files named YYYY-MM-DDTHHmmss.log
+Format: Plaintext log files named YYYY-MM-DDTHHmmss.log (archived) + opencode.log (live)
 ```
 
 Extract from each log file:
@@ -79,6 +80,43 @@ Extract from each log file:
 - **Session metadata**: session ID, agent name, model used
 - **MCP status**: which MCP servers loaded, any MCP errors
 - **Skill conflicts**: duplicate skill names
+
+### Source 1b: Live Server Log — `opencode.log` (v3.4 — CRITICAL, most important source)
+```
+Location: /home/ubuntu/.local/share/opencode/log/opencode.log
+Format: Structured log lines: timestamp=... level=... run=... message="..." providerID=... modelID=... session.id=... agent=... error.error="..."
+```
+
+This file records **model/API-layer failures that the session DB HIDES**. opencode swallows stream errors and retries, so a session can show "completed" while actually burning hours of retries. The DB-only forensics on ses_045c95a36 missed 131 Gemini 429s that were sitting in this log. ALWAYS scan this file — it is the single highest-value log source.
+
+Required extractions (use `grep` with these patterns):
+- **Stream errors**: `grep 'message="stream error"' opencode.log` → categorize by `providerID` + `modelID` (e.g. Gemini `AI_APICallError: Too Many Requests` = rate-limit; DeepSeek `Insufficient Balance` = billing)
+- **Rate limits**: `grep -i 'Too Many Requests\|429\|rate.limit\|quota\|RESOURCE_EXHAUSTED' opencode.log` → count per provider/model; correlate with the session date to find what caused the burst (e.g. parallel @vision spawns)
+- **Provider errors**: `grep 'error.error=' opencode.log | grep -v 'stream error'` → auth, billing, model-not-found
+- **Plugin load failures**: `grep 'failed to load plugin' opencode.log` → check `path=` (path=list is the benign opencode tool-listing probe; a path to OUR files is a real break)
+- **WARNs**: `grep 'level=WARN' opencode.log` → e.g. `failed to initialize fff` (file picker refusing home-dir workspace — benign, but worth a note)
+- **Process restarts**: `journalctl --user -u browser-agent.service --since "<date>"` → unexpected restarts/OOM during sessions
+
+**IMPORTANT correlation rule:** a stream error in opencode.log for `session.id=X` does NOT mean session X failed — opencode retried. But repeated 429s on the SAME session = degraded output (rate-limit retry loops, blank/white screenshots). Always pair "session completed" (DB) with "N stream errors" (log) before calling it a success.
+
+### Source 1c: Browser Agent Logs (per-owner + systemd)
+```
+Location: /home/ubuntu/.browser-agents/<owner>/server.log   (per-owner instances)
+          journalctl --user -u browser-agent.service          (shared :9222 instance)
+          journalctl --user -u browser-router.service         (router)
+```
+
+Extract:
+- Per-owner `server.log`: the browser server's own errors (Playwright exceptions, page crashes, GPU/compositor issues) — these NEVER appear in opencode logs because they're separate processes
+- `journalctl -u browser-agent.service`: unexpected restarts (e.g. a restart during a session = the shared instance died, usually OOM — 274MB+ per instance is normal, so a spike means many parallel windows)
+- Router journal: spawn failures, pool exhaustion, proxy retries
+
+The browser layer has THREE log sources that must be cross-checked:
+1. `opencode.log` — API/stream errors (the source above)
+2. `~/.browser-agents/<owner>/server.log` — per-window browser crashes
+3. `journalctl --user -u browser-*` — service lifecycle (restarts/OOM/port issues)
+
+A session can fail at ANY of these layers while the others look clean. When auditing a bad session, check all three.
 
 ### Source 2: Prompt History
 ```
@@ -204,6 +242,34 @@ Scan all log files for recurring errors:
   - Same error message across multiple sessions → persistent bug
   - Error at startup that never resolves → configuration problem
   - MCP errors that are harmless but create noise → suppress or fix
+  - Stream errors in opencode.log (Source 1b): categorize by provider/model.
+    ✗ Gemini/OpenAI 'Too Many Requests' 429s → RATE-LIMIT GAP: check if the
+      agent fired parallel subagent spawns (e.g. 8x @vision at once). Count
+      per session; if >3 in one minute → concurrency-throttling violation.
+    ✗ 'Insufficient Balance' (DeepSeek) → BILLING GAP: not code, but flag it
+      so the user knows their API credit ran out mid-session.
+    ✗ Repeated 429s on the SAME session.id → check output quality: did it
+      return blank/white screenshots or retry-loop for hours? DB says
+      "completed" but the log says degraded.
+  - Browser-layer logs (Source 1c): journalctl restarts during a session =
+    instance died (OOM from parallel windows). Per-owner server.log Playwright
+    exceptions = page crashes invisible to opencode.
+```
+
+### Rule 6b: API Rate-Limit & Throttling Audit (v3.4 — from ses_045c95a36)
+```
+The 07-31 stock session had 131 Gemini 429s across 8 vision subagents, yet
+every session showed "completed" in the DB. This is the canonical example of
+"DB-clean, log-broken". When ANY session involves subagents that spawn
+sub-subagents (surge-analyst → deep-moat-auditor → vision), check:
+  1. `grep 'message="stream error"' opencode.log --since <session-date>`
+  2. Count 429s per 60s bucket → did concurrent spawns cause a burst?
+  3. ✗ If >3 concurrent model spawns of the same provider → the methodology
+     lacks throttling. Recommend serializing or batching (max 2-3 concurrent
+     @vision-style spawns, 30-60s backoff on 429).
+  4. Verify the output quality of rate-limited sessions: screenshots that
+     came back blank/white during a 429 burst are suspect — check whether a
+     paint-settle guard exists in server.py screenshot.
 ```
 
 ### Rule 7: Evolution Velocity Check

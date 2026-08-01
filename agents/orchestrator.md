@@ -355,9 +355,12 @@ The meta-cognition auditor:
 @meta-cognition Run a full audit across all sessions and enhance what you find.
 @meta-cognition What mistakes keep happening across sessions? Fix them.
 @meta-cognition Learn from all past sessions and improve the agents.
+@meta-cognition Audit the server logs for API errors. Use Source 1b: grep 'message="stream error"' ~/.local/share/opencode/log/opencode.log, plus journalctl --user -u browser-agent.service and ~/.browser-agents/<owner>/server.log. Correlate stream errors with session IDs.
 ```
 
 > **🔁 AUTO-TRIGGER REMINDER:** Run `bash ~/my-agent-os/tools/check-audit-needed.sh` at the start of every session. If it says `need_audit: true`, spawn `@meta-cognition` immediately. Also, after every major agent/skill update (new patterns, permission changes, tool additions, agent definition changes), trigger `@meta-cognition` to audit the changes. The ecosystem evolves but only if it audits itself.
+
+> **📋 LOG-SOURCE MANDATE (v3.4):** Meta-cognition MUST scan the live server log `~/.local/share/opencode/log/opencode.log` for `stream error` lines — API-layer failures (Gemini 429s, DeepSeek billing) are invisible in the session DB because opencode retries silently. A session can show "completed" while actually retrying for hours. Cross-check three layers: opencode.log (API errors) → ~/.browser-agents/<owner>/server.log (per-window crashes) → journalctl --user -u browser-* (service restarts/OOM). Never call a session "healthy" from the DB alone.
 
 ## Ecosystem Evolution
 

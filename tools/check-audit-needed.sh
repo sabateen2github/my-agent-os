@@ -57,6 +57,22 @@ if [ "$CONFIG_CHANGED" -ge 1 ] && [ "$NEED_AUDIT" -eq 1 ]; then
     REASON="opencode.json changed $CONFIG_CHANGED time(s) since last audit"
 fi
 
+# NEW (v3.4): API error burst in the live server log triggers an audit.
+# Stream errors (Gemini 429s, DeepSeek billing) are invisible in the session
+# DB — opencode retries silently. A burst of 10+ in the current log file
+# means a session was degrading even if it shows "completed".
+STREAM_ERRORS=0
+if [ -f "$LOG_DIR/opencode.log" ]; then
+    STREAM_ERRORS=$(grep -c 'message="stream error"' "$LOG_DIR/opencode.log" 2>/dev/null || echo 0)
+fi
+if [ "$NEED_AUDIT" -ne 0 ] && [ "$STREAM_ERRORS" -ge 10 ]; then
+    NEED_AUDIT=0
+    REASON="$STREAM_ERRORS stream errors in opencode.log — API-layer degradation detected (see meta-cognition Source 1b)"
+elif [ "$NEED_AUDIT" -ne 0 ] && [ "$STREAM_ERRORS" -ge 3 ]; then
+    NEED_AUDIT=2
+    REASON="$STREAM_ERRORS stream errors in opencode.log — suggest audit"
+fi
+
 cat <<EOF
 {
   "need_audit": $([ "$NEED_AUDIT" -eq 0 ] && echo "true" || echo "false"),
@@ -65,6 +81,7 @@ cat <<EOF
   "sessions_since_audit": $SESSIONS_SINCE,
   "total_sessions": $SESSIONS,
   "config_changed": $([ "$CONFIG_CHANGED" -ge 1 ] && echo "true" || echo "false"),
+  "stream_errors": ${STREAM_ERRORS:-0},
   "reason": "${REASON}",
   "last_audit_commit": "${LAST_META_HASH:-none}"
 }
