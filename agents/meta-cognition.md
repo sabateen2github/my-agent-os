@@ -317,6 +317,50 @@ For each agent with principles and rules in its .md file:
   ✗ If rule is violated in >30% of sessions → CRITICAL (principle broken)
 ```
 
+### Rule 11: Browser-Interaction Pattern Violation Detection (NEW v1.0 — from ses_042bd2ed1f complaints)
+```
+The user's #1 frustration class: subagents stuck in "technical interaction loops of worthlessness"
+(reverse-engineering instead of normal browsing, giving up early, falling back to webfetch).
+
+For each subagent session, scan the part/tool stream for:
+
+A. REVERSE-ENGINEERING (technical loop) — flag MEDIUM each, CRITICAL if >5/session:
+   - browser_evaluate calls that: walk React fiber / shadow DOM, call internal XHR/JSON APIs
+     (patents.google.com/xhr/query, internal GraphQL, /api/*), or map all DOM elements to find
+     hidden selectors — BEFORE normal interaction was attempted
+   - Expected order: navigate → screenshot(@vision) → text → click → evaluate (LAST)
+   - Evidence grep: `patents.google.com/xhr`, `shadowRoot`, `querySelectorAll('*')`, `fiber`, `stateNode`
+   - ✗ evaluate used >3x before any click/text/screenshot succeeded → HIGH reverse-engineering loop
+
+B. GIVE-UP-EARLY (browser abandonment) — CRITICAL if webfetch used BEFORE browser retry:
+   - webfetch called within 3 steps after a browser_navigate failure/timeout, with NO retry via
+     Bing → DuckDuckGo → direct URL cascade (Pattern 20)
+   - webfetch share of web calls (webfetch + browser_navigate): ✗ >30% → HIGH, ✗ >50% → CRITICAL
+     (browser must be PRIMARY; webfetch is emergency-only per orchestrator.md)
+   - Evidence: count `webfetch` vs `browser_browser_navigate` in session; check ordering
+
+C. INVALID PARAMETER RECIDIVISM — MEDIUM each, CRITICAL if recurring across sessions:
+   - `waitUntil: "networkidle2"/"networkidle0"` (Puppeteer values Playwright rejects). The tool
+     description warns; the server now auto-maps them defensively, but recurring usage means the
+     subagent didn't read the tool schema.
+   - Evidence grep: `"waitUntil": "networkidle2"` in part data
+
+D. STALE TOOL HALLUCINATION — CRITICAL (causes the whole loop):
+   - Task prompts that reference REMOVED tools (e.g. "Use Brave Search (server-brave-search_
+     brave_web_search)" — Brave MCP was removed in commit 4232533). The model hallucinates the
+     dead tool from training data and instructs subagents to use it → they try, fail, then fall
+     back to webfetch/reverse-engineering.
+   - Evidence grep: `server-brave-search`, `brave_web_search` in task prompt parts
+   - FIX: agent .md files must carry explicit "NEVER mention Brave/removed-tools" language in
+     subagent task-prompt templates.
+
+E. SESSION-PROMPT INSTRUCTION GAP — HIGH:
+   - Task prompts given to built-in agents (general/explore) that do NOT contain browser-first
+     rules. Built-in agents get no orchestrator patterns, so the spawner must bake them in.
+   - Evidence: read the task prompt that started the session; check for "Use the browser",
+     "Bing → DuckDuckGo", "never give up".
+```
+
 ## Phase 4: SCORE — Severity Matrix
 
 | Severity | Symbol | Criteria | Action Required |
