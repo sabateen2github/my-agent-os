@@ -1,6 +1,6 @@
 # Agent OS
 
-A version-controlled, global Agent OS toolkit for [OpenCode](https://opencode.ai). Consolidates AI configurations from OpenCode and Gemini CLI into a 3-tier deep reasoning architecture backed by **DeepSeek V4 Flash** (orchestrator/agents) and **Gemini 2.5 Flash** (vision).
+A version-controlled, global Agent OS toolkit for [OpenCode](https://opencode.ai). Consolidates AI configurations from OpenCode and Gemini CLI into a 3-tier deep reasoning architecture backed by **DeepSeek V4 Flash** (orchestrator/agents) and **Gemini 2.5 Flash-Lite** (vision, 3-6x cheaper).
 
 ## Quick Start
 
@@ -50,7 +50,7 @@ my-agent-os/
 ├── agents/
 │   ├── orchestrator.md        # Tier 1: Primary terminal manager (DeepSeek V4 Flash)
 │   ├── discovery.md           # Tier 2: UI exploration thinker (DeepSeek V4 Flash)
-│   ├── vision.md              # Tier 3: Headless vision parser (Gemini 2.5 Flash)
+│   ├── vision.md              # Tier 3: Headless vision parser (Gemini 2.5 Flash-Lite)
 │   ├── deep-moat-auditor.md   # Tier 4: Qualitative tech moat research (patents, papers, physics)
 │   └── surge-analyst.md       # Tier 4: Investment analyst (quant+qual reconciliation)
 ├── skills/
@@ -99,7 +99,7 @@ my-agent-os/
           ▼                       ▼
 ┌────────────────────┐  ┌──────────────────┐
 │  TIER 2: discovery │  │  TIER 3: vision  │
-│  DeepSeek V4 Flash │  │  Gemini 2.5 Flash│
+│  DeepSeek V4 Flash │  │  Gemini 2.5 Flash-Lite│
 │  (thinking mode)   │  │  (image analysis)│
 │                    │  │                  │
 │  Maps complex UIs  │  │  Reads screenshots│
@@ -154,7 +154,7 @@ my-agent-os/
 |-----------|---------|-------|-------------|---------|---------|
 | **orchestrator** | OpenCode agent | DeepSeek V4 Flash | — | — | Task routing, terminal ops, delegation |
 | **discovery** | OpenCode subagent | DeepSeek V4 Flash | — | Inherited | UI mapping, selector discovery |
-| **vision** | OpenCode subagent | Gemini 2.5 Flash | — | — | Screenshot → spatial text report |
+| **vision** | OpenCode subagent | Gemini 2.5 Flash-Lite | — | — | Screenshot → spatial text report |
 | **browser-agent** | systemd service (:9222) + per-owner (:9230-9289) | Playwright + Chromium | ✅ per-owner userDataDir | ✅ built-in | Interactive browsing, persistent session, per-agent isolation, tab management, aggregated telemetry |
 
 

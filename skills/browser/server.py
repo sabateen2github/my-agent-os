@@ -1060,6 +1060,22 @@ def handle_command(cmd):
             output_path = cmd.get("output") or os.path.join(
                 SCREENSHOT_DIR, f"screenshot-{int(time.time() * 1000)}.png"
             )
+            # Paint-settle guard: navigations return at domcontentloaded, but the
+            # compositor may not have painted the first frame yet (SwiftShader
+            # software rendering on Xvfb). A screenshot taken a millisecond too
+            # early can capture a blank/white frame (observed on SEC EDGAR and
+            # Google Patents). Wait for a painted, stable frame before capture.
+            try:
+                page.wait_for_function(
+                    "() => { const s = getComputedStyle(document.body || document.documentElement);"
+                    " return document.readyState === 'complete' && s.display !== 'none' &&"
+                    " document.documentElement.scrollHeight > 0; }",
+                    timeout=5000,
+                )
+            except Exception:
+                pass
+            # Let any in-flight rAF/paint complete (short, bounded)
+            page.wait_for_timeout(cmd.get("settleMs", 150))
             opts = {"path": output_path, "full_page": cmd.get("fullPage", False)}
             if cmd.get("selector"):
                 try:

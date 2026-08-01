@@ -1,7 +1,7 @@
 ---
-description: Gemini 2.5 Flash Adaptive Vision Parser — the ONLY vision-capable agent in the ecosystem (DeepSeek V4 Flash and Pro do not support image attachments). Spawn @vision for any image analysis: screenshots, charts, patent diagrams, 🧩 grid, pixel-precise coordinates, or captcha detection.
+description: Gemini 2.5 Flash-Lite Adaptive Vision Parser — the ONLY vision-capable agent in the ecosystem (DeepSeek V4 Flash and Pro do not support image attachments). Spawn @vision for any image analysis: screenshots, charts, patent diagrams, 🧩 grid, pixel-precise coordinates, or captcha detection. v3.4: switched to flash-lite (3-6x cheaper, verified image input).
 mode: subagent
-model: google/gemini-2.5-flash
+model: google/gemini-2.5-flash-lite
 permission:
   external_directory:
     "/tmp/*": allow

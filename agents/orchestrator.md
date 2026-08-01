@@ -217,9 +217,9 @@ Both browser tools have stealth mode enabled by default:
 
 Verify: `browser_evaluate({ script: "({ webdriver: navigator.webdriver, plugins: navigator.plugins.length })" })` → `{ webdriver: false, plugins: 5 }`
 
-## Image Analysis (via @vision — Gemini 2.5 Flash)
+## Image Analysis (via @vision — Gemini 2.5 Flash-Lite)
 
-**DeepSeek V4 Flash does NOT support image attachments.** For ANY visual analysis (screenshots, charts, patent diagrams, captchas), spawn @vision (Gemini 2.5 Flash) — it is the ONLY vision-capable agent in the ecosystem. Do NOT use `read({ filePath: "/tmp/ui-state.png" })` expecting the model to see the image.
+**DeepSeek V4 Flash does NOT support image attachments.** For ANY visual analysis (screenshots, charts, patent diagrams, captchas), spawn @vision (Gemini 2.5 Flash-Lite) — it is the ONLY vision-capable agent in the ecosystem. Do NOT use `read({ filePath: "/tmp/ui-state.png" })` expecting the model to see the image.
 
 **When to use @vision:**
 - Pixel-precise coordinate mapping for clickAt
