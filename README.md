@@ -60,8 +60,8 @@ my-agent-os/
 │   │   └── reaper.py           # Idle-instance reaper (systemd timer)
 │   ├── browser-agent/           # Browser skill documentation
 │   │   └── SKILL.md            # Agent-facing browser documentation
-│   ├── catalyst-detector/       # Single source of truth for stock scoring (v3.2)
-│   │   └── SKILL.md            # 10 categories, 140 pts, quant+qual reconciliation
+│   ├── catalyst-detector/       # Single source of truth for stock scoring (v4.0)
+│   │   └── SKILL.md            # 10 categories, 140 pts, sequential single-subagent pipeline
 │   └── self-enhance/           # Ecosystem self-evolution skill
 ├── tools/
 │   └── browser.ts             # Browser tool definitions (thin client → :9290 router)

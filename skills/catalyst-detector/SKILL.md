@@ -1,11 +1,11 @@
 ---
 name: catalyst-detector
-description: PRIMARY screening methodology for identifying stocks poised to surge in 3-6-12 months. v3.0: Adds Deep Domain Knowledge category (10th), quantitative scoring triggers, dip/crash preference scoring, and forced quant+qual reconciliation. 10 categories, 140 points max. Runs AFTER quantitative screen and deep-moat-audit.
+description: PRIMARY screening methodology for identifying stocks poised to surge in 3-6-12 months. v4.0: Same 10-category, 140-point deep-dive scoring but runs SEQUENTIALLY with at most ONE subagent at a time (one deep-moat-auditor audit at a time; one vision call at a time). Adds Deep Domain Knowledge category (10th), quantitative scoring triggers, dip/crash preference scoring, and forced quant+qual reconciliation. 10 categories, 140 points max.
 license: MIT
 compatibility: opencode
 metadata:
-  version: "3.0"
-  last_updated: "2026-07-03"
+  version: "4.0"
+  last_updated: "2026-08-07"
   categories: 10
   max_score: 140
 ---
@@ -586,20 +586,23 @@ v2.0 listed red flags but didn't enforce them. v3.0 embeds penalties directly in
 
 **v3.0 enforcement rule:** If a stock triggers 3+ red flags, automatically remove from consideration regardless of other scores. Don't try to rationalize a "good company with some concerns" — 3+ red flags = something is wrong.
 
-## Complete Pipeline Sequence (v3.1)
+## Complete Pipeline Sequence (v4.0 — SEQUENTIAL, SINGLE-SUBAGENT)
 
-The v3.1 sequence:
+The v4.0 sequence — **same research depth, sequential execution**. Each phase completes before the next starts. At any moment AT MOST ONE subagent is active. The main analyst (surge-analyst) does discovery, quant, supply chain trace, catalyst scoring, and synthesis itself; the only subagents used are one @deep-moat-auditor at a time and one @vision call at a time.
+
 ```
-1. DYNAMIC DISCOVERY → Live market data (browser, NOT hardcoded)
+1. DYNAMIC DISCOVERY → Live market data (browser, NOT hardcoded) — main analyst, no subagents
          ↓
-2. QUANTITATIVE SCREEN → Python/yfinance → score 0-40 → top 20-30 advance
+2. QUANTITATIVE SCREEN → Python/yfinance → score 0-40 → top 20-30 advance — main analyst, no subagents
          ↓
-2.5. SUPPLY CHAIN TRACE (v3.1 — NEW) → For any stock with rev growth >50% or AI >40% of revenue,
-     trace the full 3-tier revenue chain. Apply bullwhip modifier to Categories 0 and 1.
+2.5. SUPPLY CHAIN TRACE → For any stock with rev growth >50% or AI >40% of revenue,
+     trace the full 3-tier revenue chain. Apply bullwhip modifier to Categories 0 and 1. — main analyst, no subagents
          ↓
-3. DEEP MOAT AUDIT → @deep-moat-auditor for top 10-15 → moat score 0-40
+3. DEEP MOAT AUDIT → top 3-5 candidates, ONE @deep-moat-auditor at a time (audit → save → next)
+     → moat score 0-50 per candidate. At most 1 subagent active at any moment.
          ↓
-4. CATALYST DETECTION → 10 categories, 140 pts → quant triggers + qual research
+4. CATALYST DETECTION → 10 categories, 140 pts → quant triggers + qual research. Main analyst
+     does the research itself; @vision used ONE call at a time with 2-4 screenshots batched per call.
      + supply chain bubble modifier applied
          ↓
 5. QUANT+QUAL RECONCILIATION → Both must agree → kill divergents

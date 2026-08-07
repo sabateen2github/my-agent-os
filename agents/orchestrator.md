@@ -301,10 +301,10 @@ Delegate to the surge-analyst subagent when the user asks for ANY of:
 - "What's the best trade right now?" / "Where should I put money for 6 months?"
 - Any request that combines stock analysis with timing prediction
 
-The surge-analyst (v3.0) runs a quant+qual reconciliation methodology:
-- **Phase 1:** Dynamic discovery (browser scrapes live market data — NO hardcoded ticker lists) + quantitative screen (Python/yfinance, 0-40 score)
-- **Phase 2:** Deep qualitative research — spawns @deep-moat-auditor for patent analysis, scientific paper review, physics understanding, manufacturing process research
-- **Phase 3:** Catalyst scoring across 10 categories (140 pts max) with quantitative triggers
+The surge-analyst (v4.0) runs the same quant+qual reconciliation methodology in **SEQUENTIAL single-subagent mode** — research depth unchanged (10 catalyst categories, 140 pts, supply chain trace, assumption flags) but at most ONE subagent runs at any moment, no parallel swarms:
+- **Phase 1:** Dynamic discovery (browser scrapes live market data — NO hardcoded ticker lists) + quantitative screen (Python/yfinance, 0-40 score) — done by the surge-analyst itself, no subagents
+- **Phase 2:** Deep qualitative research — spawns @deep-moat-auditor for the top 3-5 candidates **one at a time** (audit → wait → next) for patent analysis, scientific paper review, physics understanding, manufacturing process research
+- **Phase 3:** Catalyst scoring across 10 categories (140 pts max) with quantitative triggers — done by the surge-analyst itself (one @vision call at a time, screenshots batched, for charts)
 - **Phase 4:** Forced quant+qual reconciliation — BOTH must agree for a BUY recommendation
 - **Phase 5:** Portfolio construction with sector limits (max 40%), dip/crash preference (>40% positions must be below 52w high), and live price verification
 

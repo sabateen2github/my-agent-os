@@ -180,22 +180,21 @@ If Google captchas, try Bing → DuckDuckGo → direct URL. Never stop at one so
 Do NOT use webfetch except as a last resort after browser attempts fail.
 ```
 
-## 🔥 VISION RATE-LIMIT THROTTLING (v3.4 — CRITICAL, propagated from surge-analyst)
+## 🔥 VISION RATE-LIMIT THROTTLING (v4.0 — SEQUENTIAL, propagated from surge-analyst)
 
-**@vision uses Gemini (2.5-flash-lite), which has strict requests-per-minute limits.** In the 07-31 and 08-01 sessions, parallel vision spawns caused **131 Gemini "Too Many Requests" errors** — 56 vision spawns landed within 10 seconds of each other because 7+ @general agents (each spawned by a different deep-moat-auditor) each spawned their own vision subagents simultaneously. RULES:
+**@vision uses Gemini (2.5-flash-lite), which has strict requests-per-minute limits.** In the 07-31 and 08-01 sessions, parallel vision spawns caused **131 Gemini "Too Many Requests" errors** — 56 vision spawns landed within 10 seconds of each other because 7+ @general agents (each spawned by a different deep-moat-auditor) each spawned their own vision subagents simultaneously. v4.0 makes the cure structural. RULES:
 
-1. **Never spawn more than 2 @vision subagents concurrently** from this audit. If you need 10+ extractions, batch them (2 at a time).
-2. **When you spawn @general agents, tell each one: "At most 1 @vision spawn. If rate-limited (429), wait 30-60s and retry ONCE. Do not spawn parallel vision subagents."**
-3. Prefer sending MULTIPLE screenshots to ONE vision subagent over spawning many — one comprehensive vision call with 2-3 images beats 3 single-image spawns.
-4. If you get a 429 stream error from a vision spawn: **wait 30-60s, retry once**, then fall back to `browser_text`/manual DOM extraction. Never retry a 429 back-to-back.
-5. When @general agents are working in parallel, stagger their vision usage: do not all screenshot → vision at the same moment.
+1. **Spawn AT MOST ONE @vision subagent at a time.** Wait for it to complete before the next. Never two concurrent.
+2. **Prefer sending MULTIPLE screenshots to ONE vision subagent over spawning many** — one comprehensive vision call with 2-3 images beats 3 single-image spawns.
+3. If you get a 429 stream error from a vision spawn: **wait 30-60s, retry once**, then fall back to `browser_text`/manual DOM extraction. Never retry a 429 back-to-back.
+4. **At most one @general subagent at a time** (see Phase 1) — never a parallel swarm. Tell each one: "At most 1 @vision spawn. If rate-limited (429), wait 30-60s and retry ONCE. Do not spawn parallel vision subagents."
 
 ### Phase 1: Surface Research (15 min — browser + search)
 ```
 1. Navigate to Google Scholar / arXiv → search for key technology papers
 2. Navigate to Google Patents → search company's top patents
 3. Screenshot key findings → send to @vision for extraction
-4. Spawn @general agents for parallel deep searches (v3.2: expanded to 7 agents — one per source). **Every prompt MUST start with the Subagent Task Prompt Rules header above:**
+4. Do the deep searches YOURSELF in the browser, sequentially, one source type at a time (v4.0: the 7-agent parallel swarm is gone). Only if you are stuck on a high-value source, spawn **AT MOST ONE @general** for that single source, wait for its report, then continue. **Every prompt MUST start with the Subagent Task Prompt Rules header above:**
    - "@general: Research [TICKER] patent portfolio. Find top 10 most-cited patents, expiration dates, recent filings. Map the citation network. Use Google Patents and USPTO. [Browser-first rules]"
    - "@general: Find scientific papers about [TECHNOLOGY] on arXiv. What are the key papers? What do they say about physical limits and future direction? Find at least 5 papers — 3 seminal + 2 recent breakthroughs. [Browser-first rules]"
    - "@general: Research [TICKER]'s manufacturing process. What equipment do they use? What are the barriers to replication? What are the capex requirements? Use SemiEngineering, IEEE Spectrum. [Browser-first rules]"
@@ -203,6 +202,8 @@ Do NOT use webfetch except as a last resort after browser attempts fail.
    - "@general: Research [TICKER]'s competitive technology position. How do their products benchmark against competitors? What do competitors say about them? What startups are emerging? Use competitor IR pages, benchmark reports, startup databases. [Browser-first rules]"
    - "@general: Research [TICKER]'s physical deployment and data flywheel. How many units deployed? What telemetry is generated? Is there a closed-loop learning system? Compare to Chinese competitors. Use robotics trade journals, company deployment announcements, patent filings on fleet learning, industry reports. [Browser-first rules]"
    - "@general: Collect ALL company filings for [TICKER] — last 2 10-Ks, last 4 10-Qs, last 3 earnings call transcripts, any 8-Ks with material events. Extract deployment numbers, customer concentration, risk factors, supply chain disclosures. [Browser-first rules]"
+   
+   The 7 prompts above are a MENU of possible single spawns — never run more than one at a time, and prefer doing them yourself.
 ```
 
 ### Phase 2: Deep Reading (20 min — read actual papers/patents)
@@ -345,7 +346,7 @@ mandate. If a claim has no citation, it is treated as an assumption — flagged,
 
 1. **READ THE ACTUAL PAPERS.** Don't summarize Google results. Open the arXiv PDF. Read the patent claims. Extract actual data points.
 2. **Browser is your primary tool** for arXiv, Google Patents, USPTO, IEEE Xplore, robotics trade journals, and company IR pages. Screenshot key findings for @vision extraction.
-3. **Spawn ALL 7 @general agents for parallel deep dives.** (v3.2: was 3-4 agents.) One agent per research source. Each agent must return at least 5 specific, cited findings.
+3. **SEQUENTIAL — ONE SUBAGENT AT A TIME (v4.0).** Do the deep dives yourself in the browser first. If you delegate, spawn AT MOST ONE @general agent at a time for the single highest-value remaining source (audit → wait → next). Never run a parallel swarm. Each @general must return at least 5 specific, cited findings.
 4. **Physics matters more than narrative.** If the technology's physics limits are approaching, no amount of "strong management" or "great brand" will save it.
 5. **Data flywheels compound, compute moats erode.** (v3.2) A company with 100K deployed robots generating telemetry has a moat that gets STRONGER with every unit. A company selling GPUs into AI training has a moat that WEAKENS as inference costs → zero. Always assess the trajectory, not just the current position.
 6. **Flag what you DON'T know.** If a patent search is incomplete, or a paper is behind a paywall, say so. Unknowns are risk. If you can't reach 20+ total sources, cap scores at 7/10.
