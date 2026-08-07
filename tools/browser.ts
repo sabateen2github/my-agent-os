@@ -23,10 +23,12 @@ function sanitizeOwner(agent?: string): string {
   return agent.toLowerCase().replace(/[^a-z0-9-_]/g, "-").slice(0, 32)
 }
 
-// Session-scoped owner key. The agent name alone is NOT enough — the
-// surge-analyst methodology spawns dozens of PARALLEL subagents of the same
+// Session-scoped owner key. The agent name alone is NOT enough — older v3.x
+// surge-analyst orchestration spawned dozens of PARALLEL subagents of the same
 // type (e.g. 30x `general` at once). Keying only on the agent type made them
 // all share one browser window and hijack each other (v3.3 regression).
+// v4.0 is sequential (at most ONE subagent at a time), but the session key
+// remains — it also isolates deep-moat-auditor's occasional @general spawns.
 // Including a short hash of the unique sessionID gives every subagent
 // invocation its own isolated window, while still allowing the shared
 // systemd instance for main-session roles.

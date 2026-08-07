@@ -314,7 +314,7 @@ http://127.0.0.1:9231  ← deep-moat-auditor's window (session-scoped)
 http://127.0.0.1:9222  ← orchestrator (shared default, systemd)
 ```
 
-> **v3.3 fix (hijack regression):** Ownership is keyed on **agent type + sessionID hash**, NOT agent type alone. The surge-analyst spawns 10-30 *parallel* subagents of the same type (e.g. 30x `general` at once). Keying only on the type made them all resolve to one shared window → mutual page hijacking + abort-hook churn (each finishing subagent closed the window for everyone else). Including the session hash gives every subagent invocation its own isolated window. Same session across calls keeps the same key (session continuity); parallel same-type sessions get distinct windows.
+> **v3.3 fix (hijack regression):** Ownership is keyed on **agent type + sessionID hash**, NOT agent type alone. Older v3.x orchestration spawned many *parallel* same-type subagents (e.g. 10-30x `general` at once). Keying only on the type made them all resolve to one shared window → mutual page hijacking + abort-hook churn (each finishing subagent closed the window for everyone else). Including the session hash gives every subagent invocation its own isolated window. v4.0 runs surge-analyst sequentially (at most ONE subagent at a time), but session-keyed isolation remains — it also protects deep-moat-auditor's occasional @general spawns and any future parallel usage. Same session across calls keeps the same key (session continuity); parallel same-type sessions get distinct windows.
 
 > **v3.4 fix (port-pool race → router):** Previously every agent resolved its own port directly (`ownerCache` in browser.ts) while the reaper wrote the same registry — concurrent spawners all picked port 9230, and the reaper deleted live entries. Now the router is the ONLY registry writer (under a cross-process mkdir lock shared with reaper.py), reserves ports in the registry BEFORE spawning, and skips OS-bound ports (`ss -tln`). The port pool is invisible to agents: they just POST to `:9290` with an `X-Agent` header.
 
@@ -330,7 +330,7 @@ http://127.0.0.1:9222  ← orchestrator (shared default, systemd)
 2. **Idle reap** — the `browser-instance-reaper.timer` (every minute) closes windows whose owner hasn't used them for 5 min (covers normal completion; override: `BROWSER_INSTANCE_IDLE_MS`)
 3. **Explicit** — agents can call `browser_close()` to close their own window early
 
-**Tuning:** `MAX_INSTANCES` (default 12 — raised for per-session isolation, since surge-analyst legitimately needs many concurrent windows) evicts the least-recently-used idle instance when the pool is full. All instance settings live at the top of `skills/browser/router.py` (env-overridable: `BROWSER_POOL_START/END`, `BROWSER_MAX_INSTANCES`, `BROWSER_INSTANCE_IDLE_MS`).
+**Tuning:** `MAX_INSTANCES` (default 12 — per-session isolation headroom for any remaining multi-window workloads, e.g. deep-moat-auditor's occasional @general spawn or user-initiated parallel discovery sessions; surge-analyst v4.0 is sequential so needs few) evicts the least-recently-used idle instance when the pool is full. All instance settings live at the top of `skills/browser/router.py` (env-overridable: `BROWSER_POOL_START/END`, `BROWSER_MAX_INSTANCES`, `BROWSER_INSTANCE_IDLE_MS`).
 
 ## Stealth / Anti-Detection
 
